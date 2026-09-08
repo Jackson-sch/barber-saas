@@ -1,0 +1,203 @@
+'use server'
+
+import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
+
+export interface UpdateOrgByAdminInput {
+  orgId: string
+  name: string
+  slug: string
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  city?: string | null
+}
+
+export interface UpdateTenantSettingsInput {
+  organizationId: string
+  currentSlug: string
+  name: string
+  newSlug?: string
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  city?: string | null
+  openingTime?: string
+  closingTime?: string
+}
+
+function cleanSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+// 1. Edición por el SuperAdmin
+export async function updateOrganizationByAdminAction(input: UpdateOrgByAdminInput) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'No autenticado.' }
+
+  // Verificar superadmin
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_super_admin')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.is_super_admin) {
+    return { error: 'Acceso denegado: solo para súper administradores.' }
+  }
+
+  const name = input.name.trim()
+  const slug = cleanSlug(input.slug)
+
+  if (!name || name.length < 2) {
+    return { error: 'El nombre de la barbería debe tener al menos 2 caracteres.' }
+  }
+
+  if (!slug || slug.length < 3) {
+    return { error: 'El slug debe tener al menos 3 caracteres alfanuméricos.' }
+  }
+
+  // Verificar unicidad de slug
+  const { data: existingOrg } = await supabase
+    .from('organizations')
+    .select('id')
+    .eq('slug', slug)
+    .neq('id', input.orgId)
+    .maybeSingle()
+
+  if (existingOrg) {
+    return { error: `El slug "/${slug}" ya está en uso por otra barbería. Elige otro diferente.` }
+  }
+
+  const { error: updateErr } = await supabase
+    .from('organizations')
+    .update({
+      name,
+      slug,
+      phone: input.phone?.trim() || null,
+      email: input.email?.trim() || null,
+      address: input.address?.trim() || null,
+      city: input.city?.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', input.orgId)
+
+  if (updateErr) {
+    console.error('Error updating organization by admin:', updateErr)
+    return { error: 'Error al actualizar los datos de la barbería.' }
+  }
+
+  revalidatePath('/admin')
+  revalidatePath('/admin/barberias')
+  revalidatePath(`/reservar/${slug}`)
+  revalidatePath(`/app/${slug}/dashboard`)
+
+  return { success: true, newSlug: slug }
+}
+
+// 2. Edición por el Dueño / Admin de la barbería
+export async function updateTenantSettingsAction(input: UpdateTenantSettingsInput) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'No autenticado.' }
+
+  // Verificar rol del usuario en la barbería
+  const { data: member } = await supabase
+    .from('organization_members')
+    .select('role')
+    .eq('organization_id', input.organizationId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_super_admin')
+    .eq('id', user.id)
+    .single()
+
+  const isOwner = member?.role === 'OWNER' || profile?.is_super_admin
+
+  if (!isOwner) {
+    return { error: 'Solo el dueño de la barbería o el superadministrador pueden modificar la configuración.' }
+  }
+
+  const name = input.name.trim()
+  if (!name || name.length < 2) {
+    return { error: 'El nombre debe tener al menos 2 caracteres.' }
+  }
+
+  let finalSlug = input.currentSlug
+  if (input.newSlug && input.newSlug.trim()) {
+    const desiredSlug = cleanSlug(input.newSlug)
+    if (desiredSlug.length < 3) {
+      return { error: 'El slug debe tener al menos 3 caracteres.' }
+    }
+
+    if (desiredSlug !== input.currentSlug) {
+      const { data: slugTaken } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('slug', desiredSlug)
+        .neq('id', input.organizationId)
+        .maybeSingle()
+
+      if (slugTaken) {
+        return { error: `El slug "/${desiredSlug}" ya está ocupado. Elige otro.` }
+      }
+      finalSlug = desiredSlug
+    }
+  }
+
+  // Actualizar settings json
+  const { data: currentOrg } = await supabase
+    .from('organizations')
+    .select('settings')
+    .eq('id', input.organizationId)
+    .single()
+
+  const currentSettings = (currentOrg?.settings as Record<string, any>) || {}
+  const updatedSettings = {
+    ...currentSettings,
+    opening_time: input.openingTime || currentSettings.opening_time || '09:00',
+    closing_time: input.closingTime || currentSettings.closing_time || '21:00',
+  }
+
+  const { error: updateErr } = await supabase
+    .from('organizations')
+    .update({
+      name,
+      slug: finalSlug,
+      phone: input.phone?.trim() || null,
+      email: input.email?.trim() || null,
+      address: input.address?.trim() || null,
+      city: input.city?.trim() || null,
+      settings: updatedSettings,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', input.organizationId)
+
+  if (updateErr) {
+    console.error('Error updating tenant settings:', updateErr)
+    return { error: 'No se pudieron guardar los cambios.' }
+  }
+
+  revalidatePath(`/app/${input.currentSlug}/configuracion`)
+  revalidatePath(`/app/${finalSlug}/configuracion`)
+  revalidatePath(`/app/${finalSlug}/dashboard`)
+  revalidatePath(`/reservar/${finalSlug}`)
+
+  return { success: true, newSlug: finalSlug, slugChanged: finalSlug !== input.currentSlug }
+}
