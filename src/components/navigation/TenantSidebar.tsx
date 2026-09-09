@@ -11,6 +11,7 @@ import {
   Users,
   UserCheck,
   Scissors,
+  Package,
   Sparkles,
   ExternalLink,
   LogOut,
@@ -65,6 +66,7 @@ export function TenantSidebar({ slug, org, member, userEmail }: TenantSidebarPro
         { href: `/app/${slug}/clientes`, label: 'Clientes & Fichas', icon: Users },
         { href: `/app/${slug}/barberos`, label: 'Barberos & Comisiones', icon: UserCheck },
         { href: `/app/${slug}/servicios`, label: 'Servicios & Precios', icon: Scissors },
+        { href: `/app/${slug}/inventario`, label: 'Inventario & Stock', icon: Package },
       ],
     },
     {

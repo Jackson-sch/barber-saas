@@ -18,12 +18,13 @@ import {
   Sparkles,
   ArrowRight,
   Lock,
+  Package,
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { createSaleAction, type CartItemInput } from '@/actions/pos'
 import OpenShiftModal from './OpenShiftModal'
 import Link from 'next/link'
-import type { Service, ServiceCategory, OrganizationMember, CashShift, Client } from '@/types/database.types'
+import type { Service, ServiceCategory, OrganizationMember, CashShift, Client, Product } from '@/types/database.types'
 
 interface AppointmentPreload {
   id: string
@@ -39,6 +40,7 @@ interface PosClientProps {
   categories: ServiceCategory[]
   barbers: OrganizationMember[]
   clients: Client[]
+  products?: Product[]
   currentShift: CashShift | null
   organizationId: string
   slug: string
@@ -50,6 +52,7 @@ export default function PosClient({
   categories,
   barbers,
   clients,
+  products = [],
   currentShift,
   organizationId,
   slug,
@@ -57,8 +60,10 @@ export default function PosClient({
 }: PosClientProps) {
   // Estado del Carrito / Ticket
   const [cart, setCart] = useState<CartItemInput[]>([])
+  const [catalogTab, setCatalogTab] = useState<'SERVICES' | 'PRODUCTS'>('SERVICES')
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL')
   const [searchService, setSearchService] = useState('')
+  const [searchProduct, setSearchProduct] = useState('')
 
   // Estado del Cliente
   const [clientType, setClientType] = useState<'WALK_IN' | 'EXISTING'>('WALK_IN')
@@ -114,8 +119,19 @@ export default function PosClient({
     return matchesCat && matchesSearch
   })
 
+  // Filtrar productos
+  const filteredProducts = products.filter((prod) => {
+    const q = searchProduct.toLowerCase()
+    return (
+      prod.name.toLowerCase().includes(q) ||
+      (prod.sku && prod.sku.toLowerCase().includes(q)) ||
+      (prod.barcode && prod.barcode.includes(q))
+    )
+  })
+
   // Funciones del carrito
   function handleAddService(svc: Service) {
+    setError(null)
     setCart((prev) => {
       const existing = prev.find((item) => item.service_id === svc.id)
       if (existing) {
@@ -145,10 +161,61 @@ export default function PosClient({
     })
   }
 
+  function handleAddProduct(prod: Product) {
+    setError(null)
+    if (prod.stock <= 0) {
+      setError(`El producto "${prod.name}" no tiene unidades disponibles en stock.`)
+      return
+    }
+
+    setCart((prev) => {
+      const existing = prev.find((item) => item.product_id === prod.id)
+      if (existing) {
+        if (existing.quantity >= prod.stock) {
+          setError(`No puedes agregar más unidades de "${prod.name}". Stock máximo alcanzado (${prod.stock}).`)
+          return prev
+        }
+        return prev.map((item) =>
+          item.product_id === prod.id
+            ? {
+                ...item,
+                quantity: item.quantity + 1,
+                subtotal: (item.quantity + 1) * item.unit_price,
+              }
+            : item
+        )
+      }
+      return [
+        ...prev,
+        {
+          product_id: prod.id,
+          name: prod.name,
+          item_type: 'PRODUCT',
+          barber_id: barbers[0]?.id || null, // Barbero que recomendó/vendió el producto
+          quantity: 1,
+          unit_price: Number(prod.sale_price),
+          subtotal: Number(prod.sale_price),
+          commission_percent: 10, // Comisión del 10% en venta de producto
+        },
+      ]
+    })
+  }
+
   function handleUpdateQuantity(index: number, delta: number) {
+    setError(null)
     setCart((prev) => {
       const copy = [...prev]
-      const newQty = copy[index].quantity + delta
+      const item = copy[index]
+
+      if (item.item_type === 'PRODUCT' && delta > 0 && item.product_id) {
+        const prod = products.find((p) => p.id === item.product_id)
+        if (prod && item.quantity + delta > prod.stock) {
+          setError(`Stock insuficiente para "${prod.name}" (Disponible: ${prod.stock} unidades).`)
+          return prev
+        }
+      }
+
+      const newQty = item.quantity + delta
       if (newQty <= 0) {
         return copy.filter((_, i) => i !== index)
       }
@@ -278,76 +345,185 @@ export default function PosClient({
 
       {/* POS Grid: Catalog on left, Ticket on right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left 7 cols: Services Catalog */}
+        {/* Left 7 cols: Services & Products Catalog */}
         <div className="lg:col-span-7 space-y-4">
-          {/* Category Tabs & Search */}
-          <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-xl p-3 flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-              <button
-                onClick={() => setSelectedCategory('ALL')}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer whitespace-nowrap ${
-                  selectedCategory === 'ALL'
-                    ? 'bg-amber-500 text-black font-semibold'
-                    : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
-                }`}
-              >
-                Todos
-              </button>
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer whitespace-nowrap ${
-                    selectedCategory === cat.id
-                      ? 'bg-amber-500 text-black font-semibold'
-                      : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
-                  }`}
-                >
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-
-            <div className="relative w-full sm:w-52">
-              <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Buscar servicio..."
-                value={searchService}
-                onChange={(e) => setSearchService(e.target.value)}
-                className="w-full pl-8 pr-3 py-1 rounded-lg bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-amber-500 transition"
-              />
-            </div>
+          {/* Selector de Modo: Servicios vs Productos */}
+          <div className="flex items-center gap-2 p-1 rounded-xl bg-neutral-900 border border-neutral-800">
+            <button
+              type="button"
+              onClick={() => setCatalogTab('SERVICES')}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                catalogTab === 'SERVICES'
+                  ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <Scissors className="w-3.5 h-3.5" />
+              <span>Servicios ({services.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setCatalogTab('PRODUCTS')}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                catalogTab === 'PRODUCTS'
+                  ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>Productos ({products.length})</span>
+            </button>
           </div>
 
-          {/* Services Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {filteredServices.map((svc) => (
-              <button
-                key={svc.id}
-                onClick={() => handleAddService(svc)}
-                className="p-3.5 rounded-xl bg-neutral-900/70 border border-neutral-800/80 hover:border-amber-500/50 hover:bg-neutral-900 transition flex flex-col justify-between text-left group cursor-pointer min-h-[110px]"
-              >
-                <div>
-                  <h4 className="font-bold text-white text-xs leading-snug group-hover:text-amber-400 transition">
-                    {svc.name}
-                  </h4>
-                  <span className="text-[10px] text-neutral-400 mt-1 block">
-                    {svc.duration_minutes} min • {svc.commission_percent}% com.
-                  </span>
+          {catalogTab === 'SERVICES' ? (
+            <>
+              {/* Category Tabs & Search */}
+              <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-xl p-3 flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+                  <button
+                    onClick={() => setSelectedCategory('ALL')}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer whitespace-nowrap ${
+                      selectedCategory === 'ALL'
+                        ? 'bg-amber-500 text-black font-semibold'
+                        : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                    }`}
+                  >
+                    Todos
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedCategory(cat.id)}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer whitespace-nowrap ${
+                        selectedCategory === cat.id
+                          ? 'bg-amber-500 text-black font-semibold'
+                          : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
                 </div>
 
-                <div className="flex items-center justify-between w-full mt-3 pt-2 border-t border-neutral-800/60">
-                  <span className="font-extrabold text-sm text-amber-400">
-                    {formatPrice(Number(svc.price))}
-                  </span>
-                  <div className="w-6 h-6 rounded-md bg-amber-500/10 group-hover:bg-amber-500 text-amber-400 group-hover:text-black flex items-center justify-center transition">
-                    <Plus className="w-3.5 h-3.5" />
-                  </div>
+                <div className="relative w-full sm:w-52">
+                  <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Buscar servicio..."
+                    value={searchService}
+                    onChange={(e) => setSearchService(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1 rounded-lg bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-amber-500 transition"
+                  />
                 </div>
-              </button>
-            ))}
-          </div>
+              </div>
+
+              {/* Services Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {filteredServices.map((svc) => (
+                  <button
+                    key={svc.id}
+                    onClick={() => handleAddService(svc)}
+                    className="p-3.5 rounded-xl bg-neutral-900/70 border border-neutral-800/80 hover:border-amber-500/50 hover:bg-neutral-900 transition flex flex-col justify-between text-left group cursor-pointer min-h-[110px]"
+                  >
+                    <div>
+                      <h4 className="font-bold text-white text-xs leading-snug group-hover:text-amber-400 transition">
+                        {svc.name}
+                      </h4>
+                      <span className="text-[10px] text-neutral-400 mt-1 block">
+                        {svc.duration_minutes} min • {svc.commission_percent}% com.
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between w-full mt-3 pt-2 border-t border-neutral-800/60">
+                      <span className="font-extrabold text-sm text-amber-400">
+                        {formatPrice(Number(svc.price))}
+                      </span>
+                      <div className="w-6 h-6 rounded-md bg-amber-500/10 group-hover:bg-amber-500 text-amber-400 group-hover:text-black flex items-center justify-center transition">
+                        <Plus className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Product Search & Counter */}
+              <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-xl p-3 flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+                <span className="text-xs text-neutral-400">
+                  Productos para reventa: <strong className="text-white">{products.length}</strong>
+                </span>
+
+                <div className="relative w-full sm:w-60">
+                  <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre o SKU..."
+                    value={searchProduct}
+                    onChange={(e) => setSearchProduct(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1 rounded-lg bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-amber-500 transition"
+                  />
+                </div>
+              </div>
+
+              {/* Products Grid */}
+              {filteredProducts.length === 0 ? (
+                <div className="py-12 text-center bg-neutral-900/40 rounded-xl border border-neutral-800/60 text-neutral-500 text-xs">
+                  <Package className="w-8 h-8 mx-auto mb-2 text-neutral-600" />
+                  <p className="font-medium text-neutral-400">No hay productos disponibles</p>
+                  <p className="text-[11px] text-neutral-600 mt-1">Registra productos en la sección Inventario.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {filteredProducts.map((prod) => {
+                    const isOut = prod.stock <= 0
+                    const isLow = prod.stock <= prod.min_stock && !isOut
+                    return (
+                      <button
+                        key={prod.id}
+                        disabled={isOut}
+                        onClick={() => handleAddProduct(prod)}
+                        className={`p-3.5 rounded-xl border transition flex flex-col justify-between text-left group min-h-[110px] ${
+                          isOut
+                            ? 'bg-neutral-950/40 border-neutral-800/40 opacity-40 cursor-not-allowed'
+                            : 'bg-neutral-900/70 border-neutral-800/80 hover:border-amber-500/50 hover:bg-neutral-900 cursor-pointer'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            {prod.sku ? (
+                              <span className="text-[9px] font-mono text-neutral-500 uppercase truncate max-w-[80px]">
+                                {prod.sku}
+                              </span>
+                            ) : <span />}
+                            {isOut ? (
+                              <span className="text-[10px] font-bold text-red-400">Agotado</span>
+                            ) : isLow ? (
+                              <span className="text-[10px] font-bold text-amber-400">Quedan {prod.stock}</span>
+                            ) : (
+                              <span className="text-[10px] font-medium text-emerald-400">{prod.stock} un.</span>
+                            )}
+                          </div>
+                          <h4 className="font-bold text-white text-xs leading-snug group-hover:text-amber-400 transition">
+                            {prod.name}
+                          </h4>
+                        </div>
+
+                        <div className="flex items-center justify-between w-full mt-3 pt-2 border-t border-neutral-800/60">
+                          <span className="font-extrabold text-sm text-amber-400">
+                            {formatPrice(Number(prod.sale_price))}
+                          </span>
+                          <div className="w-6 h-6 rounded-md bg-amber-500/10 group-hover:bg-amber-500 text-amber-400 group-hover:text-black flex items-center justify-center transition">
+                            <Plus className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* Right 5 cols: Current Ticket & Payment */}
@@ -368,28 +544,26 @@ export default function PosClient({
           </div>
 
           {/* Client Assignment */}
-          <div className="p-3 rounded-xl bg-neutral-950/70 border border-neutral-800 space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-neutral-400 font-semibold">Cliente:</span>
-              <div className="flex items-center gap-2">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+                Cliente
+              </span>
+              <div className="flex items-center gap-1 bg-neutral-950 p-0.5 rounded-lg border border-neutral-800 text-[10px]">
                 <button
                   type="button"
                   onClick={() => setClientType('WALK_IN')}
-                  className={`text-[11px] px-2 py-0.5 rounded transition ${
-                    clientType === 'WALK_IN'
-                      ? 'bg-amber-500/20 text-amber-400 font-medium'
-                      : 'text-neutral-500 hover:text-white'
+                  className={`px-2 py-0.5 rounded transition ${
+                    clientType === 'WALK_IN' ? 'bg-amber-500 text-black font-bold' : 'text-neutral-400'
                   }`}
                 >
-                  Casual (Walk-in)
+                  Casual
                 </button>
                 <button
                   type="button"
                   onClick={() => setClientType('EXISTING')}
-                  className={`text-[11px] px-2 py-0.5 rounded transition ${
-                    clientType === 'EXISTING'
-                      ? 'bg-amber-500/20 text-amber-400 font-medium'
-                      : 'text-neutral-500 hover:text-white'
+                  className={`px-2 py-0.5 rounded transition ${
+                    clientType === 'EXISTING' ? 'bg-amber-500 text-black font-bold' : 'text-neutral-400'
                   }`}
                 >
                   Registrado
@@ -398,17 +572,17 @@ export default function PosClient({
             </div>
 
             {clientType === 'WALK_IN' ? (
-              <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="grid grid-cols-2 gap-2">
                 <input
                   type="text"
-                  placeholder="Nombre del cliente"
+                  placeholder="Nombre del cliente..."
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
                   className="px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-amber-500"
                 />
                 <input
                   type="tel"
-                  placeholder="Teléfono (Opcional)"
+                  placeholder="Celular (opcional)..."
                   value={clientPhone}
                   onChange={(e) => setClientPhone(e.target.value)}
                   className="px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-amber-500"
@@ -434,8 +608,11 @@ export default function PosClient({
           <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
             {cart.length === 0 ? (
               <div className="py-10 text-center border border-dashed border-neutral-800 rounded-xl">
-                <Scissors className="w-8 h-8 text-neutral-600 mx-auto mb-1" />
-                <p className="text-xs text-neutral-500">Selecciona servicios del catálogo para cobrar</p>
+                <div className="flex items-center justify-center gap-2 mb-1.5 text-neutral-600">
+                  <Scissors className="w-5 h-5" />
+                  <Package className="w-5 h-5" />
+                </div>
+                <p className="text-xs text-neutral-500">Selecciona servicios o productos para cobrar</p>
               </div>
             ) : (
               cart.map((item, idx) => (
@@ -444,8 +621,19 @@ export default function PosClient({
                   className="p-3 rounded-xl bg-neutral-950 border border-neutral-800/80 space-y-2 text-xs"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <h4 className="font-bold text-white">{item.name}</h4>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                            item.item_type === 'PRODUCT'
+                              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                              : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                          }`}
+                        >
+                          {item.item_type === 'PRODUCT' ? 'Producto' : 'Servicio'}
+                        </span>
+                        <h4 className="font-bold text-white truncate">{item.name}</h4>
+                      </div>
                       <span className="text-[11px] text-neutral-400">
                         {formatPrice(item.unit_price)} c/u
                       </span>

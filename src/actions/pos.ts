@@ -247,6 +247,28 @@ export async function createSaleAction(input: CreateSaleInput) {
         is_paid: false,
       })
     }
+
+    // Descontar stock físico si el ítem es un producto
+    if (it.item_type === 'PRODUCT' && it.product_id) {
+      const { data: prod } = await supabase
+        .from('products')
+        .select('stock')
+        .eq('id', it.product_id)
+        .eq('organization_id', input.organization_id)
+        .single()
+
+      if (prod) {
+        const remainingStock = Math.max(0, (prod.stock || 0) - it.quantity)
+        await supabase
+          .from('products')
+          .update({
+            stock: remainingStock,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', it.product_id)
+          .eq('organization_id', input.organization_id)
+      }
+    }
   }
 
   // 5. Si la venta vino de una cita, marcarla como COMPLETED
@@ -286,6 +308,7 @@ export async function createSaleAction(input: CreateSaleInput) {
   revalidatePath(`/app/${input.slug}/caja`)
   revalidatePath(`/app/${input.slug}/agenda`)
   revalidatePath(`/app/${input.slug}/dashboard`)
+  revalidatePath(`/app/${input.slug}/inventario`)
 
   return { success: true, saleId: sale.id }
 }

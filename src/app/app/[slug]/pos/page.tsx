@@ -1,7 +1,7 @@
 import { getTenantAuthContext } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import PosClient from '@/components/pos/PosClient'
-import type { Service, ServiceCategory, OrganizationMember, CashShift, Client } from '@/types/database.types'
+import type { Service, ServiceCategory, OrganizationMember, CashShift, Client, Product } from '@/types/database.types'
 
 interface PosPageProps {
   params: Promise<{ slug: string }>
@@ -45,7 +45,16 @@ export default async function PosPage({ params, searchParams }: PosPageProps) {
     .order('full_name', { ascending: true })
     .limit(100)
 
-  // 5. Obtener Turno de Caja actual abierto
+  // 5. Obtener Productos para reventa activos
+  const { data: products } = await supabase
+    .from('products')
+    .select('*')
+    .eq('organization_id', org.id)
+    .eq('is_active', true)
+    .eq('is_internal_use', false)
+    .order('name', { ascending: true })
+
+  // 6. Obtener Turno de Caja actual abierto
   const { data: currentShift } = await supabase
     .from('cash_shifts')
     .select('*')
@@ -55,7 +64,7 @@ export default async function PosPage({ params, searchParams }: PosPageProps) {
     .limit(1)
     .single()
 
-  // 6. Si vino una cita pre-cargada para cobrar
+  // 7. Si vino una cita pre-cargada para cobrar
   let preloadAppointment = null
   if (appointmentId) {
     const { data: appointment } = await supabase
@@ -90,6 +99,7 @@ export default async function PosPage({ params, searchParams }: PosPageProps) {
       categories={(categories || []) as unknown as ServiceCategory[]}
       barbers={(barbers || []) as unknown as OrganizationMember[]}
       clients={(clients || []) as unknown as Client[]}
+      products={(products || []) as unknown as Product[]}
       currentShift={currentShift as unknown as CashShift | null}
       organizationId={org.id}
       slug={slug}
