@@ -37,9 +37,10 @@ interface TenantSidebarProps {
     full_name: string
   } | null
   userEmail: string
+  isSuperAdmin?: boolean
 }
 
-export function TenantSidebar({ slug, org, member, userEmail }: TenantSidebarProps) {
+export function TenantSidebar({ slug, org, member, userEmail, isSuperAdmin = false }: TenantSidebarProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -80,6 +81,24 @@ export function TenantSidebar({ slug, org, member, userEmail }: TenantSidebarPro
 
   const SidebarContent = (
     <div className="flex flex-col h-full bg-[#0D0E15] text-neutral-200 border-r border-white/[0.08]">
+      {/* SuperAdmin Global Navigation Bar */}
+      {isSuperAdmin && (
+        <div className="p-3 bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border-b border-amber-500/20">
+          <div className="flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider">
+              <span>👑</span>
+              <span>Modo SúperAdmin</span>
+            </span>
+            <Link
+              href="/admin"
+              className="px-2 py-1 rounded-md bg-amber-500 hover:bg-amber-400 text-black text-[10px] font-bold transition flex items-center gap-1 shadow-sm"
+            >
+              <span>← Panel Admin</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Barbería Brand Header */}
       <div className="p-4 border-b border-white/[0.08]">
         <div className="flex items-center gap-3">

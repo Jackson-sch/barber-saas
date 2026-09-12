@@ -56,20 +56,20 @@ export async function getTenantAuthContext(slug: string) {
 
   const org = await requireTenant(slug)
 
-  // Obtener la membresía del usuario en este tenant
+  // Obtener la membresía del usuario en este tenant de forma segura
   const { data: member } = await supabase
     .from('organization_members')
     .select('*')
     .eq('organization_id', org.id)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
-  // Si no es miembro y tampoco es superadmin, denegar acceso
+  // Verificar si el usuario tiene privilegios globales de superadmin
   const { data: profileData } = await supabase
     .from('profiles')
     .select('is_super_admin')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   const profile = profileData ? (profileData as unknown as Pick<Profile, 'is_super_admin'>) : null
   const isSuperAdmin = profile?.is_super_admin ?? false
@@ -83,10 +83,29 @@ export async function getTenantAuthContext(slug: string) {
     redirect(`/login?error=suspended`)
   }
 
+  // Si el usuario es SuperAdmin pero no tiene membresía explícita en esta barbería,
+  // se le otorga un rol efectivo de OWNER para permitirle administrarla y probarla al 100%.
+  const effectiveMember: OrganizationMember = (member as unknown as OrganizationMember) || {
+    id: `superadmin-${user.id}`,
+    organization_id: org.id,
+    user_id: user.id,
+    branch_id: null,
+    role: 'OWNER',
+    full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Súper Administrador',
+    nickname: 'SuperAdmin',
+    phone: null,
+    avatar_url: null,
+    specialties: [],
+    commission_rate: 0,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+
   return {
     user,
     org,
-    member: member ? (member as unknown as OrganizationMember) : null,
+    member: effectiveMember,
     isSuperAdmin,
   }
 }

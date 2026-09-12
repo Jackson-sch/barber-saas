@@ -8,7 +8,7 @@ interface TenantLayoutProps {
 
 export default async function TenantLayout({ children, params }: TenantLayoutProps) {
   const { slug } = await params
-  const { org, member, user } = await getTenantAuthContext(slug)
+  const { org, member, user, isSuperAdmin } = await getTenantAuthContext(slug)
 
   return (
     <div className="min-h-screen bg-[#090A0E] text-white flex flex-col md:flex-row">
@@ -31,6 +31,7 @@ export default async function TenantLayout({ children, params }: TenantLayoutPro
             : null
         }
         userEmail={user.email || ''}
+        isSuperAdmin={isSuperAdmin}
       />
 
       {/* Main Content Area */}
