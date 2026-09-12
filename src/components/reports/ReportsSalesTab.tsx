@@ -63,41 +63,45 @@ export default function ReportsSalesTab({
         ) : (
           <div className="pt-2">
             {/* Gráfico visual de barras CSS */}
-            <div className="flex items-end gap-2 sm:gap-3 h-48 sm:h-56 pt-6 pb-2 overflow-x-auto scrollbar-none border-b border-white/[0.06]">
-              {dailyTrend.map((item) => {
-                const heightPercent = Math.max(
-                  8,
-                  Math.round((item.total / maxDailyRevenue) * 100)
-                )
-                return (
-                  <div
-                    key={item.date}
-                    className="flex-1 min-w-[38px] max-w-[64px] flex flex-col items-center justify-end h-full group relative"
-                  >
-                    {/* Tooltip on hover */}
-                    <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-neutral-900 border border-neutral-700 text-white text-[10px] font-mono py-1 px-2 rounded pointer-events-none shadow-xl z-20 whitespace-nowrap">
-                      {item.label}: {formatPrice(item.total)} ({item.count} tickets)
-                    </div>
-
-                    {/* Bar */}
+            <div className="pt-14 pb-2 border-b border-white/[0.06] overflow-x-auto scrollbar-none">
+              <div className="flex items-end gap-2 sm:gap-3 h-44 sm:h-52 min-w-full">
+                {dailyTrend.map((item) => {
+                  const heightPercent = Math.max(
+                    8,
+                    Math.round((item.total / maxDailyRevenue) * 100)
+                  )
+                  return (
                     <div
-                      style={{ height: `${heightPercent}%` }}
-                      className="w-full rounded-t-lg bg-gradient-to-t from-amber-500/30 to-amber-400 group-hover:to-amber-300 transition-all cursor-pointer relative"
+                      key={item.date}
+                      className="flex-1 min-w-[42px] max-w-[64px] flex flex-col items-center justify-end h-full group relative hover:z-30"
                     >
-                      {item.total > 0 && (
-                        <span className="hidden sm:block absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] font-mono text-neutral-400 truncate">
-                          {Math.round(item.total)}
-                        </span>
-                      )}
-                    </div>
+                      {/* Tooltip on hover */}
+                      <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-150 bg-[#090A0E] border border-white/20 text-white text-[11px] font-mono py-1.5 px-3 rounded-xl pointer-events-none shadow-2xl z-50 whitespace-nowrap flex items-center gap-1.5 ring-1 ring-black/50">
+                        <span className="font-medium text-neutral-300">{item.label}:</span>
+                        <span className="font-extrabold text-amber-400">{formatPrice(item.total)}</span>
+                        <span className="text-[10px] text-neutral-400">({item.count} tickets)</span>
+                      </div>
 
-                    {/* Date label */}
-                    <span className="text-[10px] font-mono text-neutral-400 mt-2 truncate max-w-full">
-                      {item.label}
-                    </span>
-                  </div>
-                )
-              })}
+                      {/* Bar */}
+                      <div
+                        style={{ height: `${heightPercent}%` }}
+                        className="w-full rounded-t-lg bg-gradient-to-t from-amber-500/30 to-amber-400 group-hover:to-amber-300 transition-all cursor-pointer relative"
+                      >
+                        {item.total > 0 && (
+                          <span className="hidden sm:block absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] font-mono text-neutral-400 truncate pointer-events-none">
+                            {Math.round(item.total)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Date label */}
+                      <span className="text-[10px] font-mono text-neutral-400 mt-2 truncate max-w-full">
+                        {item.label}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         )}
