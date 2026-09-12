@@ -102,6 +102,12 @@ export default async function PosPage({ params, searchParams }: PosPageProps) {
       products={(products || []) as unknown as Product[]}
       currentShift={currentShift as unknown as CashShift | null}
       organizationId={org.id}
+      organizationInfo={{
+        name: org.name,
+        address: org.address,
+        phone: org.phone,
+        city: org.city,
+      }}
       slug={slug}
       preloadAppointment={preloadAppointment}
     />

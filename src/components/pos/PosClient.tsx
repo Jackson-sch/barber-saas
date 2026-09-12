@@ -1,17 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Wallet,
   AlertCircle,
   Lock,
-  CheckCircle2,
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { createSaleAction, type CartItemInput } from '@/actions/pos'
 import OpenShiftModal from './OpenShiftModal'
 import PosCatalog from './PosCatalog'
 import PosTicket, { type PaymentMethodType } from './PosTicket'
+import TicketReceiptModal, { type SaleReceiptData } from './TicketReceiptModal'
 import Link from 'next/link'
 import type {
   Service,
@@ -39,6 +40,12 @@ interface PosClientProps {
   products?: Product[]
   currentShift: CashShift | null
   organizationId: string
+  organizationInfo?: {
+    name: string
+    address?: string | null
+    phone?: string | null
+    city?: string | null
+  }
   slug: string
   preloadAppointment?: AppointmentPreload | null
 }
@@ -51,9 +58,11 @@ export default function PosClient({
   products = [],
   currentShift,
   organizationId,
+  organizationInfo,
   slug,
   preloadAppointment,
 }: PosClientProps) {
+  const router = useRouter()
   // Estado del Carrito / Ticket
   const [cart, setCart] = useState<CartItemInput[]>([])
   const [catalogTab, setCatalogTab] = useState<'SERVICES' | 'PRODUCTS'>('SERVICES')
@@ -76,7 +85,7 @@ export default function PosClient({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isOpenShiftModalOpen, setIsOpenShiftModalOpen] = useState(false)
-  const [completedSale, setCompletedSale] = useState<{ id: string; total: number } | null>(null)
+  const [completedReceipt, setCompletedReceipt] = useState<SaleReceiptData | null>(null)
 
   // Pre-cargar cita si vino por parámetro
   useEffect(() => {
@@ -252,8 +261,43 @@ export default function PosClient({
       setError(res.error)
       setLoading(false)
     } else if (res?.saleId) {
+      const selectedClientObj = clients.find((c) => c.id === selectedClientId)
+      const receiptData: SaleReceiptData = {
+        id: res.saleId,
+        total,
+        subtotal,
+        discount: discountVal,
+        tip: tipVal,
+        paymentMethod,
+        createdAt: new Date().toLocaleDateString('es-PE', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        clientName:
+          clientType === 'WALK_IN'
+            ? clientName.trim() || 'Cliente Casual'
+            : selectedClientObj?.full_name || 'Cliente Registrado',
+        clientPhone:
+          clientType === 'WALK_IN'
+            ? clientPhone.trim() || null
+            : selectedClientObj?.phone || null,
+        items: cart.map((it) => {
+          const barber = barbers.find((b) => b.id === it.barber_id)
+          return {
+            name: it.name,
+            quantity: it.quantity,
+            unit_price: it.unit_price,
+            subtotal: it.subtotal,
+            barberName: barber ? barber.nickname || barber.full_name : null,
+          }
+        }),
+      }
+
       setLoading(false)
-      setCompletedSale({ id: res.saleId, total })
+      setCompletedReceipt(receiptData)
     }
   }
 
@@ -264,7 +308,7 @@ export default function PosClient({
     setClientName('')
     setClientPhone('')
     setSelectedClientId('')
-    setCompletedSale(null)
+    setCompletedReceipt(null)
   }
 
   return (
@@ -377,49 +421,16 @@ export default function PosClient({
         />
       </div>
 
-      {/* Sale Complete Modal */}
-      {completedSale && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm bg-neutral-900 border border-neutral-800 rounded-2xl p-6 text-center shadow-2xl space-y-4">
-            <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
-              <CheckCircle2 className="w-8 h-8" />
-            </div>
-
-            <div>
-              <h3 className="text-xl font-bold text-white">¡Venta Exitosa!</h3>
-              <p className="text-xs text-neutral-400 mt-1">
-                Cobro procesado y comisiones acreditadas al barbero.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-neutral-950 border border-neutral-800">
-              <span className="text-xs text-neutral-400 block">Monto Total Cobrado</span>
-              <span className="text-3xl font-extrabold text-amber-400 mt-1 block">
-                {formatPrice(completedSale.total)}
-              </span>
-              <span className="text-[11px] text-neutral-500 mt-1 block">
-                Método: {paymentMethod}
-              </span>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={handleResetSale}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition cursor-pointer"
-              >
-                Nueva Venta
-              </button>
-              <Link
-                href={`/app/${slug}/caja`}
-                className="py-2.5 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold transition"
-              >
-                Ver Caja
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Sale Complete Modal with Thermal Ticket & WhatsApp */}
+      <TicketReceiptModal
+        isOpen={!!completedReceipt}
+        onClose={handleResetSale}
+        sale={completedReceipt}
+        organization={organizationInfo || { name: 'Barbería' }}
+        slug={slug}
+        onNewSale={handleResetSale}
+        onViewCaja={() => router.push(`/app/${slug}/caja`)}
+      />
 
       {/* Open Shift Modal */}
       <OpenShiftModal

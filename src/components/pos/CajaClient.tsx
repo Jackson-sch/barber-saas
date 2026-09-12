@@ -13,15 +13,24 @@ import {
   AlertCircle,
   QrCode,
   DollarSign,
+  Printer,
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import OpenShiftModal from './OpenShiftModal'
 import CloseShiftModal from './CloseShiftModal'
+import TicketReceiptModal, { type SaleReceiptData } from './TicketReceiptModal'
 import Link from 'next/link'
 import type { CashShift, Sale } from '@/types/database.types'
 
-interface SaleWithDetails extends Sale {
-  client?: { full_name: string } | null
+export interface SaleWithDetails extends Sale {
+  client?: { full_name: string; phone?: string | null } | null
+  items?: Array<{
+    name: string
+    quantity: number
+    unit_price: number
+    subtotal: number
+    barberName?: string | null
+  }>
 }
 
 interface CajaClientProps {
@@ -29,6 +38,12 @@ interface CajaClientProps {
   currentShiftSales: SaleWithDetails[]
   pastShifts: CashShift[]
   organizationId: string
+  organizationInfo?: {
+    name: string
+    address?: string | null
+    phone?: string | null
+    city?: string | null
+  }
   slug: string
 }
 
@@ -37,10 +52,12 @@ export default function CajaClient({
   currentShiftSales,
   pastShifts,
   organizationId,
+  organizationInfo,
   slug,
 }: CajaClientProps) {
   const [isOpenModalOpen, setIsOpenModalOpen] = useState(false)
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
+  const [selectedReceipt, setSelectedReceipt] = useState<SaleReceiptData | null>(null)
 
   // Cálculos del turno actual
   const cashSales = currentShiftSales.filter((s) => s.payment_method === 'CASH')
@@ -218,11 +235,52 @@ export default function CajaClient({
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      <span className="font-bold text-white">{formatPrice(Number(s.total))}</span>
-                      {Number(s.tip) > 0 && (
-                        <p className="text-[10px] text-amber-400">+ Propina: {formatPrice(Number(s.tip))}</p>
-                      )}
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <span className="font-bold text-white block">{formatPrice(Number(s.total))}</span>
+                        {Number(s.tip) > 0 && (
+                          <p className="text-[10px] text-amber-400">+ Propina: {formatPrice(Number(s.tip))}</p>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedReceipt({
+                            id: s.id,
+                            total: Number(s.total),
+                            subtotal: Number(s.subtotal || s.total),
+                            discount: Number(s.discount || 0),
+                            tip: Number(s.tip || 0),
+                            paymentMethod: s.payment_method || 'CASH',
+                            createdAt: new Date(s.created_at).toLocaleDateString('es-PE', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            }),
+                            clientName: s.client?.full_name || 'Cliente Casual',
+                            clientPhone: s.client?.phone || null,
+                            items:
+                              s.items && s.items.length > 0
+                                ? s.items
+                                : [
+                                    {
+                                      name: 'Consumo registrado',
+                                      quantity: 1,
+                                      unit_price: Number(s.total),
+                                      subtotal: Number(s.total),
+                                    },
+                                  ],
+                          })
+                        }}
+                        className="py-1 px-2.5 rounded-lg bg-white/[0.05] hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 text-[11px] font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        title="Ver e imprimir ticket térmico o enviar por WhatsApp"
+                      >
+                        <Printer className="w-3 h-3 text-amber-400" />
+                        <span>Ticket</span>
+                      </button>
                     </div>
                   </div>
                 )
@@ -321,6 +379,15 @@ export default function CajaClient({
           slug={slug}
         />
       )}
+
+      {/* Modal de Comprobante / Ticket Térmico */}
+      <TicketReceiptModal
+        isOpen={!!selectedReceipt}
+        onClose={() => setSelectedReceipt(null)}
+        sale={selectedReceipt}
+        organization={organizationInfo || { name: 'Barbería' }}
+        slug={slug}
+      />
     </div>
   )
 }
