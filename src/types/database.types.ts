@@ -726,6 +726,45 @@ export interface Database {
         }
         Relationships: []
       }
+      cash_movements: {
+        Row: {
+          id: string
+          organization_id: string
+          shift_id: string
+          type: 'EXPENSE' | 'INCOME'
+          category: string
+          amount: number
+          description: string
+          barber_id: string | null
+          performed_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          shift_id: string
+          type: 'EXPENSE' | 'INCOME'
+          category: string
+          amount: number
+          description: string
+          barber_id?: string | null
+          performed_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          shift_id?: string
+          type?: 'EXPENSE' | 'INCOME'
+          category?: string
+          amount?: number
+          description?: string
+          barber_id?: string | null
+          performed_by?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -759,3 +798,4 @@ export type Product = Database['public']['Tables']['products']['Row']
 export type Sale = Database['public']['Tables']['sales']['Row']
 export type SaleItem = Database['public']['Tables']['sale_items']['Row']
 export type Commission = Database['public']['Tables']['commissions']['Row']
+export type CashMovement = Database['public']['Tables']['cash_movements']['Row']

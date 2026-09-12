@@ -11,6 +11,8 @@ interface CloseShiftModalProps {
   onClose: () => void
   shift: CashShift
   cashSalesTotal: number
+  expensesTotal?: number
+  manualIncomesTotal?: number
   organizationId: string
   slug: string
 }
@@ -20,10 +22,16 @@ export default function CloseShiftModal({
   onClose,
   shift,
   cashSalesTotal,
+  expensesTotal = 0,
+  manualIncomesTotal = 0,
   organizationId,
   slug,
 }: CloseShiftModalProps) {
-  const expectedTotal = Number(shift.initial_cash || 0) + Number(cashSalesTotal || 0)
+  const expectedTotal =
+    Number(shift.initial_cash || 0) +
+    Number(cashSalesTotal || 0) +
+    Number(manualIncomesTotal || 0) -
+    Number(expensesTotal || 0)
   const [countedCash, setCountedCash] = useState(String(expectedTotal))
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
@@ -86,15 +94,27 @@ export default function CloseShiftModal({
           {/* Balance Breakdown */}
           <div className="p-3.5 rounded-xl bg-neutral-950/80 border border-neutral-800 space-y-2 text-xs">
             <div className="flex justify-between text-neutral-400">
-              <span>Fondo Inicial de Caja:</span>
+              <span>Fondo Inicial de Apertura:</span>
               <strong className="text-white">{formatPrice(Number(shift.initial_cash))}</strong>
             </div>
             <div className="flex justify-between text-neutral-400">
               <span>+ Ventas Cobradas en Efectivo:</span>
               <strong className="text-emerald-400">+{formatPrice(cashSalesTotal)}</strong>
             </div>
+            {manualIncomesTotal > 0 && (
+              <div className="flex justify-between text-neutral-400">
+                <span>+ Ingresos Manuales / Inyección:</span>
+                <strong className="text-cyan-400">+{formatPrice(manualIncomesTotal)}</strong>
+              </div>
+            )}
+            {expensesTotal > 0 && (
+              <div className="flex justify-between text-neutral-400">
+                <span>- Gastos Menores & Adelantos:</span>
+                <strong className="text-rose-400">-{formatPrice(expensesTotal)}</strong>
+              </div>
+            )}
             <div className="pt-2 border-t border-neutral-800 flex justify-between font-bold text-sm text-white">
-              <span>Efectivo Esperado en Caja:</span>
+              <span>Efectivo Esperado en Gaveta:</span>
               <span className="text-amber-400">{formatPrice(expectedTotal)}</span>
             </div>
           </div>

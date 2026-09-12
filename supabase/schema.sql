@@ -275,6 +275,20 @@ CREATE TABLE IF NOT EXISTS public.commissions (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 18. MOVIMIENTOS Y EGRESOS DE CAJA (GASTOS MENORES / RETIROS)
+CREATE TABLE IF NOT EXISTS public.cash_movements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+    shift_id UUID NOT NULL REFERENCES public.cash_shifts(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN ('EXPENSE', 'INCOME')),
+    category TEXT NOT NULL,
+    amount NUMERIC(10,2) NOT NULL,
+    description TEXT NOT NULL,
+    barber_id UUID REFERENCES public.organization_members(id) ON DELETE SET NULL,
+    performed_by UUID NOT NULL REFERENCES auth.users(id),
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- TRIGGER AUTOMÁTICO PARA CREAR PROFILE CUANDO UN USUARIO SE REGISTRA EN AUTH
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$

@@ -1,7 +1,7 @@
 import { getTenantAuthContext } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import CajaClient from '@/components/pos/CajaClient'
-import type { CashShift } from '@/types/database.types'
+import type { CashShift, CashMovement, OrganizationMember } from '@/types/database.types'
 
 interface CajaPageProps {
   params: Promise<{ slug: string }>
@@ -21,6 +21,24 @@ export default async function CajaPage({ params }: CajaPageProps) {
     .order('opened_at', { ascending: false })
     .limit(1)
     .single()
+
+  // 1.1 Obtener barberos activos para asignación de adelantos
+  const { data: barbers } = await supabase
+    .from('organization_members')
+    .select('*')
+    .eq('organization_id', org.id)
+    .eq('is_active', true)
+
+  // 1.2 Movimientos de caja (gastos/ingresos) del turno actual
+  let currentShiftMovements: CashMovement[] = []
+  if (openShift) {
+    const { data: movements } = await supabase
+      .from('cash_movements')
+      .select('*')
+      .eq('shift_id', openShift.id)
+      .order('created_at', { ascending: false })
+    currentShiftMovements = (movements || []) as CashMovement[]
+  }
 
   // 2. Si hay turno abierto, obtener las ventas registradas con sus ítems
   let currentShiftSales: any[] = []
@@ -112,6 +130,8 @@ export default async function CajaPage({ params }: CajaPageProps) {
     <CajaClient
       currentShift={openShift as unknown as CashShift | null}
       currentShiftSales={currentShiftSales}
+      currentShiftMovements={currentShiftMovements}
+      barbers={(barbers || []) as OrganizationMember[]}
       pastShifts={(pastShifts || []) as unknown as CashShift[]}
       organizationId={org.id}
       organizationInfo={{

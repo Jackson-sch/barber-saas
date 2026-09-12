@@ -109,7 +109,23 @@ export async function closeCashShiftAction(
     .eq('status', 'COMPLETED')
 
   const totalCashSales = (cashSales || []).reduce((acc, curr) => acc + Number(curr.total || 0), 0)
-  const expectedCash = Number(shift.initial_cash || 0) + totalCashSales
+
+  // Calcular movimientos manuales de caja (ingresos y egresos)
+  const { data: movements } = await supabase
+    .from('cash_movements')
+    .select('type, amount')
+    .eq('shift_id', shift_id)
+
+  const totalManualIncomes = (movements || [])
+    .filter((m) => m.type === 'INCOME')
+    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
+
+  const totalExpenses = (movements || [])
+    .filter((m) => m.type === 'EXPENSE')
+    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
+
+  const expectedCash =
+    Number(shift.initial_cash || 0) + totalCashSales + totalManualIncomes - totalExpenses
   const difference = Number(final_cash) - expectedCash
 
   const { error } = await supabase

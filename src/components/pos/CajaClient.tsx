@@ -14,13 +14,18 @@ import {
   QrCode,
   DollarSign,
   Printer,
+  TrendingDown,
+  TrendingUp,
+  Receipt,
+  User,
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import OpenShiftModal from './OpenShiftModal'
 import CloseShiftModal from './CloseShiftModal'
+import CashMovementModal from './CashMovementModal'
 import TicketReceiptModal, { type SaleReceiptData } from './TicketReceiptModal'
 import Link from 'next/link'
-import type { CashShift, Sale } from '@/types/database.types'
+import type { CashShift, Sale, CashMovement, OrganizationMember } from '@/types/database.types'
 
 export interface SaleWithDetails extends Sale {
   client?: { full_name: string; phone?: string | null } | null
@@ -36,6 +41,8 @@ export interface SaleWithDetails extends Sale {
 interface CajaClientProps {
   currentShift: CashShift | null
   currentShiftSales: SaleWithDetails[]
+  currentShiftMovements?: CashMovement[]
+  barbers?: OrganizationMember[]
   pastShifts: CashShift[]
   organizationId: string
   organizationInfo?: {
@@ -50,6 +57,8 @@ interface CajaClientProps {
 export default function CajaClient({
   currentShift,
   currentShiftSales,
+  currentShiftMovements = [],
+  barbers = [],
   pastShifts,
   organizationId,
   organizationInfo,
@@ -57,16 +66,38 @@ export default function CajaClient({
 }: CajaClientProps) {
   const [isOpenModalOpen, setIsOpenModalOpen] = useState(false)
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
+  const [isMovementModalOpen, setIsMovementModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'SALES' | 'MOVEMENTS'>('SALES')
   const [selectedReceipt, setSelectedReceipt] = useState<SaleReceiptData | null>(null)
 
   // Cálculos del turno actual
+  const currentExpenses = currentShiftMovements.filter((m) => m.type === 'EXPENSE')
+  const currentIncomes = currentShiftMovements.filter((m) => m.type === 'INCOME')
+
+  const totalExpenses = currentExpenses.reduce((acc, m) => acc + Number(m.amount || 0), 0)
+  const totalManualIncomes = currentIncomes.reduce((acc, m) => acc + Number(m.amount || 0), 0)
+
   const cashSales = currentShiftSales.filter((s) => s.payment_method === 'CASH')
   const digitalSales = currentShiftSales.filter((s) => s.payment_method !== 'CASH')
 
   const totalCashAmount = cashSales.reduce((acc, s) => acc + Number(s.total || 0), 0)
   const totalDigitalAmount = digitalSales.reduce((acc, s) => acc + Number(s.total || 0), 0)
   const totalTurno = totalCashAmount + totalDigitalAmount
-  const expectedCashInDrawer = currentShift ? Number(currentShift.initial_cash || 0) + totalCashAmount : 0
+  const expectedCashInDrawer = currentShift
+    ? Number(currentShift.initial_cash || 0) + totalCashAmount + totalManualIncomes - totalExpenses
+    : 0
+
+  const barberMap = new Map(barbers.map((b) => [b.id, b.nickname || b.full_name]))
+
+  const movementCategoryLabels: Record<string, string> = {
+    INSUMOS: 'Insumos de Barbería',
+    LIMPIEZA_CAFETERIA: 'Limpieza, Agua & Cafetería',
+    ADELANTO_BARBERO: 'Adelanto a Barbero',
+    SERVICIOS_DELIVERY: 'Delivery & Envíos',
+    ALIMENTACION: 'Refrigerio / Alimentación',
+    INYECCION_FONDO: 'Inyección de Cambio / Fondo Extra',
+    OTROS: 'Otro Concepto',
+  }
 
   const paymentLabels: Record<string, { label: string; color: string }> = {
     CASH: { label: 'Efectivo', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
@@ -99,6 +130,13 @@ export default function CajaClient({
                 <CreditCard className="w-4 h-4 text-amber-400" />
                 <span>Cobrar en POS</span>
               </Link>
+              <button
+                onClick={() => setIsMovementModalOpen(true)}
+                className="py-2 px-3.5 rounded-lg bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <TrendingDown className="w-4 h-4 text-rose-400" />
+                <span>- Registrar Gasto</span>
+              </button>
               <button
                 onClick={() => setIsCloseModalOpen(true)}
                 className="py-2 px-4 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-red-600/20 cursor-pointer"
@@ -147,7 +185,7 @@ export default function CajaClient({
           </div>
 
           {/* Metrics Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
             <div className="p-4 rounded-xl bg-neutral-950/70 border border-neutral-800">
               <span className="text-xs text-neutral-400 font-medium">Fondo Inicial</span>
               <p className="text-xl font-bold text-white mt-1">
@@ -157,7 +195,7 @@ export default function CajaClient({
             </div>
 
             <div className="p-4 rounded-xl bg-neutral-950/70 border border-neutral-800">
-              <span className="text-xs text-emerald-400 font-medium">+ Efectivo Recaudado</span>
+              <span className="text-xs text-emerald-400 font-medium">+ Efectivo Cobrado</span>
               <p className="text-xl font-bold text-emerald-400 mt-1">
                 {formatPrice(totalCashAmount)}
               </p>
@@ -165,7 +203,22 @@ export default function CajaClient({
             </div>
 
             <div className="p-4 rounded-xl bg-neutral-950/70 border border-neutral-800">
-              <span className="text-xs text-purple-400 font-medium">Digital (Yape/Plin/Tarjeta)</span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-rose-400 font-medium">- Gastos / Retiros</span>
+                {totalManualIncomes > 0 && (
+                  <span className="text-[10px] text-cyan-400 font-mono">+{formatPrice(totalManualIncomes)}</span>
+                )}
+              </div>
+              <p className="text-xl font-bold text-rose-400 mt-1">
+                -{formatPrice(totalExpenses)}
+              </p>
+              <span className="text-[11px] text-neutral-500 mt-1 block">
+                {currentExpenses.length} egreso{currentExpenses.length !== 1 ? 's' : ''} en turno
+              </span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-neutral-950/70 border border-neutral-800">
+              <span className="text-xs text-purple-400 font-medium">Digital (Yape/Plin/POS)</span>
               <p className="text-xl font-bold text-purple-400 mt-1">
                 {formatPrice(totalDigitalAmount)}
               </p>
@@ -177,7 +230,7 @@ export default function CajaClient({
               <p className="text-2xl font-extrabold text-amber-400 mt-1">
                 {formatPrice(expectedCashInDrawer)}
               </p>
-              <span className="text-[11px] text-neutral-400 mt-1 block">Total que debe haber físicamente</span>
+              <span className="text-[11px] text-neutral-400 mt-1 block">Fondo + Efectivo - Gastos</span>
             </div>
           </div>
         </div>
@@ -198,94 +251,205 @@ export default function CajaClient({
         </div>
       )}
 
-      {/* Sales of current shift */}
+      {/* Sales & Cash Movements of current shift */}
       {currentShift && (
         <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-white text-sm">
-              Ventas Realizadas en este Turno ({currentShiftSales.length})
-            </h3>
-            <span className="text-xs text-neutral-400">
-              Total facturado: <strong className="text-white">{formatPrice(totalTurno)}</strong>
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-neutral-800">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab('SALES')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer ${
+                  activeTab === 'SALES'
+                    ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
+                    : 'bg-neutral-800/80 text-neutral-400 hover:text-white hover:bg-neutral-800'
+                }`}
+              >
+                <Receipt className="w-3.5 h-3.5" />
+                <span>Ventas del Turno ({currentShiftSales.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('MOVEMENTS')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer ${
+                  activeTab === 'MOVEMENTS'
+                    ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
+                    : 'bg-neutral-800/80 text-neutral-400 hover:text-white hover:bg-neutral-800'
+                }`}
+              >
+                <TrendingDown className="w-3.5 h-3.5" />
+                <span>Gastos & Retiros ({currentShiftMovements.length})</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 text-xs">
+              {activeTab === 'SALES' ? (
+                <span className="text-neutral-400">
+                  Total facturado: <strong className="text-white">{formatPrice(totalTurno)}</strong>
+                </span>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="text-neutral-400">
+                    Total egresos: <strong className="text-rose-400">-{formatPrice(totalExpenses)}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsMovementModalOpen(true)}
+                    className="px-2.5 py-1 rounded-md bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-[11px] font-medium transition flex items-center gap-1 cursor-pointer border border-rose-500/30"
+                  >
+                    <Plus className="w-3 h-3 text-rose-400" />
+                    <span>Registrar Gasto</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
-          {currentShiftSales.length === 0 ? (
-            <div className="py-8 text-center border border-dashed border-neutral-800/60 rounded-xl">
-              <p className="text-xs text-neutral-500">Aún no se han registrado cobros en este turno.</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-neutral-800 max-h-80 overflow-y-auto">
-              {currentShiftSales.map((s) => {
-                const timeStr = new Date(s.created_at).toLocaleTimeString('es-PE', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-                const badge = paymentLabels[s.payment_method] || paymentLabels.CASH
+          {activeTab === 'SALES' ? (
+            currentShiftSales.length === 0 ? (
+              <div className="py-8 text-center border border-dashed border-neutral-800/60 rounded-xl">
+                <p className="text-xs text-neutral-500">Aún no se han registrado cobros en este turno.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-neutral-800 max-h-80 overflow-y-auto">
+                {currentShiftSales.map((s) => {
+                  const timeStr = new Date(s.created_at).toLocaleTimeString('es-PE', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                  const badge = paymentLabels[s.payment_method] || paymentLabels.CASH
 
-                return (
-                  <div key={s.id} className="py-3 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-neutral-500">{timeStr}</span>
-                      <div>
-                        <p className="font-medium text-white">{s.client?.full_name || 'Cliente Casual'}</p>
-                        <span className={`inline-block mt-0.5 px-1.5 py-0.2 rounded text-[10px] border ${badge.color}`}>
-                          {badge.label}
+                  return (
+                    <div key={s.id} className="py-3 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-neutral-500">{timeStr}</span>
+                        <div>
+                          <p className="font-medium text-white">{s.client?.full_name || 'Cliente Casual'}</p>
+                          <span className={`inline-block mt-0.5 px-1.5 py-0.2 rounded text-[10px] border ${badge.color}`}>
+                            {badge.label}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <span className="font-bold text-white block">{formatPrice(Number(s.total))}</span>
+                          {Number(s.tip) > 0 && (
+                            <p className="text-[10px] text-amber-400">+ Propina: {formatPrice(Number(s.tip))}</p>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedReceipt({
+                              id: s.id,
+                              total: Number(s.total),
+                              subtotal: Number(s.subtotal || s.total),
+                              discount: Number(s.discount || 0),
+                              tip: Number(s.tip || 0),
+                              paymentMethod: s.payment_method || 'CASH',
+                              createdAt: new Date(s.created_at).toLocaleDateString('es-PE', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              }),
+                              clientName: s.client?.full_name || 'Cliente Casual',
+                              clientPhone: s.client?.phone || null,
+                              items:
+                                s.items && s.items.length > 0
+                                  ? s.items
+                                  : [
+                                      {
+                                        name: 'Consumo registrado',
+                                        quantity: 1,
+                                        unit_price: Number(s.total),
+                                        subtotal: Number(s.total),
+                                      },
+                                    ],
+                            })
+                          }}
+                          className="py-1 px-2.5 rounded-lg bg-white/[0.05] hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 text-[11px] font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                          title="Ver e imprimir ticket térmico o enviar por WhatsApp"
+                        >
+                          <Printer className="w-3 h-3 text-amber-400" />
+                          <span>Ticket</span>
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          ) : (
+            /* Tab: Gastos & Retiros de Caja */
+            currentShiftMovements.length === 0 ? (
+              <div className="py-10 text-center border border-dashed border-neutral-800/60 rounded-xl space-y-2">
+                <p className="text-xs text-neutral-500">No hay gastos ni salidas manuales de caja en este turno.</p>
+                <button
+                  type="button"
+                  onClick={() => setIsMovementModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold transition cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Registrar Primer Gasto o Salida</span>
+                </button>
+              </div>
+            ) : (
+              <div className="divide-y divide-neutral-800 max-h-80 overflow-y-auto">
+                {currentShiftMovements.map((mov) => {
+                  const timeStr = new Date(mov.created_at).toLocaleTimeString('es-PE', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                  const isExpense = mov.type === 'EXPENSE'
+                  const catLabel = movementCategoryLabels[mov.category] || mov.category
+                  const barberAssigned = mov.barber_id ? barberMap.get(mov.barber_id) : null
+
+                  return (
+                    <div key={mov.id} className="py-3 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-neutral-500">{timeStr}</span>
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-1.5 py-0.2 rounded text-[10px] font-medium border ${
+                                isExpense
+                                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                  : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+                              }`}
+                            >
+                              {isExpense ? 'Egreso / Gasto' : 'Ingreso / Inyección'}
+                            </span>
+                            <span className="font-medium text-neutral-300">{catLabel}</span>
+                          </div>
+                          <p className="text-neutral-400 text-[11px]">{mov.description}</p>
+                          {barberAssigned && (
+                            <div className="flex items-center gap-1 text-[11px] text-amber-400/90 font-medium">
+                              <User className="w-3 h-3" />
+                              <span>Barbero: {barberAssigned}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span
+                          className={`font-bold font-mono text-sm block ${
+                            isExpense ? 'text-rose-400' : 'text-cyan-400'
+                          }`}
+                        >
+                          {isExpense ? '-' : '+'}
+                          {formatPrice(Number(mov.amount))}
                         </span>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <span className="font-bold text-white block">{formatPrice(Number(s.total))}</span>
-                        {Number(s.tip) > 0 && (
-                          <p className="text-[10px] text-amber-400">+ Propina: {formatPrice(Number(s.tip))}</p>
-                        )}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedReceipt({
-                            id: s.id,
-                            total: Number(s.total),
-                            subtotal: Number(s.subtotal || s.total),
-                            discount: Number(s.discount || 0),
-                            tip: Number(s.tip || 0),
-                            paymentMethod: s.payment_method || 'CASH',
-                            createdAt: new Date(s.created_at).toLocaleDateString('es-PE', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            }),
-                            clientName: s.client?.full_name || 'Cliente Casual',
-                            clientPhone: s.client?.phone || null,
-                            items:
-                              s.items && s.items.length > 0
-                                ? s.items
-                                : [
-                                    {
-                                      name: 'Consumo registrado',
-                                      quantity: 1,
-                                      unit_price: Number(s.total),
-                                      subtotal: Number(s.total),
-                                    },
-                                  ],
-                          })
-                        }}
-                        className="py-1 px-2.5 rounded-lg bg-white/[0.05] hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 text-[11px] font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
-                        title="Ver e imprimir ticket térmico o enviar por WhatsApp"
-                      >
-                        <Printer className="w-3 h-3 text-amber-400" />
-                        <span>Ticket</span>
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            )
           )}
         </div>
       )}
@@ -370,14 +534,27 @@ export default function CajaClient({
       />
 
       {currentShift && (
-        <CloseShiftModal
-          isOpen={isCloseModalOpen}
-          onClose={() => setIsCloseModalOpen(false)}
-          shift={currentShift}
-          cashSalesTotal={totalCashAmount}
-          organizationId={organizationId}
-          slug={slug}
-        />
+        <>
+          <CloseShiftModal
+            isOpen={isCloseModalOpen}
+            onClose={() => setIsCloseModalOpen(false)}
+            shift={currentShift}
+            cashSalesTotal={totalCashAmount}
+            expensesTotal={totalExpenses}
+            manualIncomesTotal={totalManualIncomes}
+            organizationId={organizationId}
+            slug={slug}
+          />
+
+          <CashMovementModal
+            isOpen={isMovementModalOpen}
+            onClose={() => setIsMovementModalOpen(false)}
+            shiftId={currentShift.id}
+            organizationId={organizationId}
+            barbers={barbers}
+            slug={slug}
+          />
+        </>
       )}
 
       {/* Modal de Comprobante / Ticket Térmico */}
