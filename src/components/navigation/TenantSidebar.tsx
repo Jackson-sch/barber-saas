@@ -20,6 +20,7 @@ import {
   Shield,
   ChevronRight,
   Settings,
+  BarChart3,
 } from 'lucide-react'
 import { logoutAction } from '@/actions/auth'
 
@@ -62,8 +63,9 @@ export function TenantSidebar({ slug, org, member, userEmail, isSuperAdmin = fal
       ],
     },
     {
-      title: 'GESTIÓN',
+      title: 'GESTIÓN & FINANZAS',
       items: [
+        { href: `/app/${slug}/reportes`, label: 'Reportes & Finanzas', icon: BarChart3 },
         { href: `/app/${slug}/clientes`, label: 'Clientes & Fichas', icon: Users },
         { href: `/app/${slug}/barberos`, label: 'Barberos & Comisiones', icon: UserCheck },
         { href: `/app/${slug}/servicios`, label: 'Servicios & Precios', icon: Scissors },
