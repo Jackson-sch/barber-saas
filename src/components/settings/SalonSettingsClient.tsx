@@ -21,10 +21,12 @@ import {
   Sparkles,
   Gift,
   Star,
+  MessageCircle,
 } from 'lucide-react'
 import { updateTenantSettingsAction } from '@/actions/organizations'
 import { slugify, formatPrice } from '@/lib/utils'
-import type { LoyaltyProgramSettings } from '@/types/database.types'
+import type { LoyaltyProgramSettings, WhatsAppNotificationSettings } from '@/types/database.types'
+import { DEFAULT_WHATSAPP_TEMPLATES, AVAILABLE_WHATSAPP_VARIABLES } from '@/lib/whatsapp'
 import Link from 'next/link'
 
 interface SalonSettingsProps {
@@ -39,6 +41,7 @@ interface SalonSettingsProps {
     openingTime: string
     closingTime: string
     loyaltyProgram?: LoyaltyProgramSettings | null
+    whatsappSettings?: WhatsAppNotificationSettings | null
   }
   isOwner: boolean
   slug: string
@@ -65,6 +68,22 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
   const [pointsPerPen, setPointsPerPen] = useState(String(lp?.points_per_pen ?? 1))
   const [targetPoints, setTargetPoints] = useState(String(lp?.target_points ?? 100))
   const [pointsRewardDiscount, setPointsRewardDiscount] = useState(String(lp?.points_reward_discount ?? 10))
+
+  // Plantillas de Notificaciones WhatsApp
+  const ws = organization.whatsappSettings
+  const [reminderTemplate, setReminderTemplate] = useState(
+    ws?.reminder_template || DEFAULT_WHATSAPP_TEMPLATES.reminder
+  )
+  const [confirmationTemplate, setConfirmationTemplate] = useState(
+    ws?.confirmation_template || DEFAULT_WHATSAPP_TEMPLATES.confirmation
+  )
+  const [rescheduleTemplate, setRescheduleTemplate] = useState(
+    ws?.reschedule_template || DEFAULT_WHATSAPP_TEMPLATES.reschedule
+  )
+  const [followupTemplate, setFollowupTemplate] = useState(
+    ws?.followup_template || DEFAULT_WHATSAPP_TEMPLATES.followup
+  )
+  const [activeWaTab, setActiveWaTab] = useState<'reminder' | 'confirmation' | 'reschedule' | 'followup'>('reminder')
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -105,6 +124,12 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
         points_per_pen: Math.max(0.1, parseFloat(pointsPerPen) || 1),
         target_points: Math.max(10, parseInt(targetPoints) || 100),
         points_reward_discount: Math.max(0, parseFloat(pointsRewardDiscount) || 10),
+      },
+      whatsappSettings: {
+        reminder_template: reminderTemplate.trim(),
+        confirmation_template: confirmationTemplate.trim(),
+        reschedule_template: rescheduleTemplate.trim(),
+        followup_template: followupTemplate.trim(),
       },
     })
 
@@ -586,6 +611,103 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
               El programa de fidelización se encuentra pausado. Los clientes no acumularán nuevos sellos o puntos hasta que lo reactives.
             </p>
           )}
+        </div>
+
+        {/* SECCIÓN 5: Plantillas de Notificaciones por WhatsApp */}
+        <div className="p-6 rounded-2xl bg-[#0e1017] border border-white/[0.08] space-y-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
+                <MessageCircle className="w-4 h-4" />
+              </span>
+              <h2 className="text-base font-bold text-white tracking-tight">
+                5. Plantillas de Notificaciones por WhatsApp
+              </h2>
+            </div>
+            <p className="text-xs text-neutral-400">
+              Personaliza los mensajes automáticos y recordatorios que se envían a los clientes desde la Agenda y Detalle de Citas para reducir ausencias (no-shows).
+            </p>
+          </div>
+
+          {/* Selector de Plantilla a Editar */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {[
+              { id: 'reminder', label: '⏰ Recordatorio Previo' },
+              { id: 'confirmation', label: '✅ Confirmación de Cita' },
+              { id: 'reschedule', label: '🔄 Reprogramación' },
+              { id: 'followup', label: '✂️ Agradecimiento' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveWaTab(tab.id as any)}
+                className={`py-1.5 px-3 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                  activeWaTab === tab.id
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    : 'bg-[#090A0E] text-neutral-400 hover:text-white border border-white/10'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Textarea de la plantilla activa */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-neutral-300 block">
+              Contenido del Mensaje
+            </label>
+            <textarea
+              rows={4}
+              disabled={!isOwner}
+              value={
+                activeWaTab === 'reminder'
+                  ? reminderTemplate
+                  : activeWaTab === 'confirmation'
+                    ? confirmationTemplate
+                    : activeWaTab === 'reschedule'
+                      ? rescheduleTemplate
+                      : followupTemplate
+              }
+              onChange={(e) => {
+                const val = e.target.value
+                if (activeWaTab === 'reminder') setReminderTemplate(val)
+                else if (activeWaTab === 'confirmation') setConfirmationTemplate(val)
+                else if (activeWaTab === 'reschedule') setRescheduleTemplate(val)
+                else setFollowupTemplate(val)
+              }}
+              className="w-full p-3 rounded-xl bg-[#0D0E15] border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500 transition leading-relaxed resize-none"
+              placeholder="Escribe la plantilla del mensaje..."
+            />
+
+            {/* Variable Pills */}
+            <div>
+              <p className="text-[11px] text-neutral-400 mb-1.5">
+                Haz clic en una etiqueta para insertarla en el mensaje:
+              </p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {AVAILABLE_WHATSAPP_VARIABLES.map((v) => (
+                  <button
+                    key={v.tag}
+                    type="button"
+                    disabled={!isOwner}
+                    onClick={() => {
+                      if (!isOwner) return
+                      const append = (current: string) => current + (current.endsWith(' ') ? '' : ' ') + v.tag + ' '
+                      if (activeWaTab === 'reminder') setReminderTemplate(append(reminderTemplate))
+                      else if (activeWaTab === 'confirmation') setConfirmationTemplate(append(confirmationTemplate))
+                      else if (activeWaTab === 'reschedule') setRescheduleTemplate(append(rescheduleTemplate))
+                      else setFollowupTemplate(append(followupTemplate))
+                    }}
+                    className="py-1 px-2 rounded-lg bg-white/[0.05] hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/30 text-[11px] font-mono font-medium text-emerald-400 transition cursor-pointer"
+                    title={`Insertar ${v.desc}`}
+                  >
+                    +{v.tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Botón Guardar */}

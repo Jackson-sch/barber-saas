@@ -844,3 +844,12 @@ export interface LoyaltyProgramSettings {
   target_points: number
   points_reward_discount: number
 }
+
+export interface WhatsAppNotificationSettings {
+  reminder_template?: string
+  confirmation_template?: string
+  reschedule_template?: string
+  cancellation_template?: string
+  followup_template?: string
+}
+

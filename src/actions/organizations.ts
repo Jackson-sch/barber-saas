@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { LoyaltyProgramSettings } from '@/types/database.types'
+import type { LoyaltyProgramSettings, WhatsAppNotificationSettings } from '@/types/database.types'
 
 export interface UpdateOrgByAdminInput {
   orgId: string
@@ -26,6 +26,7 @@ export interface UpdateTenantSettingsInput {
   openingTime?: string
   closingTime?: string
   loyaltyProgram?: LoyaltyProgramSettings
+  whatsappSettings?: WhatsAppNotificationSettings
 }
 
 function cleanSlug(text: string): string {
@@ -176,6 +177,7 @@ export async function updateTenantSettingsAction(input: UpdateTenantSettingsInpu
     opening_time: input.openingTime || currentSettings.opening_time || '09:00',
     closing_time: input.closingTime || currentSettings.closing_time || '21:00',
     ...(input.loyaltyProgram !== undefined ? { loyalty_program: input.loyaltyProgram } : {}),
+    ...(input.whatsappSettings !== undefined ? { whatsapp_notifications: input.whatsappSettings } : {}),
   }
 
   const { error: updateErr } = await supabase

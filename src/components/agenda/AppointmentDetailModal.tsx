@@ -56,6 +56,7 @@ interface AppointmentDetailModalProps {
   appointment: AppointmentWithDetails | null
   organizationId: string
   slug: string
+  onOpenWhatsApp?: (appointment: AppointmentWithDetails) => void
 }
 
 export default function AppointmentDetailModal({
@@ -64,6 +65,7 @@ export default function AppointmentDetailModal({
   appointment,
   organizationId,
   slug,
+  onOpenWhatsApp,
 }: AppointmentDetailModalProps) {
   const [loading, setLoading] = useState(false)
 
@@ -172,16 +174,21 @@ export default function AppointmentDetailModal({
                 </div>
               </div>
 
-              {waUrl && (
-                <a
-                  href={waUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="py-1.5 px-3 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-1.5 transition border border-emerald-500/20"
+              {appointment.client?.phone && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onOpenWhatsApp) {
+                      onOpenWhatsApp(appointment)
+                    } else if (waUrl) {
+                      window.open(waUrl, '_blank')
+                    }
+                  }}
+                  className="py-1.5 px-3 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-1.5 transition border border-emerald-500/20 cursor-pointer"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
-                </a>
+                  <span>Notificar WhatsApp</span>
+                </button>
               )}
             </div>
 

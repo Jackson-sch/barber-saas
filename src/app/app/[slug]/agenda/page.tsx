@@ -56,6 +56,9 @@ export default async function AgendaPage({ params, searchParams }: AgendaPagePro
     .eq('is_active', true)
     .order('name', { ascending: true })
 
+  const orgSettings = (org.settings as Record<string, any>) || {}
+  const whatsappTemplates = orgSettings.whatsapp_notifications || null
+
   return (
     <AgendaClient
       initialAppointments={(appointments || []) as unknown as AppointmentWithDetails[]}
@@ -64,6 +67,9 @@ export default async function AgendaPage({ params, searchParams }: AgendaPagePro
       organizationId={org.id}
       slug={slug}
       selectedDate={selectedDate}
+      organizationName={org.name}
+      organizationAddress={org.address}
+      whatsappTemplates={whatsappTemplates}
     />
   )
 }

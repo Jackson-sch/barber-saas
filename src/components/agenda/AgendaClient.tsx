@@ -14,11 +14,13 @@ import {
   LayoutGrid,
   List,
   AlertCircle,
+  MessageCircle,
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import NewAppointmentModal from './NewAppointmentModal'
 import AppointmentDetailModal, { type AppointmentWithDetails } from './AppointmentDetailModal'
-import type { OrganizationMember, Service } from '@/types/database.types'
+import WhatsAppReminderModal from './WhatsAppReminderModal'
+import type { OrganizationMember, Service, WhatsAppNotificationSettings } from '@/types/database.types'
 import { useRouter } from 'next/navigation'
 
 interface AgendaClientProps {
@@ -28,6 +30,9 @@ interface AgendaClientProps {
   organizationId: string
   slug: string
   selectedDate: string
+  organizationName?: string
+  organizationAddress?: string | null
+  whatsappTemplates?: WhatsAppNotificationSettings | null
 }
 
 export default function AgendaClient({
@@ -37,12 +42,16 @@ export default function AgendaClient({
   organizationId,
   slug,
   selectedDate,
+  organizationName,
+  organizationAddress,
+  whatsappTemplates,
 }: AgendaClientProps) {
   const router = useRouter()
   const [selectedBarberId, setSelectedBarberId] = useState<string>('ALL')
   const [viewMode, setViewMode] = useState<'CHAIRS' | 'LIST'>('CHAIRS')
   const [isNewModalOpen, setIsNewModalOpen] = useState(false)
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithDetails | null>(null)
+  const [waAppointment, setWaAppointment] = useState<AppointmentWithDetails | null>(null)
   const [defaultBarberForNew, setDefaultBarberForNew] = useState<string | undefined>()
 
   // Formato legible de la fecha
@@ -351,7 +360,22 @@ export default function AgendaClient({
                             </p>
 
                             <div className="flex items-center justify-between text-[11px] text-neutral-400 mt-2 pt-2 border-t border-neutral-800/60">
-                              <span>{app.service?.duration_minutes} min</span>
+                              <div className="flex items-center gap-1.5">
+                                <span>{app.service?.duration_minutes} min</span>
+                                {app.client?.phone && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setWaAppointment(app)
+                                    }}
+                                    className="p-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition cursor-pointer"
+                                    title="Notificar por WhatsApp"
+                                  >
+                                    <MessageCircle className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
                               <span className="font-semibold text-white">
                                 {formatPrice(Number(app.total_price))}
                               </span>
@@ -419,13 +443,29 @@ export default function AgendaClient({
                         </div>
                       </div>
 
-                      <div className="text-right sm:text-right flex sm:flex-col items-center sm:items-end justify-between sm:justify-center">
-                        <span className="text-sm font-bold text-white">
-                          {formatPrice(Number(app.total_price))}
-                        </span>
-                        <span className="text-[11px] text-neutral-500">
-                          {app.service?.duration_minutes} min • {app.source}
-                        </span>
+                      <div className="flex items-center gap-3">
+                        {app.client?.phone && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setWaAppointment(app)
+                            }}
+                            className="py-1.5 px-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-1.5 transition border border-emerald-500/20 cursor-pointer"
+                            title="Notificar por WhatsApp"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">WhatsApp</span>
+                          </button>
+                        )}
+                        <div className="text-right sm:text-right flex sm:flex-col items-center sm:items-end justify-between sm:justify-center">
+                          <span className="text-sm font-bold text-white">
+                            {formatPrice(Number(app.total_price))}
+                          </span>
+                          <span className="text-[11px] text-neutral-500">
+                            {app.service?.duration_minutes} min • {app.source}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )
@@ -453,6 +493,19 @@ export default function AgendaClient({
         appointment={selectedAppointment}
         organizationId={organizationId}
         slug={slug}
+        onOpenWhatsApp={(app) => {
+          setSelectedAppointment(null)
+          setWaAppointment(app)
+        }}
+      />
+
+      <WhatsAppReminderModal
+        isOpen={!!waAppointment}
+        onClose={() => setWaAppointment(null)}
+        appointment={waAppointment}
+        barberiaName={organizationName || slug}
+        barberiaAddress={organizationAddress}
+        customTemplates={whatsappTemplates}
       />
     </div>
   )
