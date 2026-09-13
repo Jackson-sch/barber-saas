@@ -27,6 +27,8 @@ export interface CreateSaleInput {
   tip: number
   payment_method: 'CASH' | 'CARD' | 'YAPE' | 'PLIN' | 'TRANSFER' | 'MIXED'
   slug: string
+  redeem_loyalty_reward?: boolean
+  loyalty_reward_description?: string
 }
 
 // 1. Abrir Turno de Caja
@@ -299,20 +301,86 @@ export async function createSaleAction(input: CreateSaleInput) {
       .eq('organization_id', input.organization_id)
   }
 
-  // 6. Actualizar visitas y gasto del cliente
+  // 6. Actualizar fidelización, visitas y gasto del cliente
   if (clientId) {
     const { data: client } = await supabase
       .from('clients')
-      .select('total_visits, total_spent')
+      .select('total_visits, total_spent, loyalty_points')
       .eq('id', clientId)
       .single()
 
     if (client) {
+      // Consultar configuración del programa de fidelización
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('settings')
+        .eq('id', input.organization_id)
+        .single()
+
+      const loyaltyProgram = (orgData?.settings as any)?.loyalty_program
+      const isLoyaltyEnabled = loyaltyProgram?.enabled === true
+
+      let currentPoints = client.loyalty_points || 0
+      let pointsDelta = 0
+      let actionType: 'EARN_VISIT' | 'EARN_POINTS' = 'EARN_VISIT'
+
+      if (isLoyaltyEnabled) {
+        if (loyaltyProgram.program_type === 'POINTS') {
+          actionType = 'EARN_POINTS'
+          const ptsPerPen = Number(loyaltyProgram.points_per_pen || 1)
+          pointsDelta = Math.floor(total * ptsPerPen)
+        } else {
+          // Por visitas / sellos
+          actionType = 'EARN_VISIT'
+          pointsDelta = 1
+        }
+
+        // Si se canjeó un premio en esta venta
+        if (input.redeem_loyalty_reward) {
+          const costToRedeem =
+            loyaltyProgram.program_type === 'POINTS'
+              ? Number(loyaltyProgram.target_points || 100)
+              : Number(loyaltyProgram.target_visits || 8)
+
+          currentPoints = Math.max(0, currentPoints - costToRedeem)
+
+          await supabase.from('loyalty_logs').insert({
+            organization_id: input.organization_id,
+            client_id: clientId,
+            sale_id: sale.id,
+            type: 'REDEEM_REWARD',
+            points_delta: -costToRedeem,
+            reward_description:
+              input.loyalty_reward_description ||
+              (loyaltyProgram.reward_title
+                ? `Canje de premio: ${loyaltyProgram.reward_title}`
+                : 'Canje de premio de fidelización'),
+          })
+        }
+
+        // Registrar acumulación ganada
+        if (pointsDelta > 0) {
+          currentPoints += pointsDelta
+          await supabase.from('loyalty_logs').insert({
+            organization_id: input.organization_id,
+            client_id: clientId,
+            sale_id: sale.id,
+            type: actionType,
+            points_delta: pointsDelta,
+            reward_description:
+              actionType === 'EARN_VISIT'
+                ? '+1 sello por visita completada'
+                : `+${pointsDelta} puntos por consumo`,
+          })
+        }
+      }
+
       await supabase
         .from('clients')
         .update({
           total_visits: (client.total_visits || 0) + 1,
           total_spent: Number(client.total_spent || 0) + total,
+          loyalty_points: currentPoints,
           last_visit_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
@@ -322,6 +390,7 @@ export async function createSaleAction(input: CreateSaleInput) {
 
   revalidatePath(`/app/${input.slug}/pos`)
   revalidatePath(`/app/${input.slug}/caja`)
+  revalidatePath(`/app/${input.slug}/clientes`)
   revalidatePath(`/app/${input.slug}/agenda`)
   revalidatePath(`/app/${input.slug}/dashboard`)
   revalidatePath(`/app/${input.slug}/inventario`)

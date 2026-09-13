@@ -765,6 +765,39 @@ export interface Database {
         }
         Relationships: []
       }
+      loyalty_logs: {
+        Row: {
+          id: string
+          organization_id: string
+          client_id: string
+          sale_id: string | null
+          type: 'EARN_VISIT' | 'EARN_POINTS' | 'REDEEM_REWARD' | 'MANUAL_ADJUST'
+          points_delta: number
+          reward_description: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          client_id: string
+          sale_id?: string | null
+          type: 'EARN_VISIT' | 'EARN_POINTS' | 'REDEEM_REWARD' | 'MANUAL_ADJUST'
+          points_delta?: number
+          reward_description: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          client_id?: string
+          sale_id?: string | null
+          type?: 'EARN_VISIT' | 'EARN_POINTS' | 'REDEEM_REWARD' | 'MANUAL_ADJUST'
+          points_delta?: number
+          reward_description?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -799,3 +832,15 @@ export type Sale = Database['public']['Tables']['sales']['Row']
 export type SaleItem = Database['public']['Tables']['sale_items']['Row']
 export type Commission = Database['public']['Tables']['commissions']['Row']
 export type CashMovement = Database['public']['Tables']['cash_movements']['Row']
+export type LoyaltyLog = Database['public']['Tables']['loyalty_logs']['Row']
+
+export interface LoyaltyProgramSettings {
+  enabled: boolean
+  program_type: 'VISITS' | 'POINTS'
+  target_visits: number
+  reward_title: string
+  reward_discount: number
+  points_per_pen: number
+  target_points: number
+  points_reward_discount: number
+}

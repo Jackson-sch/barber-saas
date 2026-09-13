@@ -108,6 +108,7 @@ export default async function PosPage({ params, searchParams }: PosPageProps) {
         phone: org.phone,
         city: org.city,
       }}
+      loyaltyProgram={(org.settings as any)?.loyalty_program || null}
       slug={slug}
       preloadAppointment={preloadAppointment}
     />

@@ -151,3 +151,87 @@ export async function deleteClientAction(id: string, organization_id: string, sl
   revalidatePath(`/app/${slug}/clientes`)
   return { success: true }
 }
+
+export interface AdjustLoyaltyInput {
+  clientId: string
+  organizationId: string
+  pointsDelta: number
+  reason: string
+  slug: string
+}
+
+export async function adjustClientLoyaltyAction(input: AdjustLoyaltyInput) {
+  const supabase = await createClient()
+
+  if (!input.clientId || !input.organizationId) {
+    return { error: 'Cliente y organización son requeridos.' }
+  }
+
+  if (input.pointsDelta === 0) {
+    return { error: 'El ajuste debe ser distinto de cero.' }
+  }
+
+  const { data: client, error: clientErr } = await supabase
+    .from('clients')
+    .select('loyalty_points, full_name')
+    .eq('id', input.clientId)
+    .eq('organization_id', input.organizationId)
+    .single()
+
+  if (clientErr || !client) {
+    return { error: 'Cliente no encontrado.' }
+  }
+
+  const currentPoints = client.loyalty_points || 0
+  const newPoints = Math.max(0, currentPoints + input.pointsDelta)
+
+  const { error: logErr } = await supabase.from('loyalty_logs').insert({
+    organization_id: input.organizationId,
+    client_id: input.clientId,
+    type: 'MANUAL_ADJUST',
+    points_delta: input.pointsDelta,
+    reward_description: input.reason.trim() || 'Ajuste manual administrativo',
+  })
+
+  if (logErr) {
+    console.error('Error inserting loyalty log:', logErr)
+    return { error: 'Error al registrar el ajuste de fidelización.' }
+  }
+
+  const { error: updateErr } = await supabase
+    .from('clients')
+    .update({
+      loyalty_points: newPoints,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', input.clientId)
+
+  if (updateErr) {
+    console.error('Error updating client loyalty points:', updateErr)
+    return { error: 'Error al actualizar los puntos del cliente.' }
+  }
+
+  revalidatePath(`/app/${input.slug}/clientes`)
+  revalidatePath(`/app/${input.slug}/pos`)
+  return { success: true, newPoints }
+}
+
+export async function getClientLoyaltyLogsAction(clientId: string, organizationId: string) {
+  const supabase = await createClient()
+
+  const { data: logs, error } = await supabase
+    .from('loyalty_logs')
+    .select('*')
+    .eq('client_id', clientId)
+    .eq('organization_id', organizationId)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  if (error) {
+    console.error('Error fetching loyalty logs:', error)
+    return { error: 'Error al consultar historial de fidelización.' }
+  }
+
+  return { logs: logs || [] }
+}
+

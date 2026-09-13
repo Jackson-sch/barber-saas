@@ -9,10 +9,14 @@ import {
   Trash2,
   Lock,
   Loader2,
+  Award,
+  Gift,
+  Sparkles,
+  CheckCircle2,
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import type { CartItemInput } from '@/actions/pos'
-import type { OrganizationMember, Client, CashShift } from '@/types/database.types'
+import type { OrganizationMember, Client, CashShift, LoyaltyProgramSettings } from '@/types/database.types'
 
 export type PaymentMethodType = 'CASH' | 'CARD' | 'YAPE' | 'PLIN' | 'TRANSFER'
 
@@ -41,6 +45,10 @@ interface PosTicketProps {
   currentShift: CashShift | null
   loading: boolean
   error: string | null
+  loyaltyProgram?: LoyaltyProgramSettings | null
+  isRedeemingLoyalty?: boolean
+  onApplyLoyaltyReward?: (discountAmount: number, title: string) => void
+  onRemoveLoyaltyReward?: () => void
   onUpdateQuantity: (index: number, delta: number) => void
   onRemoveItem: (index: number) => void
   onAssignBarber: (index: number, barberId: string) => void
@@ -74,6 +82,10 @@ export default function PosTicket({
   currentShift,
   loading,
   error,
+  loyaltyProgram,
+  isRedeemingLoyalty,
+  onApplyLoyaltyReward,
+  onRemoveLoyaltyReward,
   onUpdateQuantity,
   onRemoveItem,
   onAssignBarber,
@@ -158,6 +170,71 @@ export default function PosTicket({
             ))}
           </select>
         )}
+
+        {/* Loyalty Program Status & Redeem Banner */}
+        {clientType === 'EXISTING' && selectedClientId && loyaltyProgram?.enabled && (() => {
+          const clientObj = clients.find((c) => c.id === selectedClientId)
+          if (!clientObj) return null
+
+          const isPoints = loyaltyProgram.program_type === 'POINTS'
+          const target = isPoints ? loyaltyProgram.target_points : loyaltyProgram.target_visits
+          const points = clientObj.loyalty_points || 0
+          const isReady = points >= target
+          const rewardDiscountVal = isPoints ? loyaltyProgram.points_reward_discount : loyaltyProgram.reward_discount
+
+          return (
+            <div
+              className={`mt-2 p-2.5 rounded-xl border text-xs transition ${
+                isReady
+                  ? 'bg-amber-500/15 border-amber-500/40 text-white'
+                  : 'bg-neutral-950/80 border-neutral-800 text-neutral-300'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Award className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="font-semibold text-neutral-200">
+                    {isPoints ? `${points}/${target} Pts` : `${points}/${target} Sellos`}
+                  </span>
+                  {isReady && !isRedeemingLoyalty && (
+                    <span className="text-[10px] text-amber-300 font-bold bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.2 rounded">
+                      ¡Premio Disponible!
+                    </span>
+                  )}
+                </div>
+
+                {isReady && !isRedeemingLoyalty && onApplyLoyaltyReward && (
+                  <button
+                    type="button"
+                    onClick={() => onApplyLoyaltyReward(rewardDiscountVal, loyaltyProgram.reward_title)}
+                    className="py-1 px-2.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-bold text-[10px] uppercase tracking-wider transition flex items-center gap-1 cursor-pointer shadow-md shadow-amber-400/20"
+                  >
+                    <Gift className="w-3 h-3" />
+                    <span>Canjear (-{formatPrice(rewardDiscountVal)})</span>
+                  </button>
+                )}
+
+                {isRedeemingLoyalty && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Premio Aplicado (-{formatPrice(rewardDiscountVal)})
+                    </span>
+                    {onRemoveLoyaltyReward && (
+                      <button
+                        type="button"
+                        onClick={onRemoveLoyaltyReward}
+                        className="text-[10px] text-neutral-400 hover:text-red-400 underline cursor-pointer"
+                      >
+                        Quitar
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
       </div>
 
       {/* Cart Items List */}

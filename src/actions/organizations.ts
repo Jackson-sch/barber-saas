@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import type { LoyaltyProgramSettings } from '@/types/database.types'
 
 export interface UpdateOrgByAdminInput {
   orgId: string
@@ -24,6 +25,7 @@ export interface UpdateTenantSettingsInput {
   city?: string | null
   openingTime?: string
   closingTime?: string
+  loyaltyProgram?: LoyaltyProgramSettings
 }
 
 function cleanSlug(text: string): string {
@@ -173,6 +175,7 @@ export async function updateTenantSettingsAction(input: UpdateTenantSettingsInpu
     ...currentSettings,
     opening_time: input.openingTime || currentSettings.opening_time || '09:00',
     closing_time: input.closingTime || currentSettings.closing_time || '21:00',
+    ...(input.loyaltyProgram !== undefined ? { loyalty_program: input.loyaltyProgram } : {}),
   }
 
   const { error: updateErr } = await supabase
@@ -184,7 +187,7 @@ export async function updateTenantSettingsAction(input: UpdateTenantSettingsInpu
       email: input.email?.trim() || null,
       address: input.address?.trim() || null,
       city: input.city?.trim() || null,
-      settings: updatedSettings,
+      settings: updatedSettings as any,
       updated_at: new Date().toISOString(),
     })
     .eq('id', input.organizationId)
@@ -194,8 +197,9 @@ export async function updateTenantSettingsAction(input: UpdateTenantSettingsInpu
     return { error: 'No se pudieron guardar los cambios.' }
   }
 
-  revalidatePath(`/app/${input.currentSlug}/configuracion`)
   revalidatePath(`/app/${finalSlug}/configuracion`)
+  revalidatePath(`/app/${finalSlug}/clientes`)
+  revalidatePath(`/app/${finalSlug}/pos`)
   revalidatePath(`/app/${finalSlug}/dashboard`)
   revalidatePath(`/reservar/${finalSlug}`)
 

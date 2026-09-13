@@ -36,11 +36,14 @@ export default async function ClientesPage({ params }: ClientesPageProps) {
     preferences: Array.isArray(c.preferences) ? c.preferences[0] || null : c.preferences || null,
   }))
 
+  const loyaltyProgram = (org.settings as any)?.loyalty_program || null
+
   return (
     <ClientsClient
       initialClients={formattedClients as unknown as ClientWithPreferences[]}
       barbers={(barbers || []) as unknown as OrganizationMember[]}
       organizationId={org.id}
+      loyaltyProgram={loyaltyProgram}
       slug={slug}
     />
   )

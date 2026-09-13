@@ -29,6 +29,13 @@ export interface PrintableTicketProps {
   total: number
   paymentMethod: string
   slug: string
+  loyaltyInfo?: {
+    currentPoints: number
+    target: number
+    isPoints: boolean
+    rewardTitle: string
+    justRedeemed?: boolean
+  } | null
 }
 
 const paymentMethodLabels: Record<string, string> = {
@@ -54,6 +61,7 @@ const PrintableTicket = forwardRef<HTMLDivElement, PrintableTicketProps>(
       total,
       paymentMethod,
       slug,
+      loyaltyInfo,
     },
     ref
   ) => {
@@ -177,6 +185,34 @@ const PrintableTicket = forwardRef<HTMLDivElement, PrintableTicketProps>(
             <span className="font-bold uppercase">{paymentLabel}</span>
           </div>
         </div>
+
+        {/* Sección de Fidelización en Ticket */}
+        {loyaltyInfo && (
+          <div className="py-2.5 text-center space-y-1 border-b border-dashed border-neutral-400">
+            <p className="font-bold text-[10px] tracking-wider uppercase">⭐ PROGRAMA DE FIDELIDAD ⭐</p>
+            {loyaltyInfo.justRedeemed && (
+              <p className="font-bold text-[10px] text-black">
+                ¡PREMIO CANJEADO EN ESTA COMPRA!
+              </p>
+            )}
+            <p className="text-[10px]">
+              {loyaltyInfo.isPoints
+                ? `Puntos acumulados: ${loyaltyInfo.currentPoints} pts (Meta: ${loyaltyInfo.target})`
+                : `Sellos acumulados: ${loyaltyInfo.currentPoints} de ${loyaltyInfo.target}`}
+            </p>
+            {loyaltyInfo.currentPoints < loyaltyInfo.target ? (
+              <p className="text-[9px] text-neutral-600">
+                {loyaltyInfo.isPoints
+                  ? `¡Faltan ${loyaltyInfo.target - loyaltyInfo.currentPoints} pts para tu próximo descuento!`
+                  : `¡Te faltan ${loyaltyInfo.target - loyaltyInfo.currentPoints} visitas para tu ${loyaltyInfo.rewardTitle}!`}
+              </p>
+            ) : (
+              <p className="text-[9px] font-bold text-neutral-800">
+                ¡Tienes un premio listo para tu próxima visita!
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Pie de Página / Agradecimiento */}
         <div className="pt-3 text-center space-y-1 text-[10px] text-neutral-700">

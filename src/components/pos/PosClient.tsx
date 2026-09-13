@@ -21,11 +21,12 @@ import type {
   CashShift,
   Client,
   Product,
+  LoyaltyProgramSettings,
 } from '@/types/database.types'
 
-interface AppointmentPreload {
+export interface AppointmentPreload {
   id: string
-  client_id: string
+  client_id?: string
   barber_id: string
   service_id: string
   client_name?: string
@@ -46,6 +47,7 @@ interface PosClientProps {
     phone?: string | null
     city?: string | null
   }
+  loyaltyProgram?: LoyaltyProgramSettings | null
   slug: string
   preloadAppointment?: AppointmentPreload | null
 }
@@ -59,6 +61,7 @@ export default function PosClient({
   currentShift,
   organizationId,
   organizationInfo,
+  loyaltyProgram = null,
   slug,
   preloadAppointment,
 }: PosClientProps) {
@@ -75,6 +78,29 @@ export default function PosClient({
   const [selectedClientId, setSelectedClientId] = useState<string>('')
   const [clientName, setClientName] = useState('')
   const [clientPhone, setClientPhone] = useState('')
+
+  // Fidelización y Recompensas
+  const [isRedeemingLoyalty, setIsRedeemingLoyalty] = useState(false)
+  const [loyaltyRewardTitle, setLoyaltyRewardTitle] = useState('')
+
+  function handleApplyLoyaltyReward(discountAmount: number, title: string) {
+    setDiscount(String(discountAmount))
+    setIsRedeemingLoyalty(true)
+    setLoyaltyRewardTitle(title)
+  }
+
+  function handleRemoveLoyaltyReward() {
+    setDiscount('0')
+    setIsRedeemingLoyalty(false)
+    setLoyaltyRewardTitle('')
+  }
+
+  // Si cambia el cliente seleccionado, reiniciar cualquier premio aplicado
+  useEffect(() => {
+    if (isRedeemingLoyalty) {
+      handleRemoveLoyaltyReward()
+    }
+  }, [selectedClientId, clientType])
 
   // Descuento, Propina y Pago
   const [discount, setDiscount] = useState('0')
@@ -255,6 +281,8 @@ export default function PosClient({
       tip: tipVal,
       payment_method: paymentMethod,
       slug,
+      redeem_loyalty_reward: isRedeemingLoyalty,
+      loyalty_reward_description: isRedeemingLoyalty ? loyaltyRewardTitle : undefined,
     })
 
     if (res?.error) {
@@ -262,6 +290,25 @@ export default function PosClient({
       setLoading(false)
     } else if (res?.saleId) {
       const selectedClientObj = clients.find((c) => c.id === selectedClientId)
+
+      let receiptLoyaltyInfo = null
+      if (selectedClientObj && loyaltyProgram?.enabled) {
+        const isPoints = loyaltyProgram.program_type === 'POINTS'
+        const target = isPoints ? loyaltyProgram.target_points : loyaltyProgram.target_visits
+        const prevPoints = selectedClientObj.loyalty_points || 0
+        const afterRedeem = isRedeemingLoyalty ? Math.max(0, prevPoints - target) : prevPoints
+        const earned = isPoints ? Math.floor(total * (loyaltyProgram.points_per_pen || 1)) : 1
+        const newBalance = afterRedeem + earned
+
+        receiptLoyaltyInfo = {
+          currentPoints: newBalance,
+          target,
+          isPoints,
+          rewardTitle: loyaltyProgram.reward_title,
+          justRedeemed: isRedeemingLoyalty,
+        }
+      }
+
       const receiptData: SaleReceiptData = {
         id: res.saleId,
         total,
@@ -294,6 +341,7 @@ export default function PosClient({
             barberName: barber ? barber.nickname || barber.full_name : null,
           }
         }),
+        loyaltyInfo: receiptLoyaltyInfo,
       }
 
       setLoading(false)
@@ -308,6 +356,8 @@ export default function PosClient({
     setClientName('')
     setClientPhone('')
     setSelectedClientId('')
+    setIsRedeemingLoyalty(false)
+    setLoyaltyRewardTitle('')
     setCompletedReceipt(null)
   }
 
@@ -412,6 +462,10 @@ export default function PosClient({
           currentShift={currentShift}
           loading={loading}
           error={error}
+          loyaltyProgram={loyaltyProgram}
+          isRedeemingLoyalty={isRedeemingLoyalty}
+          onApplyLoyaltyReward={handleApplyLoyaltyReward}
+          onRemoveLoyaltyReward={handleRemoveLoyaltyReward}
           onUpdateQuantity={handleUpdateQuantity}
           onRemoveItem={handleRemoveItem}
           onAssignBarber={handleAssignBarber}

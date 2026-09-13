@@ -289,6 +289,18 @@ CREATE TABLE IF NOT EXISTS public.cash_movements (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 19. LOGS DE FIDELIZACIÓN (SELLOS, PUNTOS Y CANJES)
+CREATE TABLE IF NOT EXISTS public.loyalty_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+    client_id UUID NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
+    sale_id UUID REFERENCES public.sales(id) ON DELETE SET NULL,
+    type TEXT NOT NULL CHECK (type IN ('EARN_VISIT', 'EARN_POINTS', 'REDEEM_REWARD', 'MANUAL_ADJUST')),
+    points_delta INT NOT NULL DEFAULT 0,
+    reward_description TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- TRIGGER AUTOMÁTICO PARA CREAR PROFILE CUANDO UN USUARIO SE REGISTRA EN AUTH
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -320,3 +332,5 @@ CREATE INDEX IF NOT EXISTS idx_appointments_org ON public.appointments(organizat
 CREATE INDEX IF NOT EXISTS idx_appointments_start ON public.appointments(start_time);
 CREATE INDEX IF NOT EXISTS idx_sales_org ON public.sales(organization_id);
 CREATE INDEX IF NOT EXISTS idx_products_org ON public.products(organization_id);
+CREATE INDEX IF NOT EXISTS idx_loyalty_logs_client ON public.loyalty_logs(client_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_loyalty_logs_org ON public.loyalty_logs(organization_id);

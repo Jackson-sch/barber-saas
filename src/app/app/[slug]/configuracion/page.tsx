@@ -24,6 +24,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
         city: org.city,
         openingTime: orgSettings.opening_time || '09:00',
         closingTime: orgSettings.closing_time || '21:00',
+        loyaltyProgram: orgSettings.loyalty_program || null,
       }}
       isOwner={isOwner}
       slug={slug}

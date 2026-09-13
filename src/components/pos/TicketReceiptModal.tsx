@@ -25,6 +25,13 @@ export interface SaleReceiptData {
   clientName: string
   clientPhone?: string | null
   items: TicketItem[]
+  loyaltyInfo?: {
+    currentPoints: number
+    target: number
+    isPoints: boolean
+    rewardTitle: string
+    justRedeemed?: boolean
+  } | null
 }
 
 interface TicketReceiptModalProps {
@@ -92,6 +99,21 @@ export default function TicketReceiptModal({
       sale.tip > 0 ? `Propina Barbero: +S/ ${sale.tip.toFixed(2)}` : '',
       `💰 *TOTAL PAGADO: S/ ${sale.total.toFixed(2)}*`,
       `💳 Medio de Pago: ${sale.paymentMethod}`,
+      sale.loyaltyInfo
+        ? [
+            `────────────────────`,
+            `⭐ *PROGRAMA DE FIDELIDAD*`,
+            sale.loyaltyInfo.justRedeemed ? `🎁 *¡Premio Canjeado con éxito!*` : '',
+            sale.loyaltyInfo.isPoints
+              ? `Puntos acumulados: ${sale.loyaltyInfo.currentPoints}/${sale.loyaltyInfo.target}`
+              : `Sellos acumulados: ${sale.loyaltyInfo.currentPoints}/${sale.loyaltyInfo.target}`,
+            sale.loyaltyInfo.currentPoints < sale.loyaltyInfo.target
+              ? `¡Te faltan ${sale.loyaltyInfo.target - sale.loyaltyInfo.currentPoints} para tu ${sale.loyaltyInfo.rewardTitle}!`
+              : `🏆 ¡Tienes un premio listo para tu próxima visita!`,
+          ]
+            .filter(Boolean)
+            .join('\n')
+        : '',
       `────────────────────`,
       `¡Muchas gracias por tu visita y preferencia! 🙌`,
       `Agenda tu próximo corte 24/7 aquí:`,
@@ -189,6 +211,7 @@ export default function TicketReceiptModal({
                 total={sale.total}
                 paymentMethod={sale.paymentMethod}
                 slug={slug}
+                loyaltyInfo={sale.loyaltyInfo}
               />
             </div>
           </div>

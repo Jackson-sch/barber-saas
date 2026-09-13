@@ -15,15 +15,19 @@ import {
   Scissors,
   DollarSign,
   UserCheck,
+  Award,
+  Star,
+  Gift,
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import ClientModal from './ClientModal'
 import TechnicalSheetModal from './TechnicalSheetModal'
+import LoyaltyHistoryModal from './LoyaltyHistoryModal'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import ToastContainer, { type ToastMessage } from '@/components/ui/Toast'
 import { deleteClientAction } from '@/actions/clients'
 import Link from 'next/link'
-import type { Client, ClientPreference, OrganizationMember } from '@/types/database.types'
+import type { Client, ClientPreference, OrganizationMember, LoyaltyProgramSettings } from '@/types/database.types'
 
 export interface ClientWithPreferences extends Client {
   preferences?: ClientPreference | null
@@ -33,6 +37,7 @@ interface ClientsClientProps {
   initialClients: ClientWithPreferences[]
   barbers: OrganizationMember[]
   organizationId: string
+  loyaltyProgram?: LoyaltyProgramSettings | null
   slug: string
 }
 
@@ -40,13 +45,16 @@ export default function ClientsClient({
   initialClients,
   barbers,
   organizationId,
+  loyaltyProgram = null,
   slug,
 }: ClientsClientProps) {
   const [clients, setClients] = useState<ClientWithPreferences[]>(initialClients)
   const [searchQuery, setSearchQuery] = useState('')
   const [isClientModalOpen, setIsClientModalOpen] = useState(false)
   const [isTechSheetOpen, setIsTechSheetOpen] = useState(false)
+  const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false)
   const [selectedClient, setSelectedClient] = useState<ClientWithPreferences | null>(null)
+  const [selectedLoyaltyClient, setSelectedLoyaltyClient] = useState<ClientWithPreferences | null>(null)
   const [clientToDelete, setClientToDelete] = useState<ClientWithPreferences | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [toasts, setToasts] = useState<ToastMessage[]>([])
@@ -90,6 +98,17 @@ export default function ClientsClient({
   function handleOpenTechSheet(client: ClientWithPreferences) {
     setSelectedClient(client)
     setIsTechSheetOpen(true)
+  }
+
+  function handleOpenLoyalty(client: ClientWithPreferences) {
+    setSelectedLoyaltyClient(client)
+    setIsLoyaltyModalOpen(true)
+  }
+
+  function handleUpdateClientPoints(clientId: string, newPoints: number) {
+    setClients((prev) =>
+      prev.map((c) => (c.id === clientId ? { ...c, loyalty_points: newPoints } : c))
+    )
   }
 
   function handleDeletePrompt(client: ClientWithPreferences) {
@@ -264,6 +283,49 @@ export default function ClientsClient({
                     </div>
                   </div>
 
+                  {/* Loyalty Progress Mini-Card */}
+                  {loyaltyProgram?.enabled && (() => {
+                    const isPoints = loyaltyProgram.program_type === 'POINTS'
+                    const target = isPoints ? loyaltyProgram.target_points : loyaltyProgram.target_visits
+                    const points = client.loyalty_points || 0
+                    const isReady = points >= target
+                    const pct = Math.min(100, Math.round((points / target) * 100))
+
+                    return (
+                      <div
+                        onClick={() => handleOpenLoyalty(client)}
+                        className={`mt-3 p-2.5 rounded-xl border transition cursor-pointer ${
+                          isReady
+                            ? 'bg-amber-500/15 border-amber-500/40 hover:bg-amber-500/25 shadow-sm shadow-amber-500/10'
+                            : 'bg-neutral-950/70 border-neutral-800/80 hover:border-neutral-700'
+                        }`}
+                        title="Ver tarjeta digital de fidelidad"
+                      >
+                        <div className="flex items-center justify-between text-[11px] mb-1.5">
+                          <span className="font-semibold text-amber-400 flex items-center gap-1">
+                            <Award className="w-3.5 h-3.5" />
+                            <span>{isPoints ? 'Puntos de Consumo' : 'Sellos de Fidelidad'}</span>
+                          </span>
+                          <span
+                            className={`font-bold font-mono px-1.5 py-0.2 rounded text-[10px] ${
+                              isReady
+                                ? 'bg-amber-400 text-black animate-pulse'
+                                : 'text-neutral-300 bg-neutral-900 border border-neutral-800'
+                            }`}
+                          >
+                            {isReady ? '🏆 ¡Premio Listo!' : `${points} / ${target}`}
+                          </span>
+                        </div>
+                        <div className="w-full bg-neutral-900 rounded-full h-1.5 overflow-hidden border border-white/5">
+                          <div
+                            className="bg-gradient-to-r from-amber-500 to-amber-300 h-full rounded-full transition-all"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })()}
+
                   {/* Technical Sheet Preview Tags */}
                   <div className="mt-3 space-y-1.5">
                     <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold block">
@@ -296,14 +358,28 @@ export default function ClientsClient({
 
                 {/* Card Actions */}
                 <div className="mt-5 pt-3 border-t border-neutral-800/60 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenTechSheet(client)}
-                    className="py-1.5 px-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Ficha Técnica</span>
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenTechSheet(client)}
+                      className="py-1.5 px-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Ficha</span>
+                    </button>
+
+                    {loyaltyProgram?.enabled && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenLoyalty(client)}
+                        className="py-1.5 px-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                        title="Ver tarjeta de fidelidad y movimientos"
+                      >
+                        <Award className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Fidelidad</span>
+                      </button>
+                    )}
+                  </div>
 
                   <div className="flex items-center gap-1">
                     <button
@@ -317,7 +393,7 @@ export default function ClientsClient({
                     <button
                       type="button"
                       onClick={() => handleDeletePrompt(client)}
-                      className="p-1.5 rounded-lg hover:bg-red-500/20 text-neutral-400 hover:text-red-400 transition cursor-pointer"
+                      className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400/70 hover:text-red-300 transition cursor-pointer"
                       title="Eliminar cliente"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -347,6 +423,19 @@ export default function ClientsClient({
         barbers={barbers}
         organizationId={organizationId}
         slug={slug}
+      />
+
+      <LoyaltyHistoryModal
+        isOpen={isLoyaltyModalOpen}
+        onClose={() => {
+          setIsLoyaltyModalOpen(false)
+          setSelectedLoyaltyClient(null)
+        }}
+        client={selectedLoyaltyClient}
+        loyaltyProgram={loyaltyProgram}
+        organizationId={organizationId}
+        slug={slug}
+        onUpdateClientPoints={handleUpdateClientPoints}
       />
 
       {/* Modal de Confirmación de Eliminación */}
