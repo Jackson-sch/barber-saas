@@ -117,7 +117,7 @@ export default function CategoryModal({
                   type="button"
                   onClick={() => handleDelete(cat.id)}
                   disabled={deletingId === cat.id}
-                  className="p-1.5 rounded-md hover:bg-red-500/20 text-neutral-400 hover:text-red-400 transition cursor-pointer"
+                  className="p-1.5 rounded-md text-neutral-400 hover:text-red-400 hover:bg-neutral-800 transition cursor-pointer"
                   title="Eliminar categoría"
                 >
                   {deletingId === cat.id ? (

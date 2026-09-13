@@ -158,18 +158,22 @@ export default function AgendaClient({
           <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-lg p-0.5">
             <button
               onClick={() => setViewMode('CHAIRS')}
-              className={`p-1.5 rounded-md transition cursor-pointer ${
-                viewMode === 'CHAIRS' ? 'bg-amber-500 text-black' : 'text-neutral-400 hover:text-white'
-              }`}
+              className={
+                viewMode === 'CHAIRS'
+                  ? 'p-1.5 rounded-md transition cursor-pointer bg-amber-500 text-black'
+                  : 'p-1.5 rounded-md transition cursor-pointer text-neutral-400 hover:text-white'
+              }
               title="Vista por Silla / Barbero"
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('LIST')}
-              className={`p-1.5 rounded-md transition cursor-pointer ${
-                viewMode === 'LIST' ? 'bg-amber-500 text-black' : 'text-neutral-400 hover:text-white'
-              }`}
+              className={
+                viewMode === 'LIST'
+                  ? 'p-1.5 rounded-md transition cursor-pointer bg-amber-500 text-black'
+                  : 'p-1.5 rounded-md transition cursor-pointer text-neutral-400 hover:text-white'
+              }
               title="Vista de Lista Cronológica"
             >
               <List className="w-4 h-4" />

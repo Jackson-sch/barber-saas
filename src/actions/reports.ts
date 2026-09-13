@@ -435,3 +435,187 @@ export async function settleBarberCommissionsAction({
     return { error: 'Error inesperado al liquidar comisiones.' }
   }
 }
+
+export interface DetailedSaleRow {
+  id: string
+  createdAt: string
+  clientName: string
+  clientPhone: string
+  barberName: string
+  itemsSummary: string
+  paymentMethod: string
+  subtotal: number
+  discount: number
+  tip: number
+  total: number
+  notes: string | null
+}
+
+export interface DetailedCashMovementRow {
+  id: string
+  createdAt: string
+  type: 'EXPENSE' | 'INCOME'
+  category: string
+  description: string
+  barberName: string | null
+  performedByName: string | null
+  amount: number
+}
+
+// Acción para obtener reporte detallado de ventas fila por fila
+export async function getDetailedSalesReportAction(
+  organizationId: string,
+  startDateStr: string,
+  endDateStr: string
+): Promise<{ data?: DetailedSaleRow[]; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    // 1. Clientes
+    const { data: clients } = await supabase
+      .from('clients')
+      .select('id, full_name, phone')
+      .eq('organization_id', organizationId)
+    const clientMap = new Map((clients || []).map((c) => [c.id, c]))
+
+    // 2. Miembros / Barberos
+    const { data: members } = await supabase
+      .from('organization_members')
+      .select('id, full_name, nickname')
+      .eq('organization_id', organizationId)
+    const memberMap = new Map((members || []).map((m) => [m.id, m.nickname || m.full_name]))
+
+    // 3. Servicios y Productos
+    const { data: services } = await supabase
+      .from('services')
+      .select('id, name')
+      .eq('organization_id', organizationId)
+    const { data: products } = await supabase
+      .from('products')
+      .select('id, name')
+      .eq('organization_id', organizationId)
+    const serviceMap = new Map((services || []).map((s) => [s.id, s.name]))
+    const productMap = new Map((products || []).map((p) => [p.id, p.name]))
+
+    // 4. Ventas completadas
+    const { data: sales, error: salesErr } = await supabase
+      .from('sales')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('status', 'COMPLETED')
+      .gte('created_at', startDateStr)
+      .lte('created_at', endDateStr)
+      .order('created_at', { ascending: false })
+
+    if (salesErr) {
+      console.error('Error fetching sales for detailed report:', salesErr)
+      return { error: 'Error al consultar ventas detalladas.' }
+    }
+
+    const saleIds = (sales || []).map((s) => s.id)
+    const itemsBySale = new Map<string, string[]>()
+    const barbersBySale = new Map<string, string>()
+
+    if (saleIds.length > 0) {
+      const { data: items } = await supabase
+        .from('sale_items')
+        .select('*')
+        .in('sale_id', saleIds)
+
+      for (const item of items || []) {
+        const name = item.service_id
+          ? serviceMap.get(item.service_id) || 'Servicio'
+          : item.product_id
+            ? productMap.get(item.product_id) || 'Producto'
+            : 'Ítem'
+        const desc = `${item.quantity}x ${name}`
+        const arr = itemsBySale.get(item.sale_id) || []
+        arr.push(desc)
+        itemsBySale.set(item.sale_id, arr)
+
+        if (item.barber_id && !barbersBySale.has(item.sale_id)) {
+          const bName = memberMap.get(item.barber_id)
+          if (bName) barbersBySale.set(item.sale_id, bName)
+        }
+      }
+    }
+
+    const rows: DetailedSaleRow[] = (sales || []).map((s) => {
+      const client = s.client_id ? clientMap.get(s.client_id) : null
+      const barberName =
+        barbersBySale.get(s.id) ||
+        (s.sold_by ? memberMap.get(s.sold_by) : null) ||
+        'Sin asignar'
+      const itemsStr = (itemsBySale.get(s.id) || []).join(', ') || 'Venta general'
+
+      return {
+        id: s.id,
+        createdAt: s.created_at,
+        clientName: client ? client.full_name : 'Cliente Ocasional',
+        clientPhone: client?.phone || '-',
+        barberName,
+        itemsSummary: itemsStr,
+        paymentMethod: s.payment_method || 'CASH',
+        subtotal: Number(s.subtotal || 0),
+        discount: Number(s.discount || 0),
+        tip: Number(s.tip || 0),
+        total: Number(s.total || 0),
+        notes: null,
+      }
+    })
+
+    return { data: rows }
+  } catch (err: any) {
+    console.error('getDetailedSalesReportAction unexpected error:', err)
+    return { error: 'Error inesperado al generar reporte de ventas detalladas.' }
+  }
+}
+
+// Acción para obtener reporte de movimientos de caja y egresos
+export async function getCashMovementsReportAction(
+  organizationId: string,
+  startDateStr: string,
+  endDateStr: string
+): Promise<{ data?: DetailedCashMovementRow[]; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    // 1. Miembros / Barberos
+    const { data: members } = await supabase
+      .from('organization_members')
+      .select('id, full_name, nickname')
+      .eq('organization_id', organizationId)
+    const memberMap = new Map((members || []).map((m) => [m.id, m.nickname || m.full_name]))
+
+    // 2. Movimientos de caja
+    const { data: movements, error: movErr } = await supabase
+      .from('cash_movements')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .gte('created_at', startDateStr)
+      .lte('created_at', endDateStr)
+      .order('created_at', { ascending: false })
+
+    if (movErr) {
+      console.error('Error fetching cash movements for report:', movErr)
+      return { error: 'Error al consultar movimientos de caja.' }
+    }
+
+    const rows: DetailedCashMovementRow[] = (movements || []).map((m) => ({
+      id: m.id,
+      createdAt: m.created_at,
+      type: m.type as 'EXPENSE' | 'INCOME',
+      category: m.category,
+      description: m.description,
+      barberName: m.barber_id ? memberMap.get(m.barber_id) || null : null,
+      performedByName: 'Administración',
+      amount: Number(m.amount || 0),
+    }))
+
+    return { data: rows }
+  } catch (err: any) {
+    console.error('getCashMovementsReportAction unexpected error:', err)
+    return { error: 'Error inesperado al generar reporte de movimientos de caja.' }
+  }
+}
+

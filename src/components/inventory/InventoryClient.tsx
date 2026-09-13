@@ -423,7 +423,7 @@ export default function InventoryClient({
                     <button
                       type="button"
                       onClick={() => setProductToDelete(prod)}
-                      className="p-1.5 rounded-lg hover:bg-red-500/20 text-neutral-400 hover:text-red-400 transition cursor-pointer"
+                      className="p-1.5 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-neutral-800 transition cursor-pointer"
                       title="Eliminar producto"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

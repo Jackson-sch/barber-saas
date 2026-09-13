@@ -1,6 +1,18 @@
 'use client'
 
-import { Calendar, Download, RefreshCw, Layers, DollarSign } from 'lucide-react'
+import { useState } from 'react'
+import {
+  Calendar,
+  Download,
+  RefreshCw,
+  Layers,
+  DollarSign,
+  ChevronDown,
+  Printer,
+  FileSpreadsheet,
+  Receipt,
+  Wallet,
+} from 'lucide-react'
 
 export type PeriodPreset = 'TODAY' | 'WEEK' | 'MONTH' | 'LAST30' | 'CUSTOM'
 export type ReportTab = 'SALES' | 'COMMISSIONS'
@@ -15,8 +27,13 @@ interface ReportsHeaderProps {
   endDate: string
   setEndDate: (d: string) => void
   loading: boolean
+  exportingType: string | null
   onRefresh: () => void
-  onExportCsv: () => void
+  onOpenPrintModal: () => void
+  onExportSalesCsv: () => void
+  onExportCommissionsCsv: () => void
+  onExportCashCsv: () => void
+  onExportConsolidatedCsv: () => void
   pendingCommissionsCount: number
 }
 
@@ -30,10 +47,17 @@ export default function ReportsHeader({
   endDate,
   setEndDate,
   loading,
+  exportingType,
   onRefresh,
-  onExportCsv,
+  onOpenPrintModal,
+  onExportSalesCsv,
+  onExportCommissionsCsv,
+  onExportCashCsv,
+  onExportConsolidatedCsv,
   pendingCommissionsCount,
 }: ReportsHeaderProps) {
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
+
   return (
     <div className="space-y-4 pb-6 border-b border-white/[0.08]">
       {/* Title & Actions Row */}
@@ -52,8 +76,8 @@ export default function ReportsHeader({
           </p>
         </div>
 
-        {/* Action buttons: Refresh and Export */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+        {/* Action buttons: Refresh and Export Dropdown */}
+        <div className="flex items-center gap-2.5 flex-wrap relative">
           <button
             type="button"
             onClick={onRefresh}
@@ -65,15 +89,128 @@ export default function ReportsHeader({
             <span>Actualizar</span>
           </button>
 
-          <button
-            type="button"
-            onClick={onExportCsv}
-            disabled={loading}
-            className="py-2 px-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Exportar CSV</span>
-          </button>
+          {/* Export Dropdown Trigger */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsExportMenuOpen((prev) => !prev)}
+              disabled={loading || !!exportingType}
+              className="py-2 px-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>{exportingType ? `Generando ${exportingType}...` : 'Exportar Reportes'}</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExportMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown Menu */}
+            {isExportMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-20"
+                  onClick={() => setIsExportMenuOpen(false)}
+                />
+                <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-[#0e1017] border border-white/10 shadow-2xl p-1.5 z-30 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-3 py-1.5 border-b border-white/[0.06]">
+                    <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400/80">
+                      Formatos Disponibles
+                    </p>
+                  </div>
+
+                  {/* PDF Option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsExportMenuOpen(false)
+                      onOpenPrintModal()
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-white hover:bg-white/10 transition flex items-center gap-2.5 cursor-pointer"
+                  >
+                    <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
+                      <Printer className="w-3.5 h-3.5" />
+                    </span>
+                    <div>
+                      <p className="font-semibold text-white">Reporte Ejecutivo PDF</p>
+                      <p className="text-[10px] text-neutral-400">Vista formal A4 con membrete y firmas</p>
+                    </div>
+                  </button>
+
+                  <div className="my-1 border-t border-white/[0.06]" />
+
+                  {/* CSV Ventas */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsExportMenuOpen(false)
+                      onExportSalesCsv()
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-white hover:bg-white/10 transition flex items-center gap-2.5 cursor-pointer"
+                  >
+                    <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
+                      <Receipt className="w-3.5 h-3.5" />
+                    </span>
+                    <div>
+                      <p className="font-semibold text-white">Ventas Detalladas (.CSV)</p>
+                      <p className="text-[10px] text-neutral-400">Ticket por ticket, clientes e ítems</p>
+                    </div>
+                  </button>
+
+                  {/* CSV Barberos */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsExportMenuOpen(false)
+                      onExportCommissionsCsv()
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-white hover:bg-white/10 transition flex items-center gap-2.5 cursor-pointer"
+                  >
+                    <span className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400">
+                      <DollarSign className="w-3.5 h-3.5" />
+                    </span>
+                    <div>
+                      <p className="font-semibold text-white">Liquidación de Barberos (.CSV)</p>
+                      <p className="text-[10px] text-neutral-400">Comisiones ganadas, pagadas y saldo</p>
+                    </div>
+                  </button>
+
+                  {/* CSV Caja y Gastos */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsExportMenuOpen(false)
+                      onExportCashCsv()
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-white hover:bg-white/10 transition flex items-center gap-2.5 cursor-pointer"
+                  >
+                    <span className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400">
+                      <Wallet className="w-3.5 h-3.5" />
+                    </span>
+                    <div>
+                      <p className="font-semibold text-white">Caja & Egresos (.CSV)</p>
+                      <p className="text-[10px] text-neutral-400">Gastos menores y retiros detallados</p>
+                    </div>
+                  </button>
+
+                  {/* CSV Consolidado */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsExportMenuOpen(false)
+                      onExportConsolidatedCsv()
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-white hover:bg-white/10 transition flex items-center gap-2.5 cursor-pointer"
+                  >
+                    <span className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
+                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                    </span>
+                    <div>
+                      <p className="font-semibold text-white">Consolidado General (.CSV)</p>
+                      <p className="text-[10px] text-neutral-400">Resumen completo con tops y métodos</p>
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

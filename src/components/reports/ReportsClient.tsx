@@ -6,10 +6,19 @@ import ReportsHeader, { type PeriodPreset, type ReportTab } from './ReportsHeade
 import ReportsMetricsCards from './ReportsMetricsCards'
 import ReportsSalesTab from './ReportsSalesTab'
 import ReportsCommissionsTab from './ReportsCommissionsTab'
+import PrintableReportModal from './PrintableReportModal'
 import {
   getReportsDataAction,
+  getDetailedSalesReportAction,
+  getCashMovementsReportAction,
   type ReportsData,
 } from '@/actions/reports'
+import {
+  exportDetailedSalesToCsv,
+  exportBarberCommissionsToCsv,
+  exportCashMovementsToCsv,
+  exportConsolidatedReportToCsv,
+} from '@/lib/export-utils'
 
 interface ReportsClientProps {
   initialData: ReportsData
@@ -32,6 +41,8 @@ export default function ReportsClient({
   const [endDate, setEndDate] = useState(initialEndDate)
   const [reportsData, setReportsData] = useState<ReportsData>(initialData)
   const [loading, setLoading] = useState(false)
+  const [exportingType, setExportingType] = useState<string | null>(null)
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
   const [toasts, setToasts] = useState<ToastMessage[]>([])
 
   function addToast(type: 'success' | 'error', text: string) {
@@ -99,98 +110,67 @@ export default function ReportsClient({
     fetchReports(startDate, endDate)
   }, [startDate, endDate, fetchReports])
 
-  // Exportar a CSV
-  function handleExportCsv() {
+  // 1. Exportar Ventas Detalladas
+  async function handleExportSalesCsv() {
     try {
-      const rows: string[][] = []
+      setExportingType('Ventas')
+      const fullStart = `${startDate}T00:00:00.000Z`
+      const fullEnd = `${endDate}T23:59:59.999Z`
+      const res = await getDetailedSalesReportAction(organizationId, fullStart, fullEnd)
+      setExportingType(null)
 
-      // 1. Título & Metadatos
-      rows.push(['REPORTE FINANCIERO Y LIQUIDACIONES - ' + slug.toUpperCase()])
-      rows.push(['Rango de Fechas', `${startDate} a ${endDate}`])
-      rows.push(['Fecha de Descarga', new Date().toLocaleString('es-PE')])
-      rows.push([])
-
-      // 2. Resumen Ejecutivo
-      rows.push(['--- RESUMEN EJECUTIVO ---'])
-      rows.push(['Facturacion Total', `S/ ${reportsData.summary.totalRevenue.toFixed(2)}`])
-      rows.push(['Numero de Tickets', reportsData.summary.ticketCount.toString()])
-      rows.push(['Ticket Promedio', `S/ ${reportsData.summary.averageTicket.toFixed(2)}`])
-      rows.push(['Descuentos Otorgados', `S/ ${reportsData.summary.totalDiscounts.toFixed(2)}`])
-      rows.push(['Propinas Recaudadas', `S/ ${reportsData.summary.totalTips.toFixed(2)}`])
-      rows.push(['Comisiones Totales', `S/ ${reportsData.summary.totalCommissionsEarned.toFixed(2)}`])
-      rows.push(['Comisiones Pagadas', `S/ ${reportsData.summary.totalCommissionsPaid.toFixed(2)}`])
-      rows.push(['Comisiones Pendientes', `S/ ${reportsData.summary.totalCommissionsPending.toFixed(2)}`])
-      rows.push(['Margen Neto del Salon', `S/ ${reportsData.summary.netShopProfit.toFixed(2)}`])
-      rows.push([])
-
-      // 3. Métodos de Pago
-      rows.push(['--- METODOS DE PAGO ---'])
-      rows.push(['Metodo', 'Total (S/)', 'Transacciones', 'Porcentaje (%)'])
-      for (const pm of reportsData.paymentMethods) {
-        rows.push([pm.label, `S/ ${pm.total.toFixed(2)}`, pm.count.toString(), `${pm.percentage}%`])
+      if (res.error || !res.data) {
+        addToast('error', res.error || 'Error al obtener ventas para exportar.')
+        return
       }
-      rows.push([])
 
-      // 4. Liquidación por Barbero
-      rows.push(['--- LIQUIDACION DE COMISIONES POR BARBERO ---'])
-      rows.push([
-        'Barbero',
-        'Comision Pactada',
-        'Cortes Atendidos',
-        'Productos Vendidos',
-        'Ventas Generadas (S/)',
-        'Comision Ganada (S/)',
-        'Comision Pagada (S/)',
-        'Saldo Pendiente (S/)',
-      ])
-      for (const b of reportsData.barberStats) {
-        rows.push([
-          b.nickname || b.barberName,
-          `${b.commissionRate}%`,
-          b.servicesCount.toString(),
-          b.productsCount.toString(),
-          `S/ ${b.totalSalesGenerated.toFixed(2)}`,
-          `S/ ${b.totalCommissionsEarned.toFixed(2)}`,
-          `S/ ${b.commissionsPaid.toFixed(2)}`,
-          `S/ ${b.commissionsPending.toFixed(2)}`,
-        ])
-      }
-      rows.push([])
-
-      // 5. Top Servicios
-      rows.push(['--- TOP SERVICIOS ---'])
-      rows.push(['Posicion', 'Servicio', 'Atenciones', 'Facturacion Total (S/)'])
-      reportsData.topServices.forEach((s, idx) => {
-        rows.push([`#${idx + 1}`, s.name, s.quantity.toString(), `S/ ${s.totalRevenue.toFixed(2)}`])
-      })
-      rows.push([])
-
-      // 6. Top Productos
-      rows.push(['--- TOP PRODUCTOS ---'])
-      rows.push(['Posicion', 'Producto', 'Unidades Vendidas', 'Facturacion Total (S/)'])
-      reportsData.topProducts.forEach((p, idx) => {
-        rows.push([`#${idx + 1}`, p.name, p.quantity.toString(), `S/ ${p.totalRevenue.toFixed(2)}`])
-      })
-
-      // Convertir a formato CSV con escape de comillas
-      const csvContent =
-        'data:text/csv;charset=utf-8,\uFEFF' +
-        rows.map((e) => e.map((val) => `"${val.replace(/"/g, '""')}"`).join(',')).join('\n')
-
-      const encodedUri = encodeURI(csvContent)
-      const link = document.createElement('a')
-      link.setAttribute('href', encodedUri)
-      link.setAttribute(
-        'download',
-        `reporte-financiero-${slug}-${startDate}-a-${endDate}.csv`
-      )
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-
-      addToast('success', 'Reporte CSV descargado con éxito.')
+      exportDetailedSalesToCsv(res.data, slug, startDate, endDate)
+      addToast('success', 'Reporte de ventas detalladas descargado.')
     } catch {
-      addToast('error', 'Error al exportar los datos a CSV.')
+      setExportingType(null)
+      addToast('error', 'Error inesperado al exportar ventas a CSV.')
+    }
+  }
+
+  // 2. Exportar Comisiones de Barberos
+  function handleExportCommissionsCsv() {
+    try {
+      exportBarberCommissionsToCsv(reportsData.barberStats, slug, startDate, endDate)
+      addToast('success', 'Reporte de comisiones descargado.')
+    } catch {
+      addToast('error', 'Error al exportar comisiones.')
+    }
+  }
+
+  // 3. Exportar Movimientos de Caja y Gastos
+  async function handleExportCashCsv() {
+    try {
+      setExportingType('Caja')
+      const fullStart = `${startDate}T00:00:00.000Z`
+      const fullEnd = `${endDate}T23:59:59.999Z`
+      const res = await getCashMovementsReportAction(organizationId, fullStart, fullEnd)
+      setExportingType(null)
+
+      if (res.error || !res.data) {
+        addToast('error', res.error || 'Error al obtener movimientos de caja.')
+        return
+      }
+
+      exportCashMovementsToCsv(res.data, slug, startDate, endDate)
+      addToast('success', 'Reporte de movimientos de caja descargado.')
+    } catch {
+      setExportingType(null)
+      addToast('error', 'Error al exportar movimientos de caja.')
+    }
+  }
+
+  // 4. Exportar Consolidado General
+  function handleExportConsolidatedCsv() {
+    try {
+      exportConsolidatedReportToCsv(reportsData, slug, startDate, endDate)
+      addToast('success', 'Reporte financiero consolidado descargado.')
+    } catch {
+      addToast('error', 'Error al exportar reporte consolidado.')
     }
   }
 
@@ -198,7 +178,7 @@ export default function ReportsClient({
 
   return (
     <div className="space-y-8">
-      {/* 1. Header & Filtros */}
+      {/* 1. Header & Filtros con Menú de Exportación */}
       <ReportsHeader
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -209,8 +189,13 @@ export default function ReportsClient({
         endDate={endDate}
         setEndDate={setEndDate}
         loading={loading}
+        exportingType={exportingType}
         onRefresh={() => fetchReports(startDate, endDate)}
-        onExportCsv={handleExportCsv}
+        onOpenPrintModal={() => setIsPrintModalOpen(true)}
+        onExportSalesCsv={handleExportSalesCsv}
+        onExportCommissionsCsv={handleExportCommissionsCsv}
+        onExportCashCsv={handleExportCashCsv}
+        onExportConsolidatedCsv={handleExportConsolidatedCsv}
         pendingCommissionsCount={pendingCount}
       />
 
@@ -245,6 +230,16 @@ export default function ReportsClient({
           onAddToast={addToast}
         />
       )}
+
+      {/* 4. Modal de Reporte Ejecutivo Imprimible / PDF */}
+      <PrintableReportModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        reportsData={reportsData}
+        slug={slug}
+        startDate={startDate}
+        endDate={endDate}
+      />
 
       {/* Feedback Toasts */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
