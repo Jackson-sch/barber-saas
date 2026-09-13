@@ -19,6 +19,7 @@ export interface PrintableTicketProps {
     address?: string | null
     phone?: string | null
     city?: string | null
+    logoUrl?: string | null
   }
   clientName: string
   clientPhone?: string | null
@@ -81,6 +82,16 @@ const PrintableTicket = forwardRef<HTMLDivElement, PrintableTicketProps>(
       >
         {/* Cabecera del Salón */}
         <div className="text-center space-y-1 pb-3 border-b border-dashed border-neutral-400">
+          {organization.logoUrl && (
+            <div className="flex justify-center pb-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={organization.logoUrl}
+                alt={organization.name}
+                className="w-12 h-12 object-contain filter grayscale contrast-125 mx-auto"
+              />
+            </div>
+          )}
           <h2 className="text-base font-bold tracking-tight uppercase">
             {organization.name}
           </h2>

@@ -31,6 +31,8 @@ interface TenantSidebarProps {
     name: string
     slug: string
     trial_ends_at: string | null
+    logo_url?: string | null
+    primary_color?: string | null
   }
   member: {
     id: string
@@ -104,8 +106,12 @@ export function TenantSidebar({ slug, org, member, userEmail, isSuperAdmin = fal
       {/* Barbería Brand Header */}
       <div className="p-4 border-b border-white/[0.08]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-lg shadow-sm">
-            {org.name.charAt(0)}
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-lg shadow-sm overflow-hidden shrink-0">
+            {org.logo_url ? (
+              <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
+            ) : (
+              <span>{org.name.charAt(0)}</span>
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="font-semibold text-white truncate text-sm tracking-tight">{org.name}</h2>
@@ -217,8 +223,12 @@ export function TenantSidebar({ slug, org, member, userEmail, isSuperAdmin = fal
       {/* Mobile Topbar with Hamburger */}
       <div className="md:hidden flex items-center justify-between px-4 py-3 bg-[#0D0E15] border-b border-white/[0.08] sticky top-0 z-30">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-sm">
-            {org.name.charAt(0)}
+          <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-sm overflow-hidden shrink-0">
+            {org.logo_url ? (
+              <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
+            ) : (
+              <span>{org.name.charAt(0)}</span>
+            )}
           </div>
           <span className="font-semibold text-white text-sm truncate">{org.name}</span>
         </div>

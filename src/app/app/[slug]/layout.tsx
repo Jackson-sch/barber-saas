@@ -20,6 +20,8 @@ export default async function TenantLayout({ children, params }: TenantLayoutPro
           name: org.name,
           slug: org.slug,
           trial_ends_at: org.trial_ends_at,
+          logo_url: org.logo_url,
+          primary_color: org.primary_color,
         }}
         member={
           member

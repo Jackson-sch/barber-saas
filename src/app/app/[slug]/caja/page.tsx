@@ -139,6 +139,7 @@ export default async function CajaPage({ params }: CajaPageProps) {
         address: org.address,
         phone: org.phone,
         city: org.city,
+        logoUrl: org.logo_url,
       }}
       slug={slug}
     />

@@ -46,6 +46,7 @@ interface PosClientProps {
     address?: string | null
     phone?: string | null
     city?: string | null
+    logoUrl?: string | null
   }
   loyaltyProgram?: LoyaltyProgramSettings | null
   slug: string

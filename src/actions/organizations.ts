@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { LoyaltyProgramSettings, WhatsAppNotificationSettings } from '@/types/database.types'
+import type { Database, LoyaltyProgramSettings, WhatsAppNotificationSettings } from '@/types/database.types'
 
 export interface UpdateOrgByAdminInput {
   orgId: string
@@ -27,6 +27,11 @@ export interface UpdateTenantSettingsInput {
   closingTime?: string
   loyaltyProgram?: LoyaltyProgramSettings
   whatsappSettings?: WhatsAppNotificationSettings
+  logoUrl?: string | null
+  primaryColor?: string
+  secondaryColor?: string
+  bannerUrl?: string | null
+  tagline?: string | null
 }
 
 function cleanSlug(text: string): string {
@@ -178,20 +183,34 @@ export async function updateTenantSettingsAction(input: UpdateTenantSettingsInpu
     closing_time: input.closingTime || currentSettings.closing_time || '21:00',
     ...(input.loyaltyProgram !== undefined ? { loyalty_program: input.loyaltyProgram } : {}),
     ...(input.whatsappSettings !== undefined ? { whatsapp_notifications: input.whatsappSettings } : {}),
+    ...(input.bannerUrl !== undefined ? { banner_url: input.bannerUrl } : {}),
+    ...(input.tagline !== undefined ? { tagline: input.tagline } : {}),
+  }
+
+  const updatePayload: Database['public']['Tables']['organizations']['Update'] = {
+    name,
+    slug: finalSlug,
+    phone: input.phone?.trim() || null,
+    email: input.email?.trim() || null,
+    address: input.address?.trim() || null,
+    city: input.city?.trim() || null,
+    settings: updatedSettings as any,
+    updated_at: new Date().toISOString(),
+  }
+
+  if (input.logoUrl !== undefined) {
+    updatePayload.logo_url = input.logoUrl ? input.logoUrl.trim() : null
+  }
+  if (input.primaryColor !== undefined) {
+    updatePayload.primary_color = input.primaryColor.trim()
+  }
+  if (input.secondaryColor !== undefined) {
+    updatePayload.secondary_color = input.secondaryColor.trim()
   }
 
   const { error: updateErr } = await supabase
     .from('organizations')
-    .update({
-      name,
-      slug: finalSlug,
-      phone: input.phone?.trim() || null,
-      email: input.email?.trim() || null,
-      address: input.address?.trim() || null,
-      city: input.city?.trim() || null,
-      settings: updatedSettings as any,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq('id', input.organizationId)
 
   if (updateErr) {

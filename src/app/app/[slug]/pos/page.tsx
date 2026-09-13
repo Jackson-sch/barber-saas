@@ -107,6 +107,7 @@ export default async function PosPage({ params, searchParams }: PosPageProps) {
         address: org.address,
         phone: org.phone,
         city: org.city,
+        logoUrl: org.logo_url,
       }}
       loyaltyProgram={(org.settings as any)?.loyalty_program || null}
       slug={slug}

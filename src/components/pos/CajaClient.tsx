@@ -50,6 +50,7 @@ interface CajaClientProps {
     address?: string | null
     phone?: string | null
     city?: string | null
+    logoUrl?: string | null
   }
   slug: string
 }

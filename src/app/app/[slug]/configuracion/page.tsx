@@ -26,6 +26,11 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
         closingTime: orgSettings.closing_time || '21:00',
         loyaltyProgram: orgSettings.loyalty_program || null,
         whatsappSettings: orgSettings.whatsapp_notifications || null,
+        logoUrl: org.logo_url || null,
+        primaryColor: org.primary_color || '#F59E0B',
+        secondaryColor: org.secondary_color || '#0F172A',
+        bannerUrl: orgSettings.banner_url || null,
+        tagline: orgSettings.tagline || null,
       }}
       isOwner={isOwner}
       slug={slug}
