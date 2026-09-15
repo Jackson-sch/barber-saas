@@ -54,3 +54,19 @@ export function formatDateOnly(dateInput: string | Date | null | undefined): str
   return `${day} ${month} ${year}`
 }
 
+export function getLocalDateString(date: Date = new Date(), timeZone: string = 'America/Lima'): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+}
+
+export function getDayUtcRange(dateStr: string, timezoneOffset: string = '-05:00') {
+  const offset = timezoneOffset.startsWith('+') || timezoneOffset.startsWith('-') ? timezoneOffset : '-05:00'
+  const startOfDay = new Date(`${dateStr}T00:00:00.000${offset}`).toISOString()
+  const endOfDay = new Date(`${dateStr}T23:59:59.999${offset}`).toISOString()
+  return { startOfDay, endOfDay }
+}
+

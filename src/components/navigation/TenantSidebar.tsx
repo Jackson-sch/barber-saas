@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Settings,
   BarChart3,
+  User,
 } from 'lucide-react'
 import { logoutAction } from '@/actions/auth'
 
@@ -77,6 +78,7 @@ export function TenantSidebar({ slug, org, member, userEmail, isSuperAdmin = fal
     {
       title: 'SISTEMA',
       items: [
+        { href: `/app/${slug}/perfil`, label: 'Mi Perfil & Seguridad', icon: User },
         { href: `/app/${slug}/suscripcion`, label: 'Mi Suscripción', icon: Sparkles },
         { href: `/app/${slug}/configuracion`, label: 'Configuración', icon: Settings },
       ],
@@ -200,10 +202,16 @@ export function TenantSidebar({ slug, org, member, userEmail, isSuperAdmin = fal
 
         {/* User profile & Logout */}
         <div className="mt-3 flex items-center justify-between pt-2 border-t border-white/[0.06]">
-          <div className="text-xs truncate mr-2">
-            <span className="text-neutral-400 text-[10px] block">Sesión iniciada</span>
+          <Link
+            href={`/app/${slug}/perfil`}
+            className="text-xs truncate mr-2 group flex-1 hover:opacity-80 transition"
+            title="Ir a Mi Perfil & Seguridad"
+          >
+            <span className="text-neutral-400 text-[10px] block group-hover:text-amber-400 transition">
+              Mi Perfil ↗
+            </span>
             <p className="text-neutral-200 font-medium truncate text-xs font-mono">{userEmail}</p>
-          </div>
+          </Link>
           <form action={logoutAction.bind(null, slug)}>
             <button
               type="submit"

@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Scissors, ChevronRight } from 'lucide-react'
+import { Scissors, ChevronRight, CreditCard, MessageCircle } from 'lucide-react'
+import { formatWhatsAppUrl } from '@/lib/whatsapp'
 import type { OrganizationMember } from '@/types/database.types'
 
 export interface FloorRadarAppointment {
@@ -114,6 +115,19 @@ export default function FloorRadar({ barbers, appointments, slug }: FloorRadarPr
                             {currentApp.service?.name}
                           </span>
                         </div>
+                        <div className="mt-2.5 pt-2 border-t border-white/[0.04] flex items-center justify-between">
+                          <span className="text-[10px] text-amber-400/90 font-mono font-medium animate-pulse">
+                            ● En atención
+                          </span>
+                          <Link
+                            href={`/app/${slug}/pos?appointmentId=${currentApp.id}`}
+                            className="py-1 px-2 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-[10px] font-semibold flex items-center gap-1 transition shadow-sm"
+                            title="Cobrar servicio en el POS"
+                          >
+                            <CreditCard className="w-3 h-3" />
+                            <span>Cobrar POS</span>
+                          </Link>
+                        </div>
                       </>
                     ) : nextApp ? (
                       <>
@@ -132,6 +146,24 @@ export default function FloorRadar({ barbers, appointments, slug }: FloorRadarPr
                             {nextApp.client?.full_name || 'Cliente'}
                           </span>
                         </div>
+                        {nextApp.client?.phone ? (
+                          <div className="mt-2.5 pt-2 border-t border-white/[0.04] flex items-center justify-between">
+                            <span className="text-[10px] text-neutral-400">Próximo turno</span>
+                            <a
+                              href={formatWhatsAppUrl(
+                                nextApp.client.phone,
+                                `¡Hola ${nextApp.client.full_name || ''}! Tu turno está programado para hoy a las ${new Date(nextApp.start_time).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })} con ${barber.nickname || barber.full_name}. ¿Confirmas tu asistencia?`
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="py-1 px-2 rounded-md bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-[10px] font-semibold flex items-center gap-1 transition shadow-sm"
+                              title="Enviar recordatorio WhatsApp"
+                            >
+                              <MessageCircle className="w-3 h-3 text-emerald-400" />
+                              <span>Avisar</span>
+                            </a>
+                          </div>
+                        ) : null}
                       </>
                     ) : (
                       <div className="py-1 text-center text-neutral-500 text-[11px]">

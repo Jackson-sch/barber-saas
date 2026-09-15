@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import PrintableTicket, { type TicketItem } from './PrintableTicket'
 import { formatPrice } from '@/lib/utils'
+import { formatWhatsAppUrl } from '@/lib/whatsapp'
 
 export interface SaleReceiptData {
   id: string
@@ -123,8 +124,8 @@ export default function TicketReceiptModal({
       .filter(Boolean)
       .join('\n')
 
-    const waUrl = cleanPhone
-      ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(lines)}`
+    const waUrl = effectivePhone
+      ? formatWhatsAppUrl(effectivePhone, lines)
       : `https://wa.me/?text=${encodeURIComponent(lines)}`
 
     window.open(waUrl, '_blank')

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Clock, Calendar, Plus, MessageCircle, ArrowUpRight } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
+import { formatWhatsAppUrl } from '@/lib/whatsapp'
 import type { DashboardAppointment } from './DashboardClient'
 
 export type AppointmentFilter = 'ALL' | 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
@@ -103,11 +104,9 @@ export default function AppointmentsTimeline({
               (app.status || '').toUpperCase() === 'IN_PROGRESS' ||
               (app.status || '').toUpperCase() === 'EN_PROGRESO'
 
-            const cleanPhone = app.client?.phone ? app.client.phone.replace(/[^0-9]/g, '') : ''
-            const waMessage = encodeURIComponent(
-              `¡Hola ${app.client?.full_name || ''}! Te saludamos de ${orgName}. Te recordamos tu cita de ${app.service?.name || 'Corte'} hoy a las ${startTime}. ¿Confirmas tu asistencia?`
-            )
-            const waUrl = `https://wa.me/${cleanPhone}?text=${waMessage}`
+            const clientPhone = app.client?.phone || ''
+            const waMessage = `¡Hola ${app.client?.full_name || ''}! Te saludamos de ${orgName}. Te recordamos tu cita de ${app.service?.name || 'Corte'} hoy a las ${startTime}. ¿Confirmas tu asistencia?`
+            const waUrl = clientPhone ? formatWhatsAppUrl(clientPhone, waMessage) : ''
 
             return (
               <div
@@ -167,7 +166,7 @@ export default function AppointmentsTimeline({
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    {cleanPhone && (
+                    {waUrl && (
                       <a
                         href={waUrl}
                         target="_blank"

@@ -18,11 +18,13 @@ import {
   Award,
   Star,
   Gift,
+  History,
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import ClientModal from './ClientModal'
 import TechnicalSheetModal from './TechnicalSheetModal'
 import LoyaltyHistoryModal from './LoyaltyHistoryModal'
+import ClientHistoryModal from './ClientHistoryModal'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import ToastContainer, { type ToastMessage } from '@/components/ui/Toast'
 import { deleteClientAction } from '@/actions/clients'
@@ -53,8 +55,10 @@ export default function ClientsClient({
   const [isClientModalOpen, setIsClientModalOpen] = useState(false)
   const [isTechSheetOpen, setIsTechSheetOpen] = useState(false)
   const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false)
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
   const [selectedClient, setSelectedClient] = useState<ClientWithPreferences | null>(null)
   const [selectedLoyaltyClient, setSelectedLoyaltyClient] = useState<ClientWithPreferences | null>(null)
+  const [selectedHistoryClient, setSelectedHistoryClient] = useState<ClientWithPreferences | null>(null)
   const [clientToDelete, setClientToDelete] = useState<ClientWithPreferences | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [toasts, setToasts] = useState<ToastMessage[]>([])
@@ -103,6 +107,11 @@ export default function ClientsClient({
   function handleOpenLoyalty(client: ClientWithPreferences) {
     setSelectedLoyaltyClient(client)
     setIsLoyaltyModalOpen(true)
+  }
+
+  function handleOpenHistory(client: ClientWithPreferences) {
+    setSelectedHistoryClient(client)
+    setIsHistoryModalOpen(true)
   }
 
   function handleUpdateClientPoints(clientId: string, newPoints: number) {
@@ -368,6 +377,16 @@ export default function ClientsClient({
                       <span>Ficha</span>
                     </button>
 
+                    <button
+                      type="button"
+                      onClick={() => handleOpenHistory(client)}
+                      className="py-1.5 px-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                      title="Ver historial de citas y servicios"
+                    >
+                      <History className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Historial</span>
+                    </button>
+
                     {loyaltyProgram?.enabled && (
                       <button
                         type="button"
@@ -436,6 +455,17 @@ export default function ClientsClient({
         organizationId={organizationId}
         slug={slug}
         onUpdateClientPoints={handleUpdateClientPoints}
+      />
+
+      <ClientHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => {
+          setIsHistoryModalOpen(false)
+          setSelectedHistoryClient(null)
+        }}
+        client={selectedHistoryClient}
+        organizationId={organizationId}
+        barberiaName={slug}
       />
 
       {/* Modal de Confirmación de Eliminación */}

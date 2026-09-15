@@ -14,7 +14,9 @@ import {
   Scissors,
   Phone,
   RotateCcw,
+  Loader2,
 } from 'lucide-react'
+
 import type { AppointmentWithDetails } from './AppointmentDetailModal'
 import type { WhatsAppNotificationSettings } from '@/types/database.types'
 import {
@@ -23,6 +25,8 @@ import {
   formatWhatsAppUrl,
   type AppointmentDataForWhatsApp,
 } from '@/lib/whatsapp'
+import { sendWhatsAppHybridAction } from '@/actions/whatsapp'
+import { toast } from 'sonner'
 
 type TemplateType = 'reminder' | 'confirmation' | 'reschedule' | 'followup'
 
@@ -33,6 +37,7 @@ interface WhatsAppReminderModalProps {
   barberiaName: string
   barberiaAddress?: string | null
   customTemplates?: WhatsAppNotificationSettings | null
+  organizationId?: string
 }
 
 export default function WhatsAppReminderModal({
@@ -42,10 +47,13 @@ export default function WhatsAppReminderModal({
   barberiaName,
   barberiaAddress,
   customTemplates,
+  organizationId,
 }: WhatsAppReminderModalProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('reminder')
   const [customMessage, setCustomMessage] = useState('')
   const [copied, setCopied] = useState(false)
+  const [sendingApi, setSendingApi] = useState(false)
+
 
   // Preparar datos de la cita para el template
   const appointmentData: AppointmentDataForWhatsApp | null = appointment
@@ -87,6 +95,50 @@ export default function WhatsAppReminderModal({
   const phoneClean = appointment.client?.phone?.replace(/\D/g, '') || ''
   const waUrl = formatWhatsAppUrl(appointment.client?.phone || '', customMessage)
 
+  const isApiConfigured =
+    customTemplates?.provider === 'META_CLOUD_API' ||
+    customTemplates?.provider === 'CUSTOM_GATEWAY'
+
+  async function handleSendAutomated() {
+    if (!phoneClean || !appointment) return
+    setSendingApi(true)
+    try {
+      const orgId = appointment.organization_id || organizationId || ''
+      const res = await sendWhatsAppHybridAction({
+        organizationId: orgId,
+        toPhone: phoneClean,
+        message: customMessage,
+        templateType: selectedTemplate,
+      })
+
+      if (res.success && res.mode !== 'MANUAL') {
+        toast.success(
+          `¡Mensaje enviado exitosamente vía ${
+            res.mode === 'API' ? 'Meta Cloud API' : 'Gateway'
+          }!`
+        )
+        onClose()
+      } else if (res.mode === 'MANUAL' && res.success) {
+        toast.info('Abriendo WhatsApp...')
+        window.open(res.fallbackUrl, '_blank')
+        onClose()
+      } else {
+        // Fallback garantizado
+        toast.warning(
+          `La API no pudo despachar (${res.error || 'error'}). Abriendo WhatsApp manual de respaldo...`
+        )
+        window.open(res.fallbackUrl, '_blank')
+        onClose()
+      }
+    } catch (e: any) {
+      toast.error('Error al despachar mensaje. Abriendo WhatsApp manual...')
+      window.open(waUrl, '_blank')
+      onClose()
+    } finally {
+      setSendingApi(false)
+    }
+  }
+
   function handleCopy() {
     navigator.clipboard.writeText(customMessage)
     setCopied(true)
@@ -109,9 +161,16 @@ export default function WhatsAppReminderModal({
               <MessageCircle className="w-5 h-5" />
             </span>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight">
-                Notificación vía WhatsApp
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-white tracking-tight">
+                  Notificación vía WhatsApp
+                </h3>
+                {isApiConfigured && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                    ⚡ Automático ({customTemplates?.provider === 'META_CLOUD_API' ? 'Meta API' : 'Gateway'})
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-neutral-400">
                 Para: <span className="text-white font-medium">{appointment.client?.full_name}</span>{' '}
                 ({appointment.client?.phone || 'Sin teléfono'})
@@ -242,16 +301,45 @@ export default function WhatsAppReminderModal({
             </button>
 
             {phoneClean ? (
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={onClose}
-                className="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer"
-              >
-                <Send className="w-4 h-4" />
-                <span>Abrir WhatsApp</span>
-              </a>
+              isApiConfigured ? (
+                <div className="flex items-center gap-2">
+                  <a
+                    href={waUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={onClose}
+                    className="py-2.5 px-3.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-medium transition flex items-center gap-1.5 cursor-pointer border border-white/5"
+                    title="Abrir conversación directamente en WhatsApp Web o App"
+                  >
+                    <span>Abrir Manual</span>
+                  </a>
+
+                  <button
+                    type="button"
+                    disabled={sendingApi}
+                    onClick={handleSendAutomated}
+                    className="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
+                  >
+                    {sendingApi ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    <span>{sendingApi ? 'Enviando API...' : 'Enviar Automático'}</span>
+                  </button>
+                </div>
+              ) : (
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={onClose}
+                  className="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Abrir WhatsApp</span>
+                </a>
+              )
             ) : (
               <button
                 type="button"
@@ -267,3 +355,4 @@ export default function WhatsAppReminderModal({
     </div>
   )
 }
+

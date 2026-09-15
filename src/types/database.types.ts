@@ -846,10 +846,16 @@ export interface LoyaltyProgramSettings {
 }
 
 export interface WhatsAppNotificationSettings {
+  provider?: 'MANUAL' | 'META_CLOUD_API' | 'CUSTOM_GATEWAY'
+  phoneNumberId?: string
+  accessToken?: string
+  webhookUrl?: string
+  webhookBearerToken?: string
   reminder_template?: string
   confirmation_template?: string
   reschedule_template?: string
   cancellation_template?: string
   followup_template?: string
 }
+
 

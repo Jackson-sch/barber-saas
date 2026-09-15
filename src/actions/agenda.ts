@@ -85,9 +85,25 @@ export async function createAppointmentAction(input: CreateAppointmentInput) {
     })
   }
 
-  // 3. Calcular start_time y end_time
-  const startDateTime = new Date(`${input.date}T${input.time}:00`)
+  // 3. Calcular start_time y end_time con offset de la barbería (America/Lima UTC-5)
+  const startDateTime = new Date(`${input.date}T${input.time}:00-05:00`)
   const endDateTime = new Date(startDateTime.getTime() + service.duration_minutes * 60 * 1000)
+
+  // 3.5 Validar si el barbero ya tiene cita en ese rango
+  const { data: conflict } = await supabase
+    .from('appointments')
+    .select('id')
+    .eq('organization_id', input.organization_id)
+    .eq('barber_id', input.barber_id)
+    .neq('status', 'CANCELLED')
+    .neq('status', 'NO_SHOW')
+    .lt('start_time', endDateTime.toISOString())
+    .gt('end_time', startDateTime.toISOString())
+    .limit(1)
+
+  if (conflict && conflict.length > 0) {
+    return { error: 'El barbero ya tiene una cita activa en ese rango de horario.' }
+  }
 
   // 4. Insertar cita
   const { error: appErr } = await supabase.from('appointments').insert({

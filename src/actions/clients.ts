@@ -235,3 +235,119 @@ export async function getClientLoyaltyLogsAction(clientId: string, organizationI
   return { logs: logs || [] }
 }
 
+export interface ClientHistoryItem {
+  id: string
+  startTime: string
+  status: string
+  totalPrice: number
+  serviceName: string
+  barberName: string
+  barberNickname?: string | null
+  notes?: string | null
+}
+
+export interface ClientHistoryResponse {
+  appointments: ClientHistoryItem[]
+  stats: {
+    totalAppointments: number
+    completedAppointments: number
+    totalSpent: number
+    lastVisit: string | null
+    favoriteBarber: string | null
+  }
+}
+
+export async function getClientHistoryAction(
+  clientId: string,
+  organizationId: string
+): Promise<{ error?: string; data?: ClientHistoryResponse }> {
+  const supabase = await createClient()
+
+  const { data: apps, error } = await supabase
+    .from('appointments')
+    .select(`
+      id,
+      start_time,
+      status,
+      total_price,
+      notes,
+      service:services(name),
+      barber:organization_members(full_name, nickname)
+    `)
+    .eq('client_id', clientId)
+    .eq('organization_id', organizationId)
+    .order('start_time', { ascending: false })
+    .limit(50)
+
+  if (error) {
+    console.error('Error fetching client appointments history:', error)
+    return { error: 'Error al consultar el historial de citas del cliente.' }
+  }
+
+  const appointments: ClientHistoryItem[] = (apps || []).map((a: any) => ({
+    id: a.id,
+    startTime: a.start_time,
+    status: a.status,
+    totalPrice: Number(a.total_price || 0),
+    serviceName: a.service?.name || 'Servicio',
+    barberName: a.barber?.full_name || 'Especialista',
+    barberNickname: a.barber?.nickname || null,
+    notes: a.notes || null,
+  }))
+
+  const completed = appointments.filter((a) => a.status === 'COMPLETED')
+  const totalSpent = appointments.reduce((acc, a) => acc + (a.status !== 'CANCELLED' ? a.totalPrice : 0), 0)
+
+  // Calcular barbero favorito
+  const barberCounts: Record<string, number> = {}
+  appointments.forEach((a) => {
+    barberCounts[a.barberName] = (barberCounts[a.barberName] || 0) + 1
+  })
+  let favoriteBarber: string | null = null
+  let maxVisits = 0
+  for (const [name, count] of Object.entries(barberCounts)) {
+    if (count > maxVisits) {
+      maxVisits = count
+      favoriteBarber = name
+    }
+  }
+
+  return {
+    data: {
+      appointments,
+      stats: {
+        totalAppointments: appointments.length,
+        completedAppointments: completed.length,
+        totalSpent,
+        lastVisit: appointments[0]?.startTime || null,
+        favoriteBarber,
+      },
+    },
+  }
+}
+
+export async function searchGlobalClientsAction(
+  organizationId: string,
+  query: string
+): Promise<{ error?: string; clients?: Array<{ id: string; full_name: string; phone: string; total_visits: number }> }> {
+  if (!query || query.trim().length < 2) return { clients: [] }
+
+  const supabase = await createClient()
+  const cleanQ = query.trim()
+
+  const { data, error } = await supabase
+    .from('clients')
+    .select('id, full_name, phone, total_visits')
+    .eq('organization_id', organizationId)
+    .or(`full_name.ilike.%${cleanQ}%,phone.ilike.%${cleanQ}%`)
+    .order('total_visits', { ascending: false })
+    .limit(8)
+
+  if (error) {
+    console.error('Error searching clients:', error)
+    return { error: 'Error al buscar clientes.' }
+  }
+
+  return { clients: data || [] }
+}
+

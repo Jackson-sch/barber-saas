@@ -1,6 +1,7 @@
 import { getTenantAuthContext } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import AgendaClient from '@/components/agenda/AgendaClient'
+import { getLocalDateString, getDayUtcRange } from '@/lib/utils'
 import type { OrganizationMember, Service } from '@/types/database.types'
 import type { AppointmentWithDetails } from '@/components/agenda/AppointmentDetailModal'
 
@@ -15,16 +16,12 @@ export default async function AgendaPage({ params, searchParams }: AgendaPagePro
   const { org } = await getTenantAuthContext(slug)
   const supabase = await createClient()
 
-  // Fecha seleccionada o Hoy (formato YYYY-MM-DD)
-  const today = new Date()
-  const yyyy = today.getFullYear()
-  const mm = String(today.getMonth() + 1).padStart(2, '0')
-  const dd = String(today.getDate()).padStart(2, '0')
-  const selectedDate = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : `${yyyy}-${mm}-${dd}`
+  // Fecha seleccionada o Hoy en zona horaria local de la barbería (America/Lima)
+  const todayStr = getLocalDateString(new Date(), 'America/Lima')
+  const selectedDate = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : todayStr
 
-  // Rango de inicio y fin del día
-  const startOfDay = `${selectedDate}T00:00:00.000Z`
-  const endOfDay = `${selectedDate}T23:59:59.999Z`
+  // Rango de inicio y fin del día en UTC correspondiente al día completo en America/Lima (UTC-5)
+  const { startOfDay, endOfDay } = getDayUtcRange(selectedDate, '-05:00')
 
   // 1. Obtener Citas del día con relaciones
   const { data: appointments } = await supabase

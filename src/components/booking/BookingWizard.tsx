@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { formatPrice, formatMinutes } from '@/lib/utils'
-import { createPublicBookingAction } from '@/actions/booking'
+import { useState, useEffect } from 'react'
+import { formatPrice, formatMinutes, getLocalDateString } from '@/lib/utils'
+import { formatWhatsAppUrl } from '@/lib/whatsapp'
+import { createPublicBookingAction, getBarberAvailabilityAction, type SlotAvailability } from '@/actions/booking'
 import {
   Scissors,
   User,
@@ -17,6 +18,8 @@ import {
   Sun,
   Moon,
   Ticket,
+  AlertCircle,
+  Lock,
 } from 'lucide-react'
 
 interface BookingWizardProps {
@@ -47,10 +50,14 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1)
   const [selectedService, setSelectedService] = useState<string | null>(null)
   const [selectedBarber, setSelectedBarber] = useState<string | null>(null)
-  const [selectedDate, setSelectedDate] = useState<string>(() => {
-    const d = new Date()
-    return d.toISOString().split('T')[0]
-  })
+
+  // Fechas locales de la barbería (America/Lima UTC-5)
+  const todayStr = getLocalDateString(new Date(), 'America/Lima')
+  const tomorrowDate = new Date()
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1)
+  const tomorrowStr = getLocalDateString(tomorrowDate, 'America/Lima')
+
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr)
   const [selectedTime, setSelectedTime] = useState<string>('10:00')
   const [clientName, setClientName] = useState('')
   const [clientPhone, setClientPhone] = useState('')
@@ -62,18 +69,57 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
     startTime: string
   } | null>(null)
 
+  // Disponibilidad dinámica de turnos
+  const [slotsLoading, setSlotsLoading] = useState(false)
+  const [availabilitySlots, setAvailabilitySlots] = useState<SlotAvailability[]>([])
+  const [scheduleNotice, setScheduleNotice] = useState<string | null>(null)
+
   const activeService = services.find((s) => s.id === selectedService)
   const activeBarber = barbers.find((b) => b.id === selectedBarber)
 
-  // Slots matutinos y vespertinos
-  const morningSlots = ['09:00', '09:40', '10:20', '11:00', '11:40', '12:20']
-  const afternoonSlots = ['14:00', '14:40', '15:20', '16:00', '16:40', '17:20', '18:00', '18:40', '19:20']
+  // Cargar disponibilidad en tiempo real cuando cambia el barbero o la fecha
+  useEffect(() => {
+    if (!selectedBarber || !selectedDate) return
 
-  // Fechas rápidas
-  const todayStr = new Date().toISOString().split('T')[0]
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowStr = tomorrow.toISOString().split('T')[0]
+    let isMounted = true
+    async function fetchAvailability() {
+      setSlotsLoading(true)
+      setScheduleNotice(null)
+      try {
+        const res = await getBarberAvailabilityAction({
+          organizationId: organization.id,
+          barberId: selectedBarber!,
+          date: selectedDate,
+          durationMinutes: activeService?.duration_minutes || 35,
+        })
+
+        if (!isMounted) return
+
+        if (!res.isWorking) {
+          setAvailabilitySlots([])
+          setScheduleNotice(res.message || 'El especialista no atiende en esta fecha.')
+          setSelectedTime('')
+        } else {
+          setAvailabilitySlots(res.slots)
+          // Si el horario seleccionado actualmente no está disponible, seleccionar el primero disponible
+          const currentIsAvailable = res.slots.some((s) => s.time === selectedTime && s.available)
+          if (!currentIsAvailable) {
+            const firstAvailable = res.slots.find((s) => s.available)
+            setSelectedTime(firstAvailable ? firstAvailable.time : '')
+          }
+        }
+      } catch (err) {
+        console.error('Error al consultar disponibilidad:', err)
+      } finally {
+        if (isMounted) setSlotsLoading(false)
+      }
+    }
+
+    fetchAvailability()
+    return () => {
+      isMounted = false
+    }
+  }, [selectedBarber, selectedDate, activeService?.duration_minutes, organization.id])
 
   async function handleConfirmBooking(e: React.FormEvent) {
     e.preventDefault()
@@ -85,18 +131,19 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
     setLoading(true)
     setError(null)
 
-    const [hours, minutes] = selectedTime.split(':')
-    const bookingDate = new Date(selectedDate)
-    bookingDate.setHours(Number(hours), Number(minutes), 0, 0)
+    // Construcción precisa de la fecha y hora con offset de la barbería (-05:00 UTC)
+    // para evitar el desfase de día de new Date("YYYY-MM-DD")
+    const bookingIso = new Date(`${selectedDate}T${selectedTime}:00-05:00`).toISOString()
 
     try {
       const res = await createPublicBookingAction({
         organizationId: organization.id,
+        organizationSlug: organization.slug,
         clientName,
         clientPhone,
         serviceId: selectedService,
         barberId: selectedBarber,
-        startTime: bookingDate.toISOString(),
+        startTime: bookingIso,
         notes: clientNotes,
       })
 
@@ -106,7 +153,7 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
       } else if (res?.success) {
         setConfirmedBooking({
           serviceName: res.serviceName || activeService?.name || 'Servicio',
-          startTime: res.startTime || bookingDate.toISOString(),
+          startTime: res.startTime || bookingIso,
         })
         setStep(5)
       }
@@ -119,6 +166,7 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
   // Paso 5: Confirmación completada - Luxury Ticket Receipt
   if (step === 5 && confirmedBooking) {
     const formattedDate = new Date(confirmedBooking.startTime).toLocaleDateString('es-PE', {
+      timeZone: 'America/Lima',
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -126,14 +174,11 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
       minute: '2-digit',
     })
 
-    const cleanPhone = organization.phone?.replace(/[^0-9]/g, '') || ''
-    const waText = encodeURIComponent(
-      `¡Hola ${organization.name}! Acabo de confirmar mi cita para *${confirmedBooking.serviceName}* el ${formattedDate} a nombre de *${clientName}*. ¡Nos vemos!`
-    )
-    const waUrl = `https://wa.me/${cleanPhone}?text=${waText}`
+    const waText = `¡Hola ${organization.name}! Acabo de confirmar mi cita para *${confirmedBooking.serviceName}* el ${formattedDate} a nombre de *${clientName}*. ¡Nos vemos!`
+    const waUrl = organization.phone ? formatWhatsAppUrl(organization.phone, waText) : ''
 
     return (
-      <div className="bg-[#12131A] border border-white/10 rounded-3xl p-6 sm:p-8 text-center max-w-lg mx-auto shadow-2xl shadow-black/80 backdrop-blur-xl relative overflow-hidden">
+      <div className="bg-[#12131A] border border-white/10 rounded-3xl p-6 sm:p-8 text-center w-full max-w-2xl mx-auto shadow-2xl shadow-black/80 backdrop-blur-xl relative overflow-hidden">
         {/* Glow accent */}
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
 
@@ -183,7 +228,7 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
           </div>
         </div>
 
-        {cleanPhone && (
+        {waUrl && (
           <a
             href={waUrl}
             target="_blank"
@@ -214,7 +259,7 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
   }
 
   return (
-    <div className="bg-[#12131A] border border-white/10 rounded-3xl p-5 sm:p-8 max-w-xl mx-auto shadow-2xl shadow-black/80 backdrop-blur-xl relative">
+    <div className="bg-[#12131A] border border-white/10 rounded-3xl p-5 sm:p-8 w-full max-w-2xl mx-auto shadow-2xl shadow-black/80 backdrop-blur-xl relative">
       {/* Stepper Header */}
       <div className="mb-6">
         <div className="grid grid-cols-4 gap-2">
@@ -438,59 +483,140 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
             </div>
           </div>
 
-          {/* Mañana */}
-          <div>
-            <div className="flex items-center gap-1.5 text-xs text-neutral-400 mb-2 font-medium">
-              <Sun className="w-3.5 h-3.5 text-amber-400" />
-              <span>Turno Mañana</span>
+          {/* Dynamic Slots View */}
+          {slotsLoading ? (
+            <div className="py-12 flex flex-col items-center justify-center text-center bg-[#090A0E]/60 rounded-2xl border border-white/5">
+              <Loader2 className="w-8 h-8 text-amber-400 animate-spin mb-3" />
+              <p className="text-xs text-neutral-300 font-medium">Consultando agenda del especialista...</p>
+              <p className="text-[11px] text-neutral-500 mt-0.5">Verificando turnos libres y citas en tiempo real</p>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {morningSlots.map((slot) => {
-                const isSelected = selectedTime === slot
-                return (
-                  <button
-                    type="button"
-                    key={slot}
-                    onClick={() => setSelectedTime(slot)}
-                    className={`py-2 px-1 rounded-lg text-xs font-mono font-medium transition cursor-pointer border ${
-                      isSelected
-                        ? 'bg-amber-400 text-black font-bold border-amber-400 shadow-sm shadow-amber-400/20'
-                        : 'bg-[#090A0E] border-white/5 text-neutral-300 hover:border-white/20'
-                    }`}
-                  >
-                    {slot}
-                  </button>
-                )
-              })}
+          ) : scheduleNotice ? (
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 shrink-0 text-amber-400" />
+              <div>
+                <p className="font-semibold text-white">Especialista no disponible</p>
+                <p className="text-neutral-400 mt-0.5">{scheduleNotice}</p>
+              </div>
             </div>
-          </div>
+          ) : availabilitySlots.length === 0 ? (
+            <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 text-center space-y-2">
+              <Lock className="w-6 h-6 text-neutral-500 mx-auto" />
+              <p className="text-sm font-semibold text-white">No hay turnos disponibles</p>
+              <p className="text-xs text-neutral-400">
+                Selecciona otra fecha para consultar los turnos disponibles de {activeBarber?.full_name}.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Mañana */}
+              {availabilitySlots.filter((s) => s.time < '13:00').length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs text-neutral-400 mb-2 font-medium">
+                    <Sun className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Turno Mañana</span>
+                  </div>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    {availabilitySlots
+                      .filter((s) => s.time < '13:00')
+                      .map((slot) => {
+                        const isSelected = selectedTime === slot.time
+                        const isAvail = slot.available
 
-          {/* Tarde */}
-          <div>
-            <div className="flex items-center gap-1.5 text-xs text-neutral-400 mb-2 font-medium">
-              <Moon className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Turno Tarde / Noche</span>
+                        return (
+                          <button
+                            type="button"
+                            key={slot.time}
+                            disabled={!isAvail}
+                            onClick={() => setSelectedTime(slot.time)}
+                            title={
+                              slot.reason === 'BOOKED'
+                                ? 'Horario ya reservado'
+                                : slot.reason === 'LUNCH'
+                                ? 'Horario de refrigerio'
+                                : slot.reason === 'PAST'
+                                ? 'Horario pasado'
+                                : 'Disponible'
+                            }
+                            className={`py-2 px-1 rounded-lg text-xs font-mono font-medium transition flex flex-col items-center justify-center gap-0.5 border ${
+                              !isAvail
+                                ? 'bg-neutral-900/40 border-white/[0.04] text-neutral-600 cursor-not-allowed line-through'
+                                : isSelected
+                                ? 'bg-amber-400 text-black font-bold border-amber-400 shadow-sm shadow-amber-400/20 cursor-pointer'
+                                : 'bg-[#090A0E] border-white/5 text-neutral-300 hover:border-amber-400/50 hover:text-white cursor-pointer'
+                            }`}
+                          >
+                            <span>{slot.time}</span>
+                            {!isAvail && (
+                              <span className="text-[9px] no-underline font-sans uppercase tracking-tight text-neutral-500">
+                                {slot.reason === 'BOOKED'
+                                  ? 'Ocupado'
+                                  : slot.reason === 'LUNCH'
+                                  ? 'Descanso'
+                                  : 'Pasado'}
+                              </span>
+                            )}
+                          </button>
+                        )
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {/* Tarde */}
+              {availabilitySlots.filter((s) => s.time >= '13:00').length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs text-neutral-400 mb-2 font-medium">
+                    <Moon className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Turno Tarde / Noche</span>
+                  </div>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {availabilitySlots
+                      .filter((s) => s.time >= '13:00')
+                      .map((slot) => {
+                        const isSelected = selectedTime === slot.time
+                        const isAvail = slot.available
+
+                        return (
+                          <button
+                            type="button"
+                            key={slot.time}
+                            disabled={!isAvail}
+                            onClick={() => setSelectedTime(slot.time)}
+                            title={
+                              slot.reason === 'BOOKED'
+                                ? 'Horario ya reservado'
+                                : slot.reason === 'LUNCH'
+                                ? 'Horario de refrigerio'
+                                : slot.reason === 'PAST'
+                                ? 'Horario pasado'
+                                : 'Disponible'
+                            }
+                            className={`py-2 px-1 rounded-lg text-xs font-mono font-medium transition flex flex-col items-center justify-center gap-0.5 border ${
+                              !isAvail
+                                ? 'bg-neutral-900/40 border-white/[0.04] text-neutral-600 cursor-not-allowed line-through'
+                                : isSelected
+                                ? 'bg-amber-400 text-black font-bold border-amber-400 shadow-sm shadow-amber-400/20 cursor-pointer'
+                                : 'bg-[#090A0E] border-white/5 text-neutral-300 hover:border-amber-400/50 hover:text-white cursor-pointer'
+                            }`}
+                          >
+                            <span>{slot.time}</span>
+                            {!isAvail && (
+                              <span className="text-[9px] no-underline font-sans uppercase tracking-tight text-neutral-500">
+                                {slot.reason === 'BOOKED'
+                                  ? 'Ocupado'
+                                  : slot.reason === 'LUNCH'
+                                  ? 'Descanso'
+                                  : 'Pasado'}
+                              </span>
+                            )}
+                          </button>
+                        )
+                      })}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-              {afternoonSlots.map((slot) => {
-                const isSelected = selectedTime === slot
-                return (
-                  <button
-                    type="button"
-                    key={slot}
-                    onClick={() => setSelectedTime(slot)}
-                    className={`py-2 px-1 rounded-lg text-xs font-mono font-medium transition cursor-pointer border ${
-                      isSelected
-                        ? 'bg-amber-400 text-black font-bold border-amber-400 shadow-sm shadow-amber-400/20'
-                        : 'bg-[#090A0E] border-white/5 text-neutral-300 hover:border-white/20'
-                    }`}
-                  >
-                    {slot}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          )}
 
           <div className="flex items-center gap-3 mt-4">
             <button

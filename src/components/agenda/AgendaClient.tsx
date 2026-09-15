@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -15,13 +15,17 @@ import {
   List,
   AlertCircle,
   MessageCircle,
+  Radio,
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 import NewAppointmentModal from './NewAppointmentModal'
 import AppointmentDetailModal, { type AppointmentWithDetails } from './AppointmentDetailModal'
 import WhatsAppReminderModal from './WhatsAppReminderModal'
 import type { OrganizationMember, Service, WhatsAppNotificationSettings } from '@/types/database.types'
 import { useRouter } from 'next/navigation'
+import { playSalonChime } from '@/lib/sound'
 
 interface AgendaClientProps {
   initialAppointments: AppointmentWithDetails[]
@@ -116,6 +120,46 @@ export default function AgendaClient({
     NO_SHOW: { bg: 'bg-neutral-900', text: 'text-neutral-500', border: 'border-neutral-800' },
   }
 
+  // Suscripción Realtime a Supabase
+  useEffect(() => {
+    const supabase = createClient()
+
+    const channel = supabase
+      .channel(`agenda-realtime-${organizationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+          filter: `organization_id=eq.${organizationId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            playSalonChime()
+            toast.success('¡Nueva Cita Registrada!', {
+              description: 'Se ha agendado una nueva cita en tiempo real.',
+              duration: 5000,
+            })
+          } else if (payload.eventType === 'UPDATE') {
+            toast.info('Cita actualizada', {
+              description: 'El estado de una cita ha sido modificado.',
+              duration: 3500,
+            })
+          } else if (payload.eventType === 'DELETE') {
+            toast.warning('Cita cancelada o eliminada de la agenda')
+          }
+          // Refrescar datos en el servidor
+          router.refresh()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [organizationId, router])
+
   return (
     <div className="space-y-6">
       {/* Header and Controls */}
@@ -124,6 +168,10 @@ export default function AgendaClient({
           <div className="flex items-center gap-2 text-amber-400 text-xs font-semibold uppercase tracking-wider">
             <CalendarIcon className="w-4 h-4" />
             <span>Control de Citas</span>
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[10px] text-emerald-400 font-mono normal-case tracking-normal ml-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>en vivo</span>
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight capitalize mt-1">
             {formattedDateTitle}
@@ -506,6 +554,7 @@ export default function AgendaClient({
         barberiaName={organizationName || slug}
         barberiaAddress={organizationAddress}
         customTemplates={whatsappTemplates}
+        organizationId={organizationId}
       />
     </div>
   )

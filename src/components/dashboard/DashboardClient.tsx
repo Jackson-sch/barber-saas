@@ -1,6 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
+import { playSalonChime, playSaleChime } from '@/lib/sound'
 import ToastContainer, { type ToastMessage } from '@/components/ui/Toast'
 import type {
   Organization,
@@ -44,6 +48,7 @@ export default function DashboardClient({
   currentShift,
   criticalProducts,
 }: DashboardClientProps) {
+  const router = useRouter()
   const [filter, setFilter] = useState<AppointmentFilter>('ALL')
   const [copiedLink, setCopiedLink] = useState(false)
   const [currentTime, setCurrentTime] = useState<string>('')
@@ -77,6 +82,75 @@ export default function DashboardClient({
     const timer = setInterval(updateClock, 1000)
     return () => clearInterval(timer)
   }, [])
+
+  // Suscripción Realtime a Supabase (citas, ventas y turnos de caja)
+  useEffect(() => {
+    const supabase = createClient()
+
+    const channel = supabase
+      .channel(`dashboard-realtime-${org.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+          filter: `organization_id=eq.${org.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            playSalonChime()
+            toast.success('¡Nueva Cita Registrada!', {
+              description: 'Se ha agendado una nueva cita en tiempo real.',
+              duration: 5000,
+            })
+          } else if (payload.eventType === 'UPDATE') {
+            toast.info('Cita actualizada', {
+              description: 'El estado o turno de una cita ha cambiado.',
+              duration: 3500,
+            })
+          }
+          router.refresh()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'sales',
+          filter: `organization_id=eq.${org.id}`,
+        },
+        (payload) => {
+          playSaleChime()
+          const totalVal = (payload.new as any)?.total
+          toast.success('¡Venta Registrada en POS!', {
+            description: totalVal
+              ? `Cobro procesado por S/ ${Number(totalVal).toFixed(2)}`
+              : 'Nueva venta procesada con éxito.',
+            duration: 4500,
+          })
+          router.refresh()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cash_shifts',
+          filter: `organization_id=eq.${org.id}`,
+        },
+        () => {
+          router.refresh()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [org.id, router])
 
   // Copiar link de reservas
   async function handleCopyPortalLink() {

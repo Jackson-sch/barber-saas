@@ -27,12 +27,18 @@ import {
   Upload,
   Trash2,
   Check,
+  Send,
+  Key,
+  Radio,
+  Info,
 } from 'lucide-react'
 import { updateTenantSettingsAction } from '@/actions/organizations'
+import { testWhatsAppCredentialsAction } from '@/actions/whatsapp'
 import { slugify, formatPrice } from '@/lib/utils'
 import type { LoyaltyProgramSettings, WhatsAppNotificationSettings } from '@/types/database.types'
 import { DEFAULT_WHATSAPP_TEMPLATES, AVAILABLE_WHATSAPP_VARIABLES } from '@/lib/whatsapp'
 import Link from 'next/link'
+
 
 interface SalonSettingsProps {
   organization: {
@@ -129,9 +135,68 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
   )
   const [activeWaTab, setActiveWaTab] = useState<'reminder' | 'confirmation' | 'reschedule' | 'followup'>('reminder')
 
+  // Configuración Híbrida de WhatsApp (Meta Cloud API / Gateway / Manual)
+  const [waProvider, setWaProvider] = useState<'MANUAL' | 'META_CLOUD_API' | 'CUSTOM_GATEWAY'>(
+    ws?.provider || 'MANUAL'
+  )
+  const [waPhoneNumberId, setWaPhoneNumberId] = useState(ws?.phoneNumberId || '')
+  const [waAccessToken, setWaAccessToken] = useState(ws?.accessToken || '')
+  const [waWebhookUrl, setWaWebhookUrl] = useState(ws?.webhookUrl || '')
+  const [waWebhookBearerToken, setWaWebhookBearerToken] = useState(ws?.webhookBearerToken || '')
+  const [testPhone, setTestPhone] = useState(organization.phone || '')
+  const [testingWa, setTestingWa] = useState(false)
+  const [waTestResult, setWaTestResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  async function handleTestWhatsApp() {
+    if (!testPhone.trim()) {
+      setWaTestResult({ success: false, message: 'Ingresa un número de celular de prueba' })
+      return
+    }
+    setTestingWa(true)
+    setWaTestResult(null)
+    try {
+      const res = await testWhatsAppCredentialsAction({
+        testPhone,
+        organizationName: name,
+        settings: {
+          provider: waProvider,
+          phoneNumberId: waPhoneNumberId.trim() || undefined,
+          accessToken: waAccessToken.trim() || undefined,
+          webhookUrl: waWebhookUrl.trim() || undefined,
+          webhookBearerToken: waWebhookBearerToken.trim() || undefined,
+        },
+      })
+
+      if (res.success && res.mode !== 'MANUAL') {
+        setWaTestResult({
+          success: true,
+          message: `¡Mensaje enviado con éxito vía ${res.mode === 'API' ? 'Meta Cloud API' : 'Gateway'}! Revisa el WhatsApp de ${testPhone}.`,
+        })
+      } else if (res.mode === 'MANUAL') {
+        setWaTestResult({
+          success: true,
+          message: 'Modo manual activo. El sistema abrirá la conversación directamente en WhatsApp Web o App.',
+        })
+      } else {
+        setWaTestResult({
+          success: false,
+          message: res.error || 'No se pudo despachar el mensaje mediante la API. Revisa las credenciales ingresadas.',
+        })
+      }
+    } catch (e: any) {
+      setWaTestResult({
+        success: false,
+        message: e.message || 'Error al ejecutar la prueba de WhatsApp.',
+      })
+    } finally {
+      setTestingWa(false)
+    }
+  }
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
 
   const slugChanged = customSlug.trim().toLowerCase() !== organization.slug.toLowerCase()
 
@@ -202,6 +267,11 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
         points_reward_discount: Math.max(0, parseFloat(pointsRewardDiscount) || 10),
       },
       whatsappSettings: {
+        provider: waProvider,
+        phoneNumberId: waPhoneNumberId.trim() || undefined,
+        accessToken: waAccessToken.trim() || undefined,
+        webhookUrl: waWebhookUrl.trim() || undefined,
+        webhookBearerToken: waWebhookBearerToken.trim() || undefined,
         reminder_template: reminderTemplate.trim(),
         confirmation_template: confirmationTemplate.trim(),
         reschedule_template: rescheduleTemplate.trim(),
@@ -987,98 +1057,338 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
           )}
         </div>
 
-        {/* SECCIÓN 5: Plantillas de Notificaciones por WhatsApp */}
+        {/* SECCIÓN 5: Notificaciones de WhatsApp (Híbrido API & Manual) */}
         <div className="p-6 rounded-2xl bg-[#0e1017] border border-white/[0.08] space-y-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
-                <MessageCircle className="w-4 h-4" />
-              </span>
-              <h2 className="text-base font-bold text-white tracking-tight">
-                5. Plantillas de Notificaciones por WhatsApp
-              </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.06]">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
+                  <MessageCircle className="w-4 h-4" />
+                </span>
+                <h2 className="text-base font-bold text-white tracking-tight">
+                  5. Notificaciones de WhatsApp (Motor Híbrido)
+                </h2>
+              </div>
+              <p className="text-xs text-neutral-400">
+                Envía recordatorios y confirmaciones automáticas por API oficial o mediante enlace directo manual 1-clic con fallback automático.
+              </p>
             </div>
-            <p className="text-xs text-neutral-400">
-              Personaliza los mensajes automáticos y recordatorios que se envían a los clientes desde la Agenda y Detalle de Citas para reducir ausencias (no-shows).
-            </p>
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 self-start sm:self-auto">
+              {waProvider === 'MANUAL'
+                ? '📱 Modo Manual (wa.me)'
+                : waProvider === 'META_CLOUD_API'
+                  ? '⚡ Meta Cloud API'
+                  : '🌐 Custom Gateway'}
+            </span>
           </div>
 
-          {/* Selector de Plantilla a Editar */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {[
-              { id: 'reminder', label: '⏰ Recordatorio Previo' },
-              { id: 'confirmation', label: '✅ Confirmación de Cita' },
-              { id: 'reschedule', label: '🔄 Reprogramación' },
-              { id: 'followup', label: '✂️ Agradecimiento' },
-            ].map((tab) => (
+          {/* Selector de Modo de Despacho */}
+          <div>
+            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2.5">
+              Canal de Despacho de WhatsApp
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
-                key={tab.id}
                 type="button"
-                onClick={() => setActiveWaTab(tab.id as any)}
-                className={`py-1.5 px-3 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
-                  activeWaTab === tab.id
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                    : 'bg-[#090A0E] text-neutral-400 hover:text-white border border-white/10'
+                disabled={!isOwner}
+                onClick={() => setWaProvider('MANUAL')}
+                className={`p-3.5 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                  waProvider === 'MANUAL'
+                    ? 'bg-emerald-500/10 border-emerald-500/40 text-white shadow-lg shadow-emerald-500/5'
+                    : 'bg-[#090A0E] border-white/10 text-neutral-400 hover:border-white/20'
                 }`}
               >
-                {tab.label}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-xs text-emerald-400 flex items-center gap-1.5">
+                      <Send className="w-3.5 h-3.5" />
+                      1-Clic Manual (wa.me)
+                    </span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+                      Sin Costo
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 leading-relaxed">
+                    Abre WhatsApp Web o App en 1 clic con el mensaje preformateado. 100% gratuito sin requerir registro en Meta.
+                  </p>
+                </div>
               </button>
-            ))}
+
+              <button
+                type="button"
+                disabled={!isOwner}
+                onClick={() => setWaProvider('META_CLOUD_API')}
+                className={`p-3.5 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                  waProvider === 'META_CLOUD_API'
+                    ? 'bg-emerald-500/10 border-emerald-500/40 text-white shadow-lg shadow-emerald-500/5'
+                    : 'bg-[#090A0E] border-white/10 text-neutral-400 hover:border-white/20'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-xs text-sky-400 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Meta Cloud API (Oficial)
+                    </span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold">
+                      Automático
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 leading-relaxed">
+                    Envío en segundo plano mediante la API oficial de Meta Graph. Requiere Phone Number ID y System Token.
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                disabled={!isOwner}
+                onClick={() => setWaProvider('CUSTOM_GATEWAY')}
+                className={`p-3.5 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                  waProvider === 'CUSTOM_GATEWAY'
+                    ? 'bg-emerald-500/10 border-emerald-500/40 text-white shadow-lg shadow-emerald-500/5'
+                    : 'bg-[#090A0E] border-white/10 text-neutral-400 hover:border-white/20'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-xs text-purple-400 flex items-center gap-1.5">
+                      <Radio className="w-3.5 h-3.5" />
+                      Gateway / Webhook
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 leading-relaxed">
+                    Conecta con Evolution API, Baileys, Z-API o un webhook HTTP propio.
+                  </p>
+                </div>
+              </button>
+            </div>
           </div>
 
-          {/* Textarea de la plantilla activa */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-neutral-300 block">
-              Contenido del Mensaje
-            </label>
-            <textarea
-              rows={4}
-              disabled={!isOwner}
-              value={
-                activeWaTab === 'reminder'
-                  ? reminderTemplate
-                  : activeWaTab === 'confirmation'
-                    ? confirmationTemplate
-                    : activeWaTab === 'reschedule'
-                      ? rescheduleTemplate
-                      : followupTemplate
-              }
-              onChange={(e) => {
-                const val = e.target.value
-                if (activeWaTab === 'reminder') setReminderTemplate(val)
-                else if (activeWaTab === 'confirmation') setConfirmationTemplate(val)
-                else if (activeWaTab === 'reschedule') setRescheduleTemplate(val)
-                else setFollowupTemplate(val)
-              }}
-              className="w-full p-3 rounded-xl bg-[#0D0E15] border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500 transition leading-relaxed resize-none"
-              placeholder="Escribe la plantilla del mensaje..."
-            />
-
-            {/* Variable Pills */}
-            <div>
-              <p className="text-[11px] text-neutral-400 mb-1.5">
-                Haz clic en una etiqueta para insertarla en el mensaje:
+          {/* Credenciales Meta Cloud API */}
+          {waProvider === 'META_CLOUD_API' && (
+            <div className="p-4 rounded-xl bg-[#090A0E] border border-sky-500/20 space-y-3 animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 text-xs font-bold text-sky-400">
+                <Key className="w-4 h-4" />
+                <span>Credenciales de Meta WhatsApp Business Cloud API</span>
+              </div>
+              <p className="text-[11px] text-neutral-400">
+                Obtén estas credenciales en tu panel de <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer" className="text-sky-400 underline">Meta for Developers</a> en la sección WhatsApp &gt; Configuración de la API.
               </p>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {AVAILABLE_WHATSAPP_VARIABLES.map((v) => (
-                  <button
-                    key={v.tag}
-                    type="button"
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                    Phone Number ID *
+                  </label>
+                  <input
+                    type="text"
                     disabled={!isOwner}
-                    onClick={() => {
-                      if (!isOwner) return
-                      const append = (current: string) => current + (current.endsWith(' ') ? '' : ' ') + v.tag + ' '
-                      if (activeWaTab === 'reminder') setReminderTemplate(append(reminderTemplate))
-                      else if (activeWaTab === 'confirmation') setConfirmationTemplate(append(confirmationTemplate))
-                      else if (activeWaTab === 'reschedule') setRescheduleTemplate(append(rescheduleTemplate))
-                      else setFollowupTemplate(append(followupTemplate))
-                    }}
-                    className="py-1 px-2 rounded-lg bg-white/[0.05] hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/30 text-[11px] font-mono font-medium text-emerald-400 transition cursor-pointer"
-                    title={`Insertar ${v.desc}`}
-                  >
-                    +{v.tag}
-                  </button>
-                ))}
+                    value={waPhoneNumberId}
+                    onChange={(e) => setWaPhoneNumberId(e.target.value)}
+                    placeholder="Ej. 102948572819203"
+                    className="w-full p-2.5 rounded-xl bg-[#0D0E15] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-sky-500 transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                    Permanent Access Token (System User) *
+                  </label>
+                  <input
+                    type="password"
+                    disabled={!isOwner}
+                    value={waAccessToken}
+                    onChange={(e) => setWaAccessToken(e.target.value)}
+                    placeholder="EAA..."
+                    className="w-full p-2.5 rounded-xl bg-[#0D0E15] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-sky-500 transition"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Credenciales Custom Gateway */}
+          {waProvider === 'CUSTOM_GATEWAY' && (
+            <div className="p-4 rounded-xl bg-[#090A0E] border border-purple-500/20 space-y-3 animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 text-xs font-bold text-purple-400">
+                <Radio className="w-4 h-4" />
+                <span>Configuración de Gateway HTTP / Webhook</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                    Endpoint URL (POST) *
+                  </label>
+                  <input
+                    type="url"
+                    disabled={!isOwner}
+                    value={waWebhookUrl}
+                    onChange={(e) => setWaWebhookUrl(e.target.value)}
+                    placeholder="https://api.mi-barberia.com/whatsapp/send"
+                    className="w-full p-2.5 rounded-xl bg-[#0D0E15] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-purple-500 transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                    Bearer Token / API Secret (Opcional)
+                  </label>
+                  <input
+                    type="password"
+                    disabled={!isOwner}
+                    value={waWebhookBearerToken}
+                    onChange={(e) => setWaWebhookBearerToken(e.target.value)}
+                    placeholder="Tu secret key"
+                    className="w-full p-2.5 rounded-xl bg-[#0D0E15] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-purple-500 transition"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Banco de Prueba en Vivo (Ping Tester) */}
+          <div className="p-4 rounded-xl bg-[#07080B] border border-white/[0.06] space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Info className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-xs font-semibold text-neutral-200">
+                  Prueba de Conexión en Tiempo Real
+                </span>
+              </div>
+              <span className="text-[11px] text-neutral-400">
+                Fallback manual: <strong className="text-emerald-400">Activado</strong>
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <input
+                type="tel"
+                value={testPhone}
+                onChange={(e) => setTestPhone(e.target.value)}
+                placeholder="Número celular de prueba (ej: 987654321)"
+                className="w-full sm:flex-1 p-2.5 rounded-xl bg-[#0D0E15] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-amber-500 transition"
+              />
+              <button
+                type="button"
+                disabled={testingWa || !isOwner}
+                onClick={handleTestWhatsApp}
+                className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold text-xs transition flex items-center justify-center gap-2 border border-white/10 disabled:opacity-50 cursor-pointer"
+              >
+                {testingWa ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                ) : (
+                  <Send className="w-3.5 h-3.5 text-emerald-400" />
+                )}
+                <span>Enviar Ping de Prueba</span>
+              </button>
+            </div>
+
+            {waTestResult && (
+              <div
+                className={`p-3 rounded-xl text-xs flex items-start gap-2 ${
+                  waTestResult.success
+                    ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
+                    : 'bg-red-500/10 border border-red-500/30 text-red-300'
+                }`}
+              >
+                {waTestResult.success ? (
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                )}
+                <span className="leading-relaxed">{waTestResult.message}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Plantillas de Mensajes */}
+          <div className="pt-2 space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-white uppercase tracking-wider">
+                Personalización de Plantillas
+              </label>
+              <span className="text-[11px] text-neutral-400">
+                Variables dinámicas disponibles abajo
+              </span>
+            </div>
+
+            {/* Selector de Plantilla a Editar */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              {[
+                { id: 'reminder', label: '⏰ Recordatorio Previo' },
+                { id: 'confirmation', label: '✅ Confirmación de Cita' },
+                { id: 'reschedule', label: '🔄 Reprogramación' },
+                { id: 'followup', label: '✂️ Agradecimiento' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveWaTab(tab.id as any)}
+                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                    activeWaTab === tab.id
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-[#090A0E] text-neutral-400 hover:text-white border border-white/10'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Textarea de la plantilla activa */}
+            <div className="space-y-2">
+              <textarea
+                rows={4}
+                disabled={!isOwner}
+                value={
+                  activeWaTab === 'reminder'
+                    ? reminderTemplate
+                    : activeWaTab === 'confirmation'
+                      ? confirmationTemplate
+                      : activeWaTab === 'reschedule'
+                        ? rescheduleTemplate
+                        : followupTemplate
+                }
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (activeWaTab === 'reminder') setReminderTemplate(val)
+                  else if (activeWaTab === 'confirmation') setConfirmationTemplate(val)
+                  else if (activeWaTab === 'reschedule') setRescheduleTemplate(val)
+                  else setFollowupTemplate(val)
+                }}
+                className="w-full p-3 rounded-xl bg-[#0D0E15] border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500 transition leading-relaxed resize-none font-sans"
+                placeholder="Escribe la plantilla del mensaje..."
+              />
+
+              {/* Variable Pills */}
+              <div>
+                <p className="text-[11px] text-neutral-400 mb-1.5">
+                  Haz clic en una etiqueta para insertarla dinámicamente:
+                </p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {AVAILABLE_WHATSAPP_VARIABLES.map((v) => (
+                    <button
+                      key={v.tag}
+                      type="button"
+                      disabled={!isOwner}
+                      onClick={() => {
+                        if (!isOwner) return
+                        const append = (current: string) =>
+                          current + (current.endsWith(' ') ? '' : ' ') + v.tag + ' '
+                        if (activeWaTab === 'reminder') setReminderTemplate(append(reminderTemplate))
+                        else if (activeWaTab === 'confirmation') setConfirmationTemplate(append(confirmationTemplate))
+                        else if (activeWaTab === 'reschedule') setRescheduleTemplate(append(rescheduleTemplate))
+                        else setFollowupTemplate(append(followupTemplate))
+                      }}
+                      className="py-1 px-2 rounded-lg bg-white/[0.05] hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/30 text-[11px] font-mono font-medium text-emerald-400 transition cursor-pointer"
+                      title={`Insertar ${v.desc}`}
+                    >
+                      +{v.tag}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

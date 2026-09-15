@@ -5,6 +5,7 @@ import DashboardClient, {
   type DashboardSaleSummary,
 } from '@/components/dashboard/DashboardClient'
 import type { OrganizationMember, CashShift, Product } from '@/types/database.types'
+import { getLocalDateString, getDayUtcRange } from '@/lib/utils'
 
 interface DashboardProps {
   params: Promise<{ slug: string }>
@@ -15,14 +16,9 @@ export default async function DashboardPage({ params }: DashboardProps) {
   const { org } = await getTenantAuthContext(slug)
   const supabase = await createClient()
 
-  // Rango del día de hoy (local / medianoche a medianoche)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const todayIso = today.toISOString()
-
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowIso = tomorrow.toISOString()
+  // Rango del día de hoy en zona horaria local de la barbería (America/Lima UTC-5)
+  const todayStr = getLocalDateString(new Date(), 'America/Lima')
+  const { startOfDay, endOfDay } = getDayUtcRange(todayStr, '-05:00')
 
   // 1. Citas de hoy con cliente, barbero y servicio
   const { data: todayAppointments } = await supabase
@@ -34,8 +30,8 @@ export default async function DashboardPage({ params }: DashboardProps) {
       service:services(name, price, duration_minutes)
     `)
     .eq('organization_id', org.id)
-    .gte('start_time', todayIso)
-    .lt('start_time', tomorrowIso)
+    .gte('start_time', startOfDay)
+    .lte('start_time', endOfDay)
     .order('start_time', { ascending: true })
 
   // 2. Ventas de hoy
@@ -43,7 +39,8 @@ export default async function DashboardPage({ params }: DashboardProps) {
     .from('sales')
     .select('id, total, payment_method')
     .eq('organization_id', org.id)
-    .gte('created_at', todayIso)
+    .gte('created_at', startOfDay)
+    .lte('created_at', endOfDay)
 
   const sales = (todaySales as Array<{ id: string; total: number; payment_method: string }>) || []
   const salesTotal = sales.reduce((acc, curr) => acc + Number(curr.total || 0), 0)
