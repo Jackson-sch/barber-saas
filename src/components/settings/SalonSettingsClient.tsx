@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Loader2,
   Save,
+  CreditCard,
 } from 'lucide-react'
 import { updateTenantSettingsAction } from '@/actions/organizations'
 import { slugify } from '@/lib/utils'
@@ -23,6 +24,7 @@ import GeneralSettingsTab from './tabs/GeneralSettingsTab'
 import BrandingSettingsTab from './tabs/BrandingSettingsTab'
 import LoyaltySettingsTab from './tabs/LoyaltySettingsTab'
 import WhatsAppSettingsTab from './tabs/WhatsAppSettingsTab'
+import PaymentSettingsTab from './tabs/PaymentSettingsTab'
 
 export default function SalonSettingsClient({ organization, isOwner, slug }: SalonSettingsProps) {
   const router = useRouter()
@@ -75,6 +77,15 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
   const [followupTemplate, setFollowupTemplate] = useState(
     ws?.followup_template || DEFAULT_WHATSAPP_TEMPLATES.followup
   )
+
+  // 5. Pasarela de Pagos Culqi (BYOK - Cada barbería con sus propias credenciales)
+  const cs = organization.culqiSettings
+  const [culqiEnabled, setCulqiEnabled] = useState(cs?.enabled ?? false)
+  const [culqiEnvironment, setCulqiEnvironment] = useState<'test' | 'production'>(
+    cs?.environment || 'test'
+  )
+  const [culqiPublicKey, setCulqiPublicKey] = useState(cs?.public_key || '')
+  const [culqiSecretKey, setCulqiSecretKey] = useState(cs?.secret_key || '')
 
   // Navegación por pestañas y estados de formulario
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
@@ -161,6 +172,12 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
           confirmation_template: confirmationTemplate.trim(),
           reschedule_template: rescheduleTemplate.trim(),
           followup_template: followupTemplate.trim(),
+        },
+        culqiSettings: {
+          enabled: culqiEnabled,
+          environment: culqiEnvironment,
+          public_key: culqiPublicKey.trim(),
+          secret_key: culqiSecretKey.trim(),
         },
         logoUrl: logoUrl.trim() || null,
         primaryColor: primaryColor.trim() || '#F59E0B',
@@ -271,6 +288,13 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
             icon: MessageCircle,
             desc: 'Credenciales en BD y plantillas',
             badge: waProvider !== 'MANUAL' ? 'API Activa' : undefined,
+          },
+          {
+            id: 'payments',
+            label: 'Pasarela Culqi',
+            icon: CreditCard,
+            desc: 'Tarjetas, Yape y pagos online',
+            badge: culqiEnabled && culqiPublicKey ? 'Culqi Activo' : undefined,
           },
         ].map((tab) => {
           const Icon = tab.icon
@@ -402,6 +426,20 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
             followupTemplate={followupTemplate}
             setFollowupTemplate={setFollowupTemplate}
             initialPhone={organization.phone}
+          />
+        )}
+
+        {activeTab === 'payments' && (
+          <PaymentSettingsTab
+            isOwner={isOwner}
+            culqiEnabled={culqiEnabled}
+            setCulqiEnabled={setCulqiEnabled}
+            culqiEnvironment={culqiEnvironment}
+            setCulqiEnvironment={setCulqiEnvironment}
+            culqiPublicKey={culqiPublicKey}
+            setCulqiPublicKey={setCulqiPublicKey}
+            culqiSecretKey={culqiSecretKey}
+            setCulqiSecretKey={setCulqiSecretKey}
           />
         )}
 

@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { Database, LoyaltyProgramSettings, WhatsAppNotificationSettings } from '@/types/database.types'
+import type { Database, LoyaltyProgramSettings, WhatsAppNotificationSettings, CulqiSettings } from '@/types/database.types'
 
 export interface UpdateOrgByAdminInput {
   orgId: string
@@ -27,6 +27,7 @@ export interface UpdateTenantSettingsInput {
   closingTime?: string
   loyaltyProgram?: LoyaltyProgramSettings
   whatsappSettings?: WhatsAppNotificationSettings
+  culqiSettings?: CulqiSettings
   logoUrl?: string | null
   primaryColor?: string
   secondaryColor?: string
@@ -189,6 +190,7 @@ export async function updateTenantSettingsAction(input: UpdateTenantSettingsInpu
     closing_time: input.closingTime || currentSettings.closing_time || '21:00',
     ...(input.loyaltyProgram !== undefined ? { loyalty_program: input.loyaltyProgram } : {}),
     ...(input.whatsappSettings !== undefined ? { whatsapp_notifications: input.whatsappSettings } : {}),
+    ...(input.culqiSettings !== undefined ? { culqi_settings: input.culqiSettings } : {}),
     ...(input.bannerUrl !== undefined ? { banner_url: input.bannerUrl } : {}),
     ...(input.tagline !== undefined ? { tagline: input.tagline } : {}),
   }
@@ -231,4 +233,57 @@ export async function updateTenantSettingsAction(input: UpdateTenantSettingsInpu
   revalidatePath(`/reservar/${finalSlug}`)
 
   return { success: true, newSlug: finalSlug, slugChanged: finalSlug !== input.currentSlug }
+}
+
+/**
+ * Prueba en vivo de la conexión con Culqi usando la llave secreta proporcionada.
+ */
+export async function testCulqiConnectionAction(secretKey: string) {
+  const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
+  const trimmedKey = secretKey.trim()
+  if (!trimmedKey) {
+    return { error: 'Por favor ingresa la Llave Secreta para probar la conexión.' }
+  }
+
+  if (!trimmedKey.startsWith('sk_test_') && !trimmedKey.startsWith('sk_live_')) {
+    return {
+      error: 'Formato de llave inválido. Debe comenzar con "sk_test_" (Pruebas) o "sk_live_" (Producción).',
+    }
+  }
+
+  try {
+    const response = await fetch('https://api.culqi.com/v2/charges?limit=1', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${trimmedKey}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (response.status === 200) {
+      const mode = trimmedKey.startsWith('sk_test_') ? 'Pruebas (Sandbox)' : 'Producción (En vivo)'
+      return {
+        success: true,
+        message: `¡Conexión exitosa con Culqi! Modo detectado: ${mode}.`,
+      }
+    }
+
+    if (response.status === 401) {
+      return {
+        error: 'Culqi rechazó la llave secreta (Error 401: No autorizado). Verifica que esté copiada correctamente.',
+      }
+    }
+
+    return {
+      error: `Culqi respondió con código de estado ${response.status}. Verifica que tu cuenta en culqi.com esté activa.`,
+    }
+  } catch (err: any) {
+    console.error('Error testing Culqi connection:', err)
+    return {
+      error: 'No se pudo contactar los servidores de Culqi. Verifica tu conexión a internet.',
+    }
+  }
 }

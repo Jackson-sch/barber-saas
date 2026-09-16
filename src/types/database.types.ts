@@ -858,4 +858,9 @@ export interface WhatsAppNotificationSettings {
   followup_template?: string
 }
 
-
+export interface CulqiSettings {
+  enabled: boolean
+  environment: 'test' | 'production'
+  public_key: string
+  secret_key: string
+}
