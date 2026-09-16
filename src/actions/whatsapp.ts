@@ -5,6 +5,7 @@ import {
   dispatchWhatsAppMessage,
   type WhatsAppDispatchResult,
 } from '@/lib/whatsapp-dispatch'
+import { formatWhatsAppUrl } from '@/lib/whatsapp'
 import type { WhatsAppNotificationSettings } from '@/types/database.types'
 
 interface SendWhatsAppParams {
@@ -26,8 +27,15 @@ export async function sendWhatsAppHybridAction({
 }: SendWhatsAppParams): Promise<WhatsAppDispatchResult> {
   try {
     const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+    const { data: authData } = await supabase.auth.getUser()
+    if (!authData.user) {
+      return {
+        success: false,
+        mode: 'MANUAL',
+        fallbackUrl: formatWhatsAppUrl(toPhone, message),
+        error: 'No autorizado',
+      }
+    }
 
 
     // 1. Obtener settings de la organización

@@ -37,8 +37,6 @@ export async function getBarberAvailabilityAction(params: {
 }): Promise<BarberAvailabilityResponse> {
   const { organizationId, barberId, date, durationMinutes = 35 } = params
   const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
 
 
   const [y, m, d] = date.split('-').map(Number)
@@ -172,8 +170,6 @@ export async function createPublicBookingAction(params: CreateBookingParams) {
   }
 
   const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
 
 
   // 1. Obtener datos del servicio para calcular duración y precio
