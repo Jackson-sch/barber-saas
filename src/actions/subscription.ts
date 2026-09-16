@@ -204,3 +204,75 @@ export async function toggleOrganizationStatusAction(orgId: string, is_active: b
   revalidatePath('/admin/barberias')
   return { success: true }
 }
+
+// 5. Aprobar Barbería Pendiente desde SuperAdmin
+export async function approveOrganizationAction(orgId: string) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_super_admin')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.is_super_admin) {
+    return { error: 'Acceso denegado: solo para súper administradores.' }
+  }
+
+  // Obtener la organización actual y sus settings
+  const { data: org, error: orgErr } = await supabase
+    .from('organizations')
+    .select('id, name, settings')
+    .eq('id', orgId)
+    .single()
+
+  if (orgErr || !org) {
+    return { error: 'No se encontró la barbería a aprobar.' }
+  }
+
+  const currentSettings = (typeof org.settings === 'object' && org.settings !== null ? org.settings : {}) as Record<string, any>
+  const updatedSettings = {
+    ...currentSettings,
+    approval_status: 'APPROVED',
+    approved_at: new Date().toISOString(),
+    approved_by: user.id,
+  }
+
+  // Activar la organización
+  const { error: updateErr } = await supabase
+    .from('organizations')
+    .update({
+      is_active: true,
+      settings: updatedSettings,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', orgId)
+
+  if (updateErr) {
+    return { error: 'Error al actualizar el estado de la barbería.' }
+  }
+
+  // Iniciar el período de prueba de 14 días a partir de hoy
+  const now = new Date()
+  const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+
+  await supabase
+    .from('organization_subscriptions')
+    .update({
+      status: 'TRIAL',
+      current_period_start: now.toISOString(),
+      current_period_end: trialEnd.toISOString(),
+      updated_at: now.toISOString(),
+    })
+    .eq('organization_id', orgId)
+
+  revalidatePath('/admin')
+  revalidatePath('/admin/barberias')
+  return { success: true, message: `Barbería "${org.name}" aprobada y activada con éxito.` }
+}
+

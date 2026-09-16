@@ -25,7 +25,11 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
         openingTime: orgSettings.opening_time || '09:00',
         closingTime: orgSettings.closing_time || '21:00',
         loyaltyProgram: orgSettings.loyalty_program || null,
-        whatsappSettings: orgSettings.whatsapp_notifications || null,
+        whatsappSettings:
+          orgSettings.whatsapp_notifications ||
+          orgSettings.whatsapp_settings ||
+          orgSettings.whatsappSettings ||
+          null,
         logoUrl: org.logo_url || null,
         primaryColor: org.primary_color || '#F59E0B',
         secondaryColor: org.secondary_color || '#0F172A',

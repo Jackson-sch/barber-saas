@@ -78,8 +78,12 @@ export async function getTenantAuthContext(slug: string) {
     redirect(`/login?error=unauthorized`)
   }
 
-  // Si la organización está suspendida y el usuario no es superadmin, denegar acceso
+  // Si la organización no está activa y el usuario no es superadmin, denegar acceso
   if (!org.is_active && !isSuperAdmin) {
+    const orgSettings = (typeof org.settings === 'object' && org.settings !== null ? org.settings : {}) as Record<string, any>
+    if (orgSettings.approval_status === 'PENDING') {
+      redirect(`/login?error=pending_approval`)
+    }
     redirect(`/login?error=suspended`)
   }
 

@@ -2,19 +2,32 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { slugify } from '@/lib/utils'
-import { redirect } from 'next/navigation'
+import { validateHoneypot, validateSubmissionSpeed } from '@/lib/anti-spam'
 
-interface RegisterBarbershopParams {
+export interface RegisterBarbershopParams {
   ownerName: string
   barbershopName: string
   email: string
   password: string
   phone: string
   city?: string
+  honeypot?: string
+  formLoadedAt?: number
 }
 
 export async function registerBarbershopAction(params: RegisterBarbershopParams) {
-  const { ownerName, barbershopName, email, password, phone, city } = params
+  const { ownerName, barbershopName, email, password, phone, city, honeypot, formLoadedAt } = params
+
+  // 0. Validación Anti-Spam y Anti-Bots
+  if (!validateHoneypot(honeypot)) {
+    console.warn('[Anti-Spam] Bloqueado registro por Honeypot detectado:', { email, barbershopName })
+    return { error: 'Solicitud no procesada (detección de actividad automatizada).' }
+  }
+
+  if (!validateSubmissionSpeed(formLoadedAt)) {
+    console.warn('[Anti-Spam] Bloqueado registro por Time-Gate (demasiado veloz):', { email })
+    return { error: 'Envío demasiado rápido. Por favor tómate un momento para revisar tus datos.' }
+  }
 
   if (!ownerName || !barbershopName || !email || !password || !phone) {
     return { error: 'Todos los campos obligatorios deben ser completados' }
@@ -57,7 +70,7 @@ export async function registerBarbershopAction(params: RegisterBarbershopParams)
 
   const userId = authData.user.id
 
-  // 3. Crear Organización (Tenant)
+  // 3. Crear Organización (Tenant) en estado PENDIENTE DE APROBACIÓN
   const { data: org, error: orgError } = await supabase
     .from('organizations')
     .insert({
@@ -68,7 +81,12 @@ export async function registerBarbershopAction(params: RegisterBarbershopParams)
       city: city || 'Lima',
       primary_color: '#d97706', // Ámbar Barber Studio
       secondary_color: '#0f172a',
-      is_active: true,
+      is_active: false, // Inactivo hasta aprobación por SuperAdmin
+      settings: {
+        approval_status: 'PENDING',
+        registered_at: new Date().toISOString(),
+        owner_name: ownerName,
+      },
     })
     .select('id')
     .single()
@@ -79,7 +97,7 @@ export async function registerBarbershopAction(params: RegisterBarbershopParams)
 
   const orgId = org.id
 
-  // 4. Crear Suscripción Trial (14 días gratis)
+  // 4. Crear Suscripción Trial (se activará al ser aprobado)
   await supabase.from('organization_subscriptions').insert({
     organization_id: orgId,
     plan_tier: 'TRIAL',
@@ -155,6 +173,15 @@ export async function registerBarbershopAction(params: RegisterBarbershopParams)
     },
   ])
 
-  // Iniciar sesión y redirigir
-  redirect(`/app/${finalSlug}/dashboard`)
+  // Desconectar sesión temporal para evitar accesos prematuros
+  await supabase.auth.signOut()
+
+  return {
+    success: true,
+    slug: finalSlug,
+    status: 'PENDING' as const,
+    barbershopName,
+    ownerName,
+    email,
+  }
 }

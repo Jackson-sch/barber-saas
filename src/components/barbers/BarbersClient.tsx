@@ -157,7 +157,7 @@ export default function BarbersClient({
                           {member.full_name}
                         </h3>
                         {member.nickname && (
-                          <p className="text-xs text-amber-400/90 font-medium">"{member.nickname}"</p>
+                          <p className="text-xs text-amber-400/90 font-medium">&ldquo;{member.nickname}&rdquo;</p>
                         )}
                         <div className="mt-1">
                           <span

@@ -227,7 +227,7 @@ export default function AdminPaymentsClient({ initialPayments }: AdminPaymentsCl
                         )}
                         {payment.notes && (
                           <span className="text-neutral-500 block text-[10px] italic">
-                            "{payment.notes}"
+                            &ldquo;{payment.notes}&rdquo;
                           </span>
                         )}
                       </td>

@@ -34,6 +34,8 @@ export default function LoginForm() {
   const [error, setError] = useState<string | null>(
     errorParam === 'unauthorized'
       ? 'No tienes permisos para acceder a esta barbería.'
+      : errorParam === 'pending_approval'
+      ? 'Tu barbería está en proceso de revisión por el equipo de BarberOS. Te notificaremos en cuanto tu cuenta sea aprobada.'
       : errorParam === 'suspended'
       ? 'Esta barbería ha sido suspendida. Contacta a soporte para reactivar el acceso.'
       : null

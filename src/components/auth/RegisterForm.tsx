@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { registerBarbershopAction } from '@/actions/onboarding'
 import { slugify } from '@/lib/utils'
 import {
@@ -24,8 +25,10 @@ import {
 } from 'lucide-react'
 
 export default function RegisterForm() {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [formLoadedAt] = useState(() => Date.now())
 
   // Form states for interactive feedback
   const [barbershopName, setBarbershopName] = useState('')
@@ -51,6 +54,7 @@ export default function RegisterForm() {
     const email = formData.get('email') as string
     const phone = formData.get('phone') as string
     const city = formData.get('city') as string
+    const honeypot = (formData.get('company_website') as string) || ''
 
     try {
       const res = await registerBarbershopAction({
@@ -60,11 +64,22 @@ export default function RegisterForm() {
         password,
         phone,
         city,
+        honeypot,
+        formLoadedAt,
       })
 
       if (res?.error) {
         setError(res.error)
         setLoading(false)
+        return
+      }
+
+      if (res?.success && res.slug) {
+        router.push(
+          `/registro-barberia/pendiente?slug=${encodeURIComponent(res.slug)}&name=${encodeURIComponent(
+            barbershopName
+          )}`
+        )
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.message.includes('NEXT_REDIRECT')) {
@@ -131,6 +146,18 @@ export default function RegisterForm() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Campo Trampa Anti-Spam / Anti-Bot (Honeypot) */}
+            <div style={{ display: 'none', position: 'absolute', left: '-9999px', opacity: 0 }} aria-hidden="true">
+              <label htmlFor="company_website">Website</label>
+              <input
+                type="text"
+                id="company_website"
+                name="company_website"
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
+
             {/* Grid 1: Owner & Barbershop Name */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="space-y-1.5">
