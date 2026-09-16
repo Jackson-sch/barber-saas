@@ -205,20 +205,13 @@ export default async function AdminDashboardPage() {
                       </span>
                     </td>
                     <td className="py-3 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <Link
-                          href={`/app/${org.slug}/dashboard`}
-                          className="text-xs font-semibold text-amber-400 hover:text-amber-300 transition inline-flex items-center gap-1"
-                        >
-                          <span>Panel</span>
-                          <ArrowUpRight className="w-3 h-3" />
-                        </Link>
+                      <div className="flex items-center justify-end">
                         <Link
                           href={`/reservar/${org.slug}`}
                           target="_blank"
-                          className="text-xs text-neutral-400 hover:text-white transition inline-flex items-center gap-1"
+                          className="text-xs text-amber-400/80 hover:text-amber-300 transition inline-flex items-center gap-1 font-medium"
                         >
-                          <span>Portal</span>
+                          <span>Ver Portal</span>
                           <ArrowUpRight className="w-3 h-3" />
                         </Link>
                       </div>

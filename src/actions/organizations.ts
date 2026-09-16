@@ -143,10 +143,10 @@ export async function updateTenantSettingsAction(input: UpdateTenantSettingsInpu
     .eq('id', user.id)
     .single()
 
-  const isOwner = member?.role === 'OWNER' || profile?.is_super_admin
+  const isOwner = member?.role === 'OWNER'
 
   if (!isOwner) {
-    return { error: 'Solo el dueño de la barbería o el superadministrador pueden modificar la configuración.' }
+    return { error: 'Solo el dueño legítimo de la barbería puede modificar la configuración del salón.' }
   }
 
   const name = input.name.trim()

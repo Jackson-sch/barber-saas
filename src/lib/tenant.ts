@@ -74,12 +74,18 @@ export async function getTenantAuthContext(slug: string) {
   const profile = profileData ? (profileData as unknown as Pick<Profile, 'is_super_admin'>) : null
   const isSuperAdmin = profile?.is_super_admin ?? false
 
-  if (!member && !isSuperAdmin) {
+  // Si el usuario no pertenece a esta barbería:
+  // - Si es SuperAdmin, se le redirige a su panel maestro /admin (privacidad y aislamiento estricto de los tenants).
+  // - Si es otro usuario, se le deniega el acceso.
+  if (!member) {
+    if (isSuperAdmin) {
+      redirect('/admin')
+    }
     redirect(`/login?error=unauthorized`)
   }
 
-  // Si la organización no está activa y el usuario no es superadmin, denegar acceso
-  if (!org.is_active && !isSuperAdmin) {
+  // Si la organización no está activa, denegar acceso al equipo de la barbería
+  if (!org.is_active) {
     const orgSettings = (typeof org.settings === 'object' && org.settings !== null ? org.settings : {}) as Record<string, any>
     if (orgSettings.approval_status === 'PENDING') {
       redirect(`/login?error=pending_approval`)
@@ -87,29 +93,10 @@ export async function getTenantAuthContext(slug: string) {
     redirect(`/login?error=suspended`)
   }
 
-  // Si el usuario es SuperAdmin pero no tiene membresía explícita en esta barbería,
-  // se le otorga un rol efectivo de OWNER para permitirle administrarla y probarla al 100%.
-  const effectiveMember: OrganizationMember = (member as unknown as OrganizationMember) || {
-    id: `superadmin-${user.id}`,
-    organization_id: org.id,
-    user_id: user.id,
-    branch_id: null,
-    role: 'OWNER',
-    full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Súper Administrador',
-    nickname: 'SuperAdmin',
-    phone: null,
-    avatar_url: null,
-    specialties: [],
-    commission_rate: 0,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }
-
   return {
     user,
     org,
-    member: effectiveMember,
+    member: member as unknown as OrganizationMember,
     isSuperAdmin,
   }
 }

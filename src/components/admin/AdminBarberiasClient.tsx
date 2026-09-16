@@ -14,7 +14,6 @@ import {
   Calendar,
   Loader2,
   Pencil,
-  LayoutDashboard,
 } from 'lucide-react'
 import { toggleOrganizationStatusAction, approveOrganizationAction } from '@/actions/subscription'
 import { formatDateOnly } from '@/lib/utils'
@@ -332,20 +331,11 @@ export default function AdminBarberiasClient({ initialOrgs }: AdminBarberiasClie
                 <div className="mt-5 pt-3 border-t border-neutral-800/60 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Link
-                      href={`/app/${org.slug}/dashboard`}
-                      className="text-xs font-semibold text-amber-400 hover:text-amber-300 transition inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20"
-                      title="Entrar al Dashboard de esta barbería como SuperAdmin"
-                    >
-                      <LayoutDashboard className="w-3.5 h-3.5" />
-                      <span>Panel Salón</span>
-                    </Link>
-
-                    <Link
                       href={`/reservar/${org.slug}`}
                       target="_blank"
-                      className="text-xs text-neutral-400 hover:text-neutral-200 transition inline-flex items-center gap-1 font-medium px-1.5 py-1"
+                      className="text-xs text-amber-400 hover:text-amber-300 transition inline-flex items-center gap-1.5 font-medium py-1 px-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20"
                     >
-                      <span>Portal</span>
+                      <span>Ver Portal Público</span>
                       <ExternalLink className="w-3 h-3" />
                     </Link>
                   </div>
