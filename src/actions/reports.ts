@@ -67,6 +67,9 @@ export async function getReportsDataAction(
 ): Promise<{ data?: ReportsData; error?: string }> {
   try {
     const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
     // 1. Obtener miembros (barberos) de la organización
     const { data: members, error: membersErr } = await supabase
@@ -404,6 +407,9 @@ export async function settleBarberCommissionsAction({
 }): Promise<{ success?: boolean; error?: string }> {
   try {
     const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
     const now = new Date().toISOString()
 
     let query = supabase
@@ -470,6 +476,9 @@ export async function getDetailedSalesReportAction(
 ): Promise<{ data?: DetailedSaleRow[]; error?: string }> {
   try {
     const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
     // 1. Clientes
     const { data: clients } = await supabase
@@ -579,6 +588,9 @@ export async function getCashMovementsReportAction(
 ): Promise<{ data?: DetailedCashMovementRow[]; error?: string }> {
   try {
     const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
     // 1. Miembros / Barberos
     const { data: members } = await supabase

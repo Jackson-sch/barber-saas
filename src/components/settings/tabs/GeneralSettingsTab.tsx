@@ -67,10 +67,10 @@ export default function GeneralSettingsTab({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+            <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
               Nombre de la Barbería *
             </label>
-            <input
+            <input aria-label="input"
               type="text"
               required
               disabled={!isOwner}
@@ -82,14 +82,14 @@ export default function GeneralSettingsTab({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+            <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
               Identificador URL (Slug) *
             </label>
             <div className="flex items-center">
               <span className="p-2.5 bg-white/[0.04] border border-r-0 border-white/10 rounded-l-xl text-neutral-500 text-xs font-mono select-none">
                 /reservar/
               </span>
-              <input
+              <input aria-label="input"
                 type="text"
                 required
                 disabled={!isOwner}
@@ -147,11 +147,11 @@ export default function GeneralSettingsTab({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1.5 flex items-center gap-1.5">
+            <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5 flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5 text-neutral-400" />
               Teléfono / WhatsApp de Atención
             </label>
-            <input
+            <input aria-label="input"
               type="tel"
               disabled={!isOwner}
               value={phone}
@@ -162,11 +162,11 @@ export default function GeneralSettingsTab({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1.5 flex items-center gap-1.5">
+            <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5 flex items-center gap-1.5">
               <Mail className="w-3.5 h-3.5 text-neutral-400" />
               Email de Contacto
             </label>
-            <input
+            <input aria-label="input"
               type="email"
               disabled={!isOwner}
               value={email}
@@ -177,10 +177,10 @@ export default function GeneralSettingsTab({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+            <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
               Dirección Física
             </label>
-            <input
+            <input aria-label="input"
               type="text"
               disabled={!isOwner}
               value={address}
@@ -191,10 +191,10 @@ export default function GeneralSettingsTab({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+            <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
               Ciudad
             </label>
-            <input
+            <input aria-label="input"
               type="text"
               disabled={!isOwner}
               value={city}
@@ -215,10 +215,10 @@ export default function GeneralSettingsTab({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+            <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
               Hora de Apertura
             </label>
-            <input
+            <input aria-label="input"
               type="time"
               disabled={!isOwner}
               value={openingTime}
@@ -228,10 +228,10 @@ export default function GeneralSettingsTab({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+            <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
               Hora de Cierre
             </label>
-            <input
+            <input aria-label="input"
               type="time"
               disabled={!isOwner}
               value={closingTime}

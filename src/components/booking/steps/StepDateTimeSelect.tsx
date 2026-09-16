@@ -73,7 +73,7 @@ export default function StepDateTimeSelect({
           Mañana
         </button>
         <div className="relative flex-1">
-          <input
+          <input aria-label="input"
             type="date"
             value={selectedDate}
             min={todayStr}

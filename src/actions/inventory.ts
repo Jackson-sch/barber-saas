@@ -19,6 +19,9 @@ export interface ProductInput {
 
 export async function createProductAction(input: ProductInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   if (!input.name?.trim() || !input.organization_id) {
     return { error: 'El nombre del producto y la organización son requeridos.' }
@@ -53,6 +56,9 @@ export async function createProductAction(input: ProductInput) {
 
 export async function updateProductAction(input: ProductInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   if (!input.id || !input.name?.trim() || !input.organization_id) {
     return { error: 'Datos incompletos para actualizar el producto.' }
@@ -91,6 +97,9 @@ export async function adjustStockAction(
   slug: string
 ) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   const { data: prod, error: fetchErr } = await supabase
     .from('products')
@@ -130,6 +139,9 @@ export async function deleteProductAction(
   slug: string
 ) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   // Verificar si tiene ventas asociadas
   const { data: saleItems } = await supabase

@@ -18,6 +18,9 @@ export interface SubmitVoucherInput {
 // 1. Enviar comprobante de pago por parte del tenant
 export async function submitSubscriptionPaymentAction(input: SubmitVoucherInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   if (!input.voucher_url || !input.amount || !input.organization_id) {
     return { error: 'Comprobante y monto son obligatorios.' }
@@ -47,6 +50,9 @@ export async function submitSubscriptionPaymentAction(input: SubmitVoucherInput)
 // 2. Aprobar comprobante por parte del SuperAdmin
 export async function approvePaymentAction(paymentId: string, rejectionReason?: string) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -139,6 +145,9 @@ export async function approvePaymentAction(paymentId: string, rejectionReason?: 
 // 3. Rechazar comprobante por parte del SuperAdmin
 export async function rejectPaymentAction(paymentId: string, reason: string) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -178,6 +187,9 @@ export async function rejectPaymentAction(paymentId: string, reason: string) {
 // 4. Activar o Suspender barbería desde SuperAdmin
 export async function toggleOrganizationStatusAction(orgId: string, is_active: boolean) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -208,6 +220,9 @@ export async function toggleOrganizationStatusAction(orgId: string, is_active: b
 // 5. Aprobar Barbería Pendiente desde SuperAdmin
 export async function approveOrganizationAction(orgId: string) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()

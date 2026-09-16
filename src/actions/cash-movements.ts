@@ -17,6 +17,9 @@ export interface RecordCashMovementInput {
 export async function recordCashMovementAction(input: RecordCashMovementInput) {
   try {
     const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
     const {
       data: { user },
     } = await supabase.auth.getUser()

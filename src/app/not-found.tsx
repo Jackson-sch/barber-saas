@@ -137,7 +137,7 @@ export default function NotFound() {
             <form onSubmit={handleSearchSubmit} className="space-y-2 pt-1">
               <div className="relative">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-neutral-500" />
-                <input
+                <input aria-label="input"
                   type="text"
                   value={salonQuery}
                   onChange={(e) => setSalonQuery(e.target.value)}

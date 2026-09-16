@@ -151,13 +151,15 @@ export function usePosState({
       return
     }
 
+    const existing = cart.find((item) => item.product_id === prod.id)
+    if (existing && existing.quantity >= prod.stock) {
+      setError(`No puedes agregar más unidades de "${prod.name}". Stock máximo alcanzado (${prod.stock}).`)
+      return
+    }
+
     setCart((prev) => {
-      const existing = prev.find((item) => item.product_id === prod.id)
-      if (existing) {
-        if (existing.quantity >= prod.stock) {
-          setError(`No puedes agregar más unidades de "${prod.name}". Stock máximo alcanzado (${prod.stock}).`)
-          return prev
-        }
+      const existingInPrev = prev.find((item) => item.product_id === prod.id)
+      if (existingInPrev) {
         return prev.map((item) =>
           item.product_id === prod.id
             ? {
@@ -186,24 +188,30 @@ export function usePosState({
 
   function handleUpdateQuantity(index: number, delta: number) {
     setError(null)
+    const item = cart[index]
+    if (item && item.item_type === 'PRODUCT' && delta > 0 && item.product_id) {
+      const prod = products.find((p) => p.id === item.product_id)
+      if (prod && item.quantity + delta > prod.stock) {
+        setError(`Stock insuficiente para "${prod.name}" (Disponible: ${prod.stock} unidades).`)
+        return
+      }
+    }
+
     setCart((prev) => {
       const copy = [...prev]
-      const item = copy[index]
+      const currentItem = copy[index]
+      if (!currentItem) return prev
 
-      if (item.item_type === 'PRODUCT' && delta > 0 && item.product_id) {
-        const prod = products.find((p) => p.id === item.product_id)
-        if (prod && item.quantity + delta > prod.stock) {
-          setError(`Stock insuficiente para "${prod.name}" (Disponible: ${prod.stock} unidades).`)
-          return prev
-        }
-      }
-
-      const newQty = item.quantity + delta
+      const newQty = currentItem.quantity + delta
       if (newQty <= 0) {
         return copy.filter((_, i) => i !== index)
       }
-      copy[index].quantity = newQty
-      copy[index].subtotal = newQty * copy[index].unit_price
+      
+      copy[index] = {
+        ...currentItem,
+        quantity: newQty,
+        subtotal: newQty * currentItem.unit_price,
+      }
       return copy
     })
   }

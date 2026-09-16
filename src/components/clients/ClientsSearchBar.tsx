@@ -19,7 +19,7 @@ export default function ClientsSearchBar({
 
       <div className="relative w-full sm:w-72">
         <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-        <input
+        <input aria-label="Buscar por nombre o celular..."
           type="text"
           placeholder="Buscar por nombre o celular..."
           value={searchQuery}

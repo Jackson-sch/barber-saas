@@ -47,6 +47,9 @@ function cleanSlug(text: string): string {
 // 1. Edición por el SuperAdmin
 export async function updateOrganizationByAdminAction(input: UpdateOrgByAdminInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -116,6 +119,9 @@ export async function updateOrganizationByAdminAction(input: UpdateOrgByAdminInp
 // 2. Edición por el Dueño / Admin de la barbería
 export async function updateTenantSettingsAction(input: UpdateTenantSettingsInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()

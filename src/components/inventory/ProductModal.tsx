@@ -155,10 +155,10 @@ export default function ProductModal({
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           {/* Nombre */}
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+            <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
               Nombre del Producto <span className="text-amber-400">*</span>
             </label>
-            <input
+            <input aria-label="Ej: Pomada Fijación Fuerte Mate 100g, Aceite de Barba..."
               type="text"
               required
               placeholder="Ej: Pomada Fijación Fuerte Mate 100g, Aceite de Barba..."
@@ -171,12 +171,12 @@ export default function ProductModal({
           {/* SKU y Código de Barras */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+              <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                 Código SKU (opcional)
               </label>
               <div className="relative">
                 <Tag className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
+                <input aria-label="POM-MATE-01"
                   type="text"
                   placeholder="POM-MATE-01"
                   value={sku}
@@ -187,12 +187,12 @@ export default function ProductModal({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+              <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                 Código de Barras (opcional)
               </label>
               <div className="relative">
                 <Barcode className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
+                <input aria-label="775123456789"
                   type="text"
                   placeholder="775123456789"
                   value={barcode}
@@ -206,14 +206,14 @@ export default function ProductModal({
           {/* Precios: Costo y Venta */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+              <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                 Precio de Costo (Compra)
               </label>
               <div className="relative">
                 <span className="text-neutral-500 text-xs absolute left-3 top-1/2 -translate-y-1/2 font-mono">
                   S/
                 </span>
-                <input
+                <input aria-label="input"
                   type="number"
                   step="0.01"
                   min="0"
@@ -226,14 +226,14 @@ export default function ProductModal({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+              <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                 Precio de Venta (Público) <span className="text-amber-400">*</span>
               </label>
               <div className="relative">
                 <span className="text-neutral-500 text-xs absolute left-3 top-1/2 -translate-y-1/2 font-mono">
                   S/
                 </span>
-                <input
+                <input aria-label="input"
                   type="number"
                   step="0.01"
                   min="0"
@@ -264,10 +264,10 @@ export default function ProductModal({
           {/* Stock Actual y Stock Mínimo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+              <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                 Stock Inicial en Tienda <span className="text-amber-400">*</span>
               </label>
-              <input
+              <input aria-label="input"
                 type="number"
                 min="0"
                 required
@@ -278,10 +278,10 @@ export default function ProductModal({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+              <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                 Alerta de Stock Mínimo
               </label>
-              <input
+              <input aria-label="input"
                 type="number"
                 min="0"
                 required
@@ -297,8 +297,8 @@ export default function ProductModal({
 
           {/* Switch de Insumo Interno vs Reventa */}
           <div className="pt-2">
-            <label className="flex items-start gap-3 p-3 rounded-xl bg-[#090A0E] border border-white/10 cursor-pointer hover:border-white/20 transition">
-              <input
+            <label htmlFor="field" className="flex items-start gap-3 p-3 rounded-xl bg-[#090A0E] border border-white/10 cursor-pointer hover:border-white/20 transition">
+              <input aria-label="input"
                 type="checkbox"
                 checked={isInternalUse}
                 onChange={(e) => setIsInternalUse(e.target.checked)}

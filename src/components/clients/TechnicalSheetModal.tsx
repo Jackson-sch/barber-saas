@@ -149,7 +149,7 @@ export default function TechnicalSheetModal({
         <form onSubmit={handleSave} className="mt-5 space-y-4">
           {/* Tipo de Degradado */}
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
               Tipo de Degradado / Fade
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -172,7 +172,7 @@ export default function TechnicalSheetModal({
 
           {/* Guía o Peine Base */}
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
               Peine o Guía Base de Inicio
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -195,10 +195,10 @@ export default function TechnicalSheetModal({
 
           {/* Peinado y Largo Superior */}
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Largo y Estilo Superior
             </label>
-            <input
+            <input aria-label="Ej: 3 dedos de largo, texturizado con tijera de entresacar, peinado al costado"
               type="text"
               placeholder="Ej: 3 dedos de largo, texturizado con tijera de entresacar, peinado al costado"
               value={topLength}
@@ -209,7 +209,7 @@ export default function TechnicalSheetModal({
 
           {/* Estilo de Barba */}
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
               Diseño de Barba
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -234,11 +234,11 @@ export default function TechnicalSheetModal({
           <div>
             <div className="flex items-center gap-1.5 mb-1.5">
               <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider">
                 Sensibilidad de Piel / Alergias (Aviso para el Barbero)
               </label>
             </div>
-            <input
+            <input aria-label="Ej: Piel muy sensible, no usar aftershave con alcohol, enrojecimiento con navaja"
               type="text"
               placeholder="Ej: Piel muy sensible, no usar aftershave con alcohol, enrojecimiento con navaja"
               value={allergies}
@@ -251,11 +251,11 @@ export default function TechnicalSheetModal({
           <div>
             <div className="flex items-center gap-1.5 mb-1.5">
               <Heart className="w-3.5 h-3.5 text-red-400" />
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider">
                 Barbero Preferido
               </label>
             </div>
-            <select
+            <select aria-label="select"
               value={favoriteBarberId}
               onChange={(e) => setFavoriteBarberId(e.target.value)}
               className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs focus:outline-none focus:border-amber-500 transition"

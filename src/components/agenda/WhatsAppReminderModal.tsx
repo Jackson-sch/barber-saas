@@ -120,19 +120,19 @@ export default function WhatsAppReminderModal({
         onClose()
       } else if (res.mode === 'MANUAL' && res.success) {
         toast.info('Abriendo WhatsApp...')
-        window.open(res.fallbackUrl, '_blank')
+        window.open(res.fallbackUrl, '_blank', 'noopener,noreferrer')
         onClose()
       } else {
         // Fallback garantizado
         toast.warning(
           `La API no pudo despachar (${res.error || 'error'}). Abriendo WhatsApp manual de respaldo...`
         )
-        window.open(res.fallbackUrl, '_blank')
+        window.open(res.fallbackUrl, '_blank', 'noopener,noreferrer')
         onClose()
       }
     } catch (e: any) {
       toast.error('Error al despachar mensaje. Abriendo WhatsApp manual...')
-      window.open(waUrl, '_blank')
+      window.open(waUrl, '_blank', 'noopener,noreferrer')
       onClose()
     } finally {
       setSendingApi(false)
@@ -190,7 +190,7 @@ export default function WhatsAppReminderModal({
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
           {/* Selector de Plantilla */}
           <div>
-            <label className="text-xs font-semibold text-neutral-300 block mb-2">
+            <label htmlFor="field" className="text-xs font-semibold text-neutral-300 block mb-2">
               Tipo de Mensaje
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -226,7 +226,7 @@ export default function WhatsAppReminderModal({
           {/* Editor de Mensaje */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-neutral-300">
+              <label htmlFor="field" className="text-xs font-semibold text-neutral-300">
                 Mensaje a Enviar (Editable)
               </label>
               <button
@@ -239,7 +239,7 @@ export default function WhatsAppReminderModal({
                 <span>Restaurar</span>
               </button>
             </div>
-            <textarea
+            <textarea aria-label="textarea"
               value={customMessage}
               onChange={(e) => setCustomMessage(e.target.value)}
               rows={4}
@@ -253,7 +253,7 @@ export default function WhatsAppReminderModal({
 
           {/* Simulación Visual de Burbuja WhatsApp */}
           <div>
-            <label className="text-xs font-semibold text-neutral-300 block mb-2">
+            <label htmlFor="field" className="text-xs font-semibold text-neutral-300 block mb-2">
               Vista Previa en WhatsApp
             </label>
             <div className="p-4 rounded-xl bg-[#0b141a] border border-[#1f2c34] relative overflow-hidden">

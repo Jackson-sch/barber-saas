@@ -34,6 +34,9 @@ export async function registerBarbershopAction(params: RegisterBarbershopParams)
   }
 
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   // 1. Generar slug único
   let baseSlug = slugify(barbershopName)

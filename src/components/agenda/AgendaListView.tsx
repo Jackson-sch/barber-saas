@@ -24,7 +24,7 @@ export default function AgendaListView({
         </div>
       ) : (
         <div className="divide-y divide-neutral-800">
-          {filteredAppointments
+          {[...filteredAppointments]
             .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
             .map((app) => {
               const startTime = new Date(app.start_time).toLocaleTimeString('es-PE', {

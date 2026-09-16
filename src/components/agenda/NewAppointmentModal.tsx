@@ -104,12 +104,12 @@ export default function NewAppointmentModal({
           {/* Datos del Cliente */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Nombre del Cliente *
               </label>
               <div className="relative">
                 <User className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
+                <input aria-label="Juan Pérez"
                   type="text"
                   required
                   placeholder="Juan Pérez"
@@ -121,12 +121,12 @@ export default function NewAppointmentModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Teléfono / WhatsApp *
               </label>
               <div className="relative">
                 <Phone className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
+                <input aria-label="999888777"
                   type="tel"
                   required
                   placeholder="999888777"
@@ -141,10 +141,10 @@ export default function NewAppointmentModal({
           {/* Barbero & Servicio */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Barbero / Especialista *
               </label>
-              <select
+              <select aria-label="select"
                 value={barberId}
                 onChange={(e) => setBarberId(e.target.value)}
                 required
@@ -159,10 +159,10 @@ export default function NewAppointmentModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Servicio *
               </label>
-              <select
+              <select aria-label="select"
                 value={serviceId}
                 onChange={(e) => setServiceId(e.target.value)}
                 required
@@ -180,10 +180,10 @@ export default function NewAppointmentModal({
           {/* Fecha, Hora y Canal */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Fecha *
               </label>
-              <input
+              <input aria-label="input"
                 type="date"
                 required
                 value={date}
@@ -193,10 +193,10 @@ export default function NewAppointmentModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Hora de Inicio *
               </label>
-              <input
+              <input aria-label="input"
                 type="time"
                 required
                 value={time}
@@ -206,10 +206,10 @@ export default function NewAppointmentModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Canal de Entrada
               </label>
-              <select
+              <select aria-label="select"
                 value={source}
                 onChange={(e) => setSource(e.target.value as any)}
                 className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs focus:outline-none focus:border-amber-500 transition"
@@ -223,10 +223,10 @@ export default function NewAppointmentModal({
 
           {/* Notas */}
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Notas o Preferencias (Opcional)
             </label>
-            <input
+            <input aria-label="Ej: Viene por primera vez, corte bajo, etc."
               type="text"
               placeholder="Ej: Viene por primera vez, corte bajo, etc."
               value={notes}

@@ -57,7 +57,7 @@ export default function BrandingSettingsTab({
 
         {/* 1. Logotipo del Salón */}
         <div className="p-4 rounded-xl bg-[#090A0E] border border-white/[0.06] space-y-3">
-          <label className="block text-xs font-semibold text-neutral-200">
+          <label htmlFor="field" className="block text-xs font-semibold text-neutral-200">
             Logotipo Oficial del Salón
           </label>
           <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -79,10 +79,10 @@ export default function BrandingSettingsTab({
             {/* Upload & URL Controls */}
             <div className="flex-1 space-y-2 w-full">
               <div className="flex items-center gap-2 flex-wrap">
-                <label className="py-2 px-3 rounded-xl bg-white/[0.07] hover:bg-white/15 text-white text-xs font-semibold transition flex items-center gap-2 cursor-pointer border border-white/10">
+                <label htmlFor="field" className="py-2 px-3 rounded-xl bg-white/[0.07] hover:bg-white/15 text-white text-xs font-semibold transition flex items-center gap-2 cursor-pointer border border-white/10">
                   <Upload className="w-3.5 h-3.5 text-amber-400" />
                   <span>Subir Imagen</span>
-                  <input
+                  <input aria-label="input"
                     type="file"
                     accept="image/*"
                     disabled={!isOwner}
@@ -105,7 +105,7 @@ export default function BrandingSettingsTab({
               </div>
 
               <div className="flex items-center gap-2">
-                <input
+                <input aria-label="input"
                   type="url"
                   disabled={!isOwner}
                   value={logoUrl}
@@ -124,7 +124,7 @@ export default function BrandingSettingsTab({
         {/* 2. Portada / Banner de Fondo */}
         <div className="p-4 rounded-xl bg-[#090A0E] border border-white/[0.06] space-y-3">
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-semibold text-neutral-200">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-200">
               Portada de Fondo para Portal de Reservas
             </label>
             {bannerUrl && (
@@ -192,10 +192,10 @@ export default function BrandingSettingsTab({
 
           {/* Upload or Custom URL */}
           <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
-            <label className="py-2 px-3 rounded-xl bg-white/[0.07] hover:bg-white/15 text-white text-xs font-semibold transition flex items-center gap-2 cursor-pointer border border-white/10 shrink-0 w-full sm:w-auto justify-center">
+            <label htmlFor="field" className="py-2 px-3 rounded-xl bg-white/[0.07] hover:bg-white/15 text-white text-xs font-semibold transition flex items-center gap-2 cursor-pointer border border-white/10 shrink-0 w-full sm:w-auto justify-center">
               <Upload className="w-3.5 h-3.5 text-amber-400" />
               <span>Subir Portada</span>
-              <input
+              <input aria-label="input"
                 type="file"
                 accept="image/*"
                 disabled={!isOwner}
@@ -203,7 +203,7 @@ export default function BrandingSettingsTab({
                 className="hidden"
               />
             </label>
-            <input
+            <input aria-label="input"
               type="url"
               disabled={!isOwner}
               value={bannerUrl}
@@ -216,7 +216,7 @@ export default function BrandingSettingsTab({
 
         {/* 3. Paleta de Color Corporativo */}
         <div className="p-4 rounded-xl bg-[#090A0E] border border-white/[0.06] space-y-3">
-          <label className="block text-xs font-semibold text-neutral-200">
+          <label htmlFor="field" className="block text-xs font-semibold text-neutral-200">
             Color de Acento de la Marca
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -249,14 +249,14 @@ export default function BrandingSettingsTab({
           <div className="flex items-center gap-2 pt-1">
             <span className="text-xs text-neutral-400">Color Personalizado:</span>
             <div className="flex items-center gap-2">
-              <input
+              <input aria-label="input"
                 type="color"
                 disabled={!isOwner}
                 value={primaryColor}
                 onChange={(e) => setPrimaryColor(e.target.value)}
                 className="w-8 h-8 rounded-lg bg-transparent cursor-pointer border border-white/20"
               />
-              <input
+              <input aria-label="input"
                 type="text"
                 disabled={!isOwner}
                 value={primaryColor}
@@ -269,10 +269,10 @@ export default function BrandingSettingsTab({
 
         {/* 4. Slogan / Lema Comercial */}
         <div className="p-4 rounded-xl bg-[#090A0E] border border-white/[0.06] space-y-2">
-          <label className="block text-xs font-semibold text-neutral-200">
+          <label htmlFor="field" className="block text-xs font-semibold text-neutral-200">
             Slogan o Lema Comercial (Opcional)
           </label>
-          <input
+          <input aria-label="input"
             type="text"
             disabled={!isOwner}
             value={tagline}

@@ -283,14 +283,14 @@ export default function ReportsHeader({
           <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-neutral-400">Desde:</span>
-            <input
+            <input aria-label="input"
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               className="px-2.5 py-1 rounded-lg bg-neutral-900 border border-neutral-800 text-white text-xs focus:outline-none focus:border-amber-500"
             />
             <span className="text-neutral-400">Hasta:</span>
-            <input
+            <input aria-label="input"
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}

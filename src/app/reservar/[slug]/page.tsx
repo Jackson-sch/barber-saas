@@ -271,7 +271,7 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
           {/* Bento Cell 2: Quick Trust & Metrics Card */}
           <div className="lg:col-span-4 grid grid-cols-2 lg:grid-cols-1 gap-4">
             {/* Metric A: Calificación & Reseñas */}
-            <div className="bg-[#0E0F16]/90 border border-white/10 hover:border-amber-500/30 rounded-3xl p-5 backdrop-blur-xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
+            <div className="bg-[#0E0F16]/90 border border-white/10 hover:border-amber-500/30 rounded-3xl p-5 backdrop-blur-xl transition duration-300 flex flex-col justify-between relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400">
@@ -293,7 +293,7 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
             </div>
 
             {/* Metric B: Garantía de Puntualidad */}
-            <div className="bg-[#0E0F16]/90 border border-white/10 hover:border-emerald-500/30 rounded-3xl p-5 backdrop-blur-xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
+            <div className="bg-[#0E0F16]/90 border border-white/10 hover:border-emerald-500/30 rounded-3xl p-5 backdrop-blur-xl transition duration-300 flex flex-col justify-between relative overflow-hidden group">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-400">
                   Compromiso
@@ -320,7 +320,7 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
           {/* Right Bento Column: Salon Features, Team, Schedule, Payments */}
           <div className="lg:col-span-5 space-y-5 order-2 lg:order-1">
             {/* Bento Card: Experiencia VIP en Sala (2x2 mini grid) */}
-            <div className="bg-[#0E0F16]/90 border border-white/10 hover:border-white/15 rounded-3xl p-5 backdrop-blur-xl shadow-xl transition-all">
+            <div className="bg-[#0E0F16]/90 border border-white/10 hover:border-white/15 rounded-3xl p-5 backdrop-blur-xl shadow-xl transition">
               <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-white/10">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
@@ -341,7 +341,7 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
                   return (
                     <div
                       key={idx}
-                      className="p-3 rounded-2xl bg-neutral-900/60 border border-white/5 hover:border-amber-500/30 transition-all group flex items-start gap-2.5"
+                      className="p-3 rounded-2xl bg-neutral-900/60 border border-white/5 hover:border-amber-500/30 transition group flex items-start gap-2.5"
                     >
                       <div className="w-7 h-7 rounded-lg bg-neutral-800 border border-white/10 text-amber-400 flex items-center justify-center shrink-0 group-hover:bg-amber-500 group-hover:text-black transition">
                         <Icon className="w-3.5 h-3.5" />
@@ -362,7 +362,7 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
 
             {/* Bento Card: Maestros del Estilo */}
             {barbers && barbers.length > 0 && (
-              <div className="bg-[#0E0F16]/90 border border-white/10 hover:border-white/15 rounded-3xl p-5 backdrop-blur-xl shadow-xl transition-all">
+              <div className="bg-[#0E0F16]/90 border border-white/10 hover:border-white/15 rounded-3xl p-5 backdrop-blur-xl shadow-xl transition">
                 <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-white/10">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
@@ -532,7 +532,7 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
             {reviews.map((rev, i) => (
               <div
                 key={i}
-                className="bg-[#0E0F16]/90 border border-white/10 hover:border-amber-500/20 rounded-2xl p-4 shadow-lg flex flex-col justify-between transition-all"
+                className="bg-[#0E0F16]/90 border border-white/10 hover:border-amber-500/20 rounded-2xl p-4 shadow-lg flex flex-col justify-between transition"
               >
                 <div>
                   <div className="flex items-center gap-1 mb-2">

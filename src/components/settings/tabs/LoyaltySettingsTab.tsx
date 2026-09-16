@@ -61,15 +61,15 @@ export default function LoyaltySettingsTab({
             </div>
           </div>
 
-          <label className="relative inline-flex items-center cursor-pointer select-none">
-            <input
+          <label htmlFor="field" className="relative inline-flex items-center cursor-pointer select-none">
+            <input aria-label="input"
               type="checkbox"
               disabled={!isOwner}
               checked={loyaltyEnabled}
               onChange={(e) => setLoyaltyEnabled(e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+            <div className="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition peer-checked:bg-amber-500"></div>
             <span className="ml-2.5 text-xs font-semibold text-neutral-300">
               {loyaltyEnabled ? 'Activado' : 'Desactivado'}
             </span>
@@ -80,7 +80,7 @@ export default function LoyaltySettingsTab({
           <div className="space-y-5">
             {/* Selector de Modalidad */}
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">
                 Modalidad del Programa
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -128,10 +128,10 @@ export default function LoyaltySettingsTab({
             {programType === 'VISITS' ? (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-[#090A0E] border border-white/[0.06]">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                     Visitas para Premio *
                   </label>
-                  <input
+                  <input aria-label="input"
                     type="number"
                     min="2"
                     max="50"
@@ -144,10 +144,10 @@ export default function LoyaltySettingsTab({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                     Título del Beneficio *
                   </label>
-                  <input
+                  <input aria-label="input"
                     type="text"
                     disabled={!isOwner}
                     value={rewardTitle}
@@ -158,10 +158,10 @@ export default function LoyaltySettingsTab({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                     Tope Descuento Máximo (S/ PEN) *
                   </label>
-                  <input
+                  <input aria-label="input"
                     type="number"
                     step="1"
                     min="1"
@@ -176,10 +176,10 @@ export default function LoyaltySettingsTab({
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 rounded-xl bg-[#090A0E] border border-white/[0.06]">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                     Puntos por cada S/ 1 gastado
                   </label>
-                  <input
+                  <input aria-label="input"
                     type="number"
                     step="0.5"
                     min="0.1"
@@ -192,10 +192,10 @@ export default function LoyaltySettingsTab({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                     Puntos para Canje *
                   </label>
-                  <input
+                  <input aria-label="input"
                     type="number"
                     min="10"
                     disabled={!isOwner}
@@ -207,10 +207,10 @@ export default function LoyaltySettingsTab({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                     Descuento Otorgado (S/ PEN) *
                   </label>
-                  <input
+                  <input aria-label="input"
                     type="number"
                     step="1"
                     min="1"
@@ -223,10 +223,10 @@ export default function LoyaltySettingsTab({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                     Título del Beneficio *
                   </label>
-                  <input
+                  <input aria-label="input"
                     type="text"
                     disabled={!isOwner}
                     value={rewardTitle}

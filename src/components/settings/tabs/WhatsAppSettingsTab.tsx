@@ -165,7 +165,7 @@ export default function WhatsAppSettingsTab({
 
         {/* Selector de Modo de Despacho */}
         <div>
-          <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2.5">
+          <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2.5">
             Canal de Despacho de WhatsApp
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -259,10 +259,10 @@ export default function WhatsAppSettingsTab({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                   Phone Number ID (ID del número de teléfono)
                 </label>
-                <input
+                <input aria-label="input"
                   type="text"
                   disabled={!isOwner}
                   value={waPhoneNumberId}
@@ -276,10 +276,10 @@ export default function WhatsAppSettingsTab({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                   Access Token Permanente (Bearer)
                 </label>
-                <input
+                <input aria-label="input"
                   type="password"
                   disabled={!isOwner}
                   value={waAccessToken}
@@ -304,10 +304,10 @@ export default function WhatsAppSettingsTab({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                   Webhook / Endpoint URL
                 </label>
-                <input
+                <input aria-label="input"
                   type="url"
                   disabled={!isOwner}
                   value={waWebhookUrl}
@@ -318,10 +318,10 @@ export default function WhatsAppSettingsTab({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                   Bearer Token de Autenticación (Opcional)
                 </label>
-                <input
+                <input aria-label="input"
                   type="password"
                   disabled={!isOwner}
                   value={waWebhookBearerToken}
@@ -347,7 +347,7 @@ export default function WhatsAppSettingsTab({
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-2">
-            <input
+            <input aria-label="input"
               type="tel"
               value={testPhone}
               onChange={(e) => setTestPhone(e.target.value)}
@@ -429,7 +429,7 @@ export default function WhatsAppSettingsTab({
 
           {/* Textarea de la plantilla activa */}
           <div className="space-y-2">
-            <textarea
+            <textarea aria-label="textarea"
               rows={4}
               disabled={!isOwner}
               value={

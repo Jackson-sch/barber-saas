@@ -116,7 +116,7 @@ export default function PosCatalog({
 
             <div className="relative w-full sm:w-52">
               <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
-              <input
+              <input aria-label="Buscar servicio..."
                 type="text"
                 placeholder="Buscar servicio..."
                 value={searchService}
@@ -166,7 +166,7 @@ export default function PosCatalog({
 
             <div className="relative w-full sm:w-60">
               <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
-              <input
+              <input aria-label="Buscar por nombre o SKU..."
                 type="text"
                 placeholder="Buscar por nombre o SKU..."
                 value={searchProduct}

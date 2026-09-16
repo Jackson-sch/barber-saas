@@ -29,6 +29,9 @@ export interface DayScheduleInput {
 
 export async function createBarberAction(input: BarberInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   if (!input.full_name || !input.organization_id) {
     return { error: 'El nombre completo es obligatorio.' }
@@ -89,6 +92,9 @@ export async function createBarberAction(input: BarberInput) {
 
 export async function updateBarberAction(input: BarberInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   if (!input.id || !input.full_name || !input.organization_id) {
     return { error: 'Datos incompletos para actualizar.' }
@@ -122,6 +128,9 @@ export async function updateBarberAction(input: BarberInput) {
 
 export async function toggleBarberStatusAction(id: string, organization_id: string, is_active: boolean, slug: string) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   const { error } = await supabase
     .from('organization_members')
@@ -145,6 +154,9 @@ export async function saveBarberSchedulesAction(
   slug: string
 ) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   for (const s of schedules) {
     const { error } = await supabase

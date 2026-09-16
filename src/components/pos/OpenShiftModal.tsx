@@ -77,10 +77,10 @@ export default function OpenShiftModal({
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Monto Inicial en Efectivo (S/ PEN) *
             </label>
-            <input
+            <input aria-label="input"
               type="number"
               step="0.50"
               min="0"
@@ -96,10 +96,10 @@ export default function OpenShiftModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Observaciones / Notas (Opcional)
             </label>
-            <input
+            <input aria-label="input"
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

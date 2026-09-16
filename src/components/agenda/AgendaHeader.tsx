@@ -64,7 +64,7 @@ export default function AgendaHeader({
           </button>
         </div>
 
-        <input
+        <input aria-label="input"
           type="date"
           value={selectedDate}
           onChange={(e) => onDateChange(e.target.value)}

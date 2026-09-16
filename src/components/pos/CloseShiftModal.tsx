@@ -120,10 +120,10 @@ export default function CloseShiftModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Efectivo Físico Contado (S/ PEN) *
             </label>
-            <input
+            <input aria-label="input"
               type="number"
               step="0.50"
               min="0"
@@ -162,10 +162,10 @@ export default function CloseShiftModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Notas de Cierre (Opcional)
             </label>
-            <input
+            <input aria-label="input"
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

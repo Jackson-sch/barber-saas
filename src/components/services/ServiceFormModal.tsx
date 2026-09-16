@@ -115,10 +115,10 @@ export default function ServiceFormModal({
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Nombre del Servicio *
             </label>
-            <input
+            <input aria-label="input"
               type="text"
               required
               value={name}
@@ -130,10 +130,10 @@ export default function ServiceFormModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Categoría
               </label>
-              <select
+              <select aria-label="select"
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-sm focus:outline-none focus:border-amber-500 transition"
@@ -148,10 +148,10 @@ export default function ServiceFormModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Precio (S/ PEN) *
               </label>
-              <input
+              <input aria-label="input"
                 type="number"
                 step="0.50"
                 min="0"
@@ -165,10 +165,10 @@ export default function ServiceFormModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Duración (Minutos) *
               </label>
-              <select
+              <select aria-label="select"
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-sm focus:outline-none focus:border-amber-500 transition"
@@ -187,10 +187,10 @@ export default function ServiceFormModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Comisión Barbero (%)
               </label>
-              <input
+              <input aria-label="input"
                 type="number"
                 step="1"
                 min="0"
@@ -203,10 +203,10 @@ export default function ServiceFormModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Descripción Corta (Visible en Portal de Reservas)
             </label>
-            <textarea
+            <textarea aria-label="textarea"
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}

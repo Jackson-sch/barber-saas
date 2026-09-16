@@ -26,6 +26,9 @@ export async function sendWhatsAppHybridAction({
 }: SendWhatsAppParams): Promise<WhatsAppDispatchResult> {
   try {
     const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
     // 1. Obtener settings de la organización
     const { data: org, error: orgErr } = await supabase

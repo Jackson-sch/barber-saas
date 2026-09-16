@@ -141,14 +141,14 @@ export default function PosTicket({
 
         {clientType === 'WALK_IN' ? (
           <div className="grid grid-cols-2 gap-2">
-            <input
+            <input aria-label="Nombre del cliente..."
               type="text"
               placeholder="Nombre del cliente..."
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
               className="px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-amber-500"
             />
-            <input
+            <input aria-label="Celular (opcional)..."
               type="tel"
               placeholder="Celular (opcional)..."
               value={clientPhone}
@@ -157,7 +157,7 @@ export default function PosTicket({
             />
           </div>
         ) : (
-          <select
+          <select aria-label="select"
             value={selectedClientId}
             onChange={(e) => setSelectedClientId(e.target.value)}
             className="w-full px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-white text-xs focus:outline-none focus:border-amber-500"
@@ -308,7 +308,7 @@ export default function PosTicket({
               {/* Asignar Barbero al item */}
               <div className="flex items-center justify-between pt-2 border-t border-neutral-800/60 text-[11px]">
                 <span className="text-neutral-500">Atendido por:</span>
-                <select
+                <select aria-label="select"
                   value={item.barber_id || ''}
                   onChange={(e) => onAssignBarber(idx, e.target.value)}
                   className="bg-neutral-900 border border-neutral-800 text-neutral-200 text-[11px] px-2 py-0.5 rounded focus:outline-none focus:border-amber-500"
@@ -360,8 +360,8 @@ export default function PosTicket({
       {/* Descuento y Propina */}
       <div className="grid grid-cols-2 gap-3 pt-2">
         <div>
-          <label className="block text-[11px] text-neutral-400 mb-1">Descuento (S/)</label>
-          <input
+          <label htmlFor="field" className="block text-[11px] text-neutral-400 mb-1">Descuento (S/)</label>
+          <input aria-label="input"
             type="number"
             min="0"
             step="1"
@@ -372,8 +372,8 @@ export default function PosTicket({
         </div>
 
         <div>
-          <label className="block text-[11px] text-neutral-400 mb-1">Propina Barbero (S/)</label>
-          <input
+          <label htmlFor="field" className="block text-[11px] text-neutral-400 mb-1">Propina Barbero (S/)</label>
+          <input aria-label="input"
             type="number"
             min="0"
             step="1"

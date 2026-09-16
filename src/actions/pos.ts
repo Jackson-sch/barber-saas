@@ -39,6 +39,9 @@ export async function openCashShiftAction(
   slug: string
 ) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -84,6 +87,9 @@ export async function closeCashShiftAction(
   slug: string
 ) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -157,6 +163,9 @@ export async function closeCashShiftAction(
 // 3. Registrar Venta (POS)
 export async function createSaleAction(input: CreateSaleInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()

@@ -18,6 +18,9 @@ export interface ServiceInput {
 
 export async function createServiceAction(input: ServiceInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   if (!input.name || !input.price || !input.organization_id) {
     return { error: 'Nombre y precio son obligatorios.' }
@@ -46,6 +49,9 @@ export async function createServiceAction(input: ServiceInput) {
 
 export async function updateServiceAction(input: ServiceInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   if (!input.id || !input.name || !input.price || !input.organization_id) {
     return { error: 'Datos incompletos para actualizar.' }
@@ -78,6 +84,9 @@ export async function updateServiceAction(input: ServiceInput) {
 
 export async function toggleServiceStatusAction(id: string, organization_id: string, is_active: boolean, slug: string) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   const { error } = await supabase
     .from('services')
@@ -96,6 +105,9 @@ export async function toggleServiceStatusAction(id: string, organization_id: str
 
 export async function deleteServiceAction(id: string, organization_id: string, slug: string) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   const { error } = await supabase
     .from('services')
@@ -115,6 +127,9 @@ export async function deleteServiceAction(id: string, organization_id: string, s
 
 export async function createCategoryAction(organization_id: string, name: string, slug: string) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   if (!name.trim()) {
     return { error: 'El nombre de la categoría es obligatorio.' }
@@ -136,6 +151,9 @@ export async function createCategoryAction(organization_id: string, name: string
 
 export async function deleteCategoryAction(id: string, organization_id: string, slug: string) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   const { error } = await supabase
     .from('service_categories')

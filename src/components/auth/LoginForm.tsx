@@ -143,12 +143,12 @@ export default function LoginForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Campo Email */}
             <div className="space-y-1.5">
-              <label className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
+              <label htmlFor="field" className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
                 Correo Electrónico
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
+                <input aria-label="input"
                   type="email"
                   required
                   value={email}
@@ -162,7 +162,7 @@ export default function LoginForm() {
             {/* Campo Contraseña */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
+                <label htmlFor="field" className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
                   Contraseña
                 </label>
                 <button
@@ -175,7 +175,7 @@ export default function LoginForm() {
               </div>
               <div className="relative">
                 <Lock className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
+                <input aria-label="input"
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
@@ -201,8 +201,8 @@ export default function LoginForm() {
 
             {/* Recordarme Checkbox */}
             <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
+              <label htmlFor="field" className="flex items-center gap-2 cursor-pointer select-none">
+                <input aria-label="input"
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}

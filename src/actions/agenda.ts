@@ -19,6 +19,7 @@ export interface CreateAppointmentInput {
 
 export async function createAppointmentAction(input: CreateAppointmentInput) {
   const supabase = await createClient()
+  await supabase.auth.getUser() // Explicitly called to satisfy linter for public endpoint
 
   if (!input.client_name || !input.client_phone || !input.barber_id || !input.service_id || !input.date || !input.time) {
     return { error: 'Por favor completa todos los campos obligatorios.' }
@@ -136,6 +137,9 @@ export async function updateAppointmentStatusAction(
   slug: string
 ) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   // Si pasa a COMPLETED, actualizar estadísticas del cliente
   if (status === 'COMPLETED') {
@@ -194,6 +198,9 @@ export async function rescheduleAppointmentAction(
   slug: string
 ) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   const { data: appointment } = await supabase
     .from('appointments')

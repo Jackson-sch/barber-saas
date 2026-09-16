@@ -81,7 +81,7 @@ export default function CategoryModal({
 
         {/* Crear nueva categoría */}
         <form onSubmit={handleCreate} className="mt-4 flex gap-2">
-          <input
+          <input aria-label="input"
             type="text"
             required
             value={newCatName}

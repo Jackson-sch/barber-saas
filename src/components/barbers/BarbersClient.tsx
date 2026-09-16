@@ -107,7 +107,7 @@ export default function BarbersClient({
 
         <div className="relative w-64">
           <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
+          <input aria-label="Buscar barbero o apodo..."
             type="text"
             placeholder="Buscar barbero o apodo..."
             value={searchQuery}

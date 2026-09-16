@@ -156,7 +156,7 @@ export default function ClientsGrid({
                     </div>
                     <div className="w-full bg-neutral-900 rounded-full h-1.5 overflow-hidden border border-white/5">
                       <div
-                        className="bg-gradient-to-r from-amber-500 to-amber-300 h-full rounded-full transition-all"
+                        className="bg-gradient-to-r from-amber-500 to-amber-300 h-full rounded-full transition"
                         style={{ width: `${pct}%` }}
                       />
                     </div>

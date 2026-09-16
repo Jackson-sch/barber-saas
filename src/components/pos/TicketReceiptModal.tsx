@@ -128,7 +128,7 @@ export default function TicketReceiptModal({
       ? formatWhatsAppUrl(effectivePhone, lines)
       : `https://wa.me/?text=${encodeURIComponent(lines)}`
 
-    window.open(waUrl, '_blank')
+    window.open(waUrl, '_blank', 'noopener,noreferrer')
   }
 
   function handlePrint() {
@@ -254,10 +254,10 @@ export default function TicketReceiptModal({
               </p>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] text-neutral-400 font-medium">
+                <label htmlFor="field" className="text-[11px] text-neutral-400 font-medium">
                   Número de Celular (con código de país o local):
                 </label>
-                <input
+                <input aria-label="Ej. 987654321 o +51987654321"
                   type="tel"
                   placeholder="Ej. 987654321 o +51987654321"
                   value={phoneInput || sale.clientPhone || ''}

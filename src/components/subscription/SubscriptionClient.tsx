@@ -286,10 +286,10 @@ export default function SubscriptionClient({
           <form onSubmit={handleSubmitVoucher} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                   Plan Elegido
                 </label>
-                <select
+                <select aria-label="select"
                   value={selectedPlan}
                   onChange={(e) => setSelectedPlan(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs focus:outline-none focus:border-amber-500"
@@ -301,10 +301,10 @@ export default function SubscriptionClient({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                   Meses a Pagar
                 </label>
-                <select
+                <select aria-label="select"
                   value={months}
                   onChange={(e) => setMonths(parseInt(e.target.value, 10))}
                   className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs focus:outline-none focus:border-amber-500"
@@ -317,10 +317,10 @@ export default function SubscriptionClient({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                   Medio de Pago
                 </label>
-                <select
+                <select aria-label="select"
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as any)}
                   className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs focus:outline-none focus:border-amber-500"
@@ -334,10 +334,10 @@ export default function SubscriptionClient({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                   URL o Enlace de la Captura / Voucher *
                 </label>
-                <input
+                <input aria-label="input"
                   type="url"
                   required
                   value={voucherUrl}
@@ -348,10 +348,10 @@ export default function SubscriptionClient({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                   Código de Operación (Opcional)
                 </label>
-                <input
+                <input aria-label="input"
                   type="text"
                   value={referenceCode}
                   onChange={(e) => setReferenceCode(e.target.value)}
@@ -362,10 +362,10 @@ export default function SubscriptionClient({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Notas Adicionales
               </label>
-              <input
+              <input aria-label="input"
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}

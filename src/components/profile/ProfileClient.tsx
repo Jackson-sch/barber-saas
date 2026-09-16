@@ -227,7 +227,7 @@ export default function ProfileClient({ slug, user, organizationName }: ProfileC
           <div className="p-6 rounded-2xl bg-[#0D0E15] border border-white/[0.08] space-y-6">
             {/* Foto de Perfil */}
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-3">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-3">
                 Foto de Perfil
               </label>
               <div className="flex items-center gap-4">
@@ -240,10 +240,10 @@ export default function ProfileClient({ slug, user, organizationName }: ProfileC
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="py-2 px-3.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-white text-xs font-semibold transition inline-flex items-center gap-2 cursor-pointer shadow-sm">
+                  <label htmlFor="field" className="py-2 px-3.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-white text-xs font-semibold transition inline-flex items-center gap-2 cursor-pointer shadow-sm">
                     <Camera className="w-3.5 h-3.5 text-amber-400" />
                     <span>Cambiar Foto</span>
-                    <input
+                    <input aria-label="input"
                       type="file"
                       accept="image/png,image/jpeg,image/webp"
                       onChange={handleAvatarUpload}
@@ -260,10 +260,10 @@ export default function ProfileClient({ slug, user, organizationName }: ProfileC
             {/* Campos de texto */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                   Nombre Completo *
                 </label>
-                <input
+                <input aria-label="input"
                   type="text"
                   required
                   value={fullName}
@@ -274,12 +274,12 @@ export default function ProfileClient({ slug, user, organizationName }: ProfileC
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                   Teléfono Móvil
                 </label>
                 <div className="relative">
                   <Phone className="w-3.5 h-3.5 absolute left-3 top-3 text-neutral-500" />
-                  <input
+                  <input aria-label="input"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -290,12 +290,12 @@ export default function ProfileClient({ slug, user, organizationName }: ProfileC
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                   Correo Electrónico (No modificable)
                 </label>
                 <div className="relative">
                   <Mail className="w-3.5 h-3.5 absolute left-3 top-3 text-neutral-500" />
-                  <input
+                  <input aria-label="input"
                     type="email"
                     disabled
                     value={user.email}
@@ -305,12 +305,12 @@ export default function ProfileClient({ slug, user, organizationName }: ProfileC
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                   Barbería Vinculada
                 </label>
                 <div className="relative">
                   <Building className="w-3.5 h-3.5 absolute left-3 top-3 text-neutral-500" />
-                  <input
+                  <input aria-label="input"
                     type="text"
                     disabled
                     value={organizationName}
@@ -373,10 +373,10 @@ export default function ProfileClient({ slug, user, organizationName }: ProfileC
 
             <div className="max-w-md space-y-4">
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                   Contraseña Actual *
                 </label>
-                <input
+                <input aria-label="input"
                   type="password"
                   required
                   value={currentPassword}
@@ -387,10 +387,10 @@ export default function ProfileClient({ slug, user, organizationName }: ProfileC
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                   Nueva Contraseña *
                 </label>
-                <input
+                <input aria-label="input"
                   type="password"
                   required
                   value={newPassword}
@@ -401,10 +401,10 @@ export default function ProfileClient({ slug, user, organizationName }: ProfileC
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
                   Confirmar Nueva Contraseña *
                 </label>
-                <input
+                <input aria-label="input"
                   type="password"
                   required
                   value={confirmPassword}

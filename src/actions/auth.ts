@@ -61,6 +61,9 @@ export async function loginAction(formData: FormData) {
 
 export async function logoutAction(slug?: string) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
   await supabase.auth.signOut()
   if (slug) {
     redirect(`/login?redirect=/app/${slug}/dashboard`)
@@ -75,6 +78,9 @@ export async function requestPasswordResetAction(email: string) {
 
   try {
     const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/login?reset=success`,
     })
@@ -100,6 +106,9 @@ interface UpdateProfileInput {
 export async function updateUserProfileInfoAction(input: UpdateProfileInput) {
   try {
     const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -160,6 +169,9 @@ interface UpdatePasswordInput {
 export async function updateUserPasswordAction(input: UpdatePasswordInput) {
   try {
     const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
     const {
       data: { user },
     } = await supabase.auth.getUser()

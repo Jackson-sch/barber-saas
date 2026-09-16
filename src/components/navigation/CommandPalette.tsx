@@ -74,10 +74,14 @@ export default function CommandPalette({
 
   // Focus input al abrir
   useEffect(() => {
+    let t: NodeJS.Timeout
     if (isOpen) {
       setQuery('')
       setSelectedIndex(0)
-      setTimeout(() => inputRef.current?.focus(), 50)
+      t = setTimeout(() => inputRef.current?.focus(), 50)
+    }
+    return () => {
+      if (t) clearTimeout(t)
     }
   }, [isOpen])
 
@@ -341,7 +345,7 @@ export default function CommandPalette({
             {/* Input Header */}
             <div className="p-4 border-b border-white/10 flex items-center gap-3 bg-neutral-900/50">
               <Search className="w-4 h-4 text-amber-400 shrink-0" />
-              <input
+              <input aria-label="input"
                 ref={inputRef}
                 type="text"
                 value={query}

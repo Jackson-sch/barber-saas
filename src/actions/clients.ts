@@ -27,6 +27,9 @@ export interface ClientPreferencesInput {
 
 export async function createClientAction(input: ClientInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   if (!input.full_name || !input.phone || !input.organization_id) {
     return { error: 'Nombre y teléfono son obligatorios.' }
@@ -77,6 +80,9 @@ export async function createClientAction(input: ClientInput) {
 
 export async function updateClientAction(input: ClientInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   if (!input.id || !input.full_name || !input.phone) {
     return { error: 'Datos incompletos para actualizar el cliente.' }
@@ -107,6 +113,9 @@ export async function updateClientAction(input: ClientInput) {
 
 export async function saveClientPreferencesAction(input: ClientPreferencesInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   const { error } = await supabase
     .from('client_preferences')
@@ -136,6 +145,9 @@ export async function saveClientPreferencesAction(input: ClientPreferencesInput)
 
 export async function deleteClientAction(id: string, organization_id: string, slug: string) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   const { error } = await supabase
     .from('clients')
@@ -162,6 +174,9 @@ export interface AdjustLoyaltyInput {
 
 export async function adjustClientLoyaltyAction(input: AdjustLoyaltyInput) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   if (!input.clientId || !input.organizationId) {
     return { error: 'Cliente y organización son requeridos.' }
@@ -218,6 +233,9 @@ export async function adjustClientLoyaltyAction(input: AdjustLoyaltyInput) {
 
 export async function getClientLoyaltyLogsAction(clientId: string, organizationId: string) {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   const { data: logs, error } = await supabase
     .from('loyalty_logs')
@@ -262,6 +280,9 @@ export async function getClientHistoryAction(
   organizationId: string
 ): Promise<{ error?: string; data?: ClientHistoryResponse }> {
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
 
   const { data: apps, error } = await supabase
     .from('appointments')
@@ -333,6 +354,9 @@ export async function searchGlobalClientsAction(
   if (!query || query.trim().length < 2) return { clients: [] }
 
   const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
   const cleanQ = query.trim()
 
   const { data, error } = await supabase

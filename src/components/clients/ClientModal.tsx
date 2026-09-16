@@ -101,12 +101,12 @@ export default function ClientModal({
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Nombre Completo *
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
+              <input aria-label="input"
                 type="text"
                 required
                 value={fullName}
@@ -118,12 +118,12 @@ export default function ClientModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Teléfono / WhatsApp *
             </label>
             <div className="relative">
               <Phone className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
+              <input aria-label="input"
                 type="tel"
                 required
                 value={phone}
@@ -135,12 +135,12 @@ export default function ClientModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Correo Electrónico (Opcional)
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
+              <input aria-label="input"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -151,10 +151,10 @@ export default function ClientModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Notas Generales
             </label>
-            <textarea
+            <textarea aria-label="textarea"
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

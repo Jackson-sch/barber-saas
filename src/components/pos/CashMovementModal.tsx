@@ -186,14 +186,14 @@ export default function CashMovementModal({
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {/* Amount */}
           <div>
-            <label className="block text-[11px] font-mono text-neutral-300 uppercase tracking-wider mb-1">
+            <label htmlFor="field" className="block text-[11px] font-mono text-neutral-300 uppercase tracking-wider mb-1">
               Monto en Efectivo (S/)
             </label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 font-mono text-sm">
                 S/
               </span>
-              <input
+              <input aria-label="0.00"
                 type="number"
                 step="0.10"
                 min="0.10"
@@ -208,10 +208,10 @@ export default function CashMovementModal({
 
           {/* Category */}
           <div>
-            <label className="block text-[11px] font-mono text-neutral-300 uppercase tracking-wider mb-1">
+            <label htmlFor="field" className="block text-[11px] font-mono text-neutral-300 uppercase tracking-wider mb-1">
               Categoría
             </label>
-            <select
+            <select aria-label="select"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full px-3 py-2 rounded-xl bg-[#090A0E] border border-white/10 text-white text-xs focus:outline-none focus:border-amber-400 transition"
@@ -227,10 +227,10 @@ export default function CashMovementModal({
           {/* Barber Selection if ADELANTO_BARBERO */}
           {type === 'EXPENSE' && category === 'ADELANTO_BARBERO' && (
             <div>
-              <label className="block text-[11px] font-mono text-neutral-300 uppercase tracking-wider mb-1">
+              <label htmlFor="field" className="block text-[11px] font-mono text-neutral-300 uppercase tracking-wider mb-1">
                 Especialista que recibe el adelanto
               </label>
-              <select
+              <select aria-label="select"
                 required
                 value={selectedBarberId}
                 onChange={(e) => setSelectedBarberId(e.target.value)}
@@ -248,10 +248,10 @@ export default function CashMovementModal({
 
           {/* Description / Motivo */}
           <div>
-            <label className="block text-[11px] font-mono text-neutral-300 uppercase tracking-wider mb-1">
+            <label htmlFor="field" className="block text-[11px] font-mono text-neutral-300 uppercase tracking-wider mb-1">
               Motivo / Detalle del Comprobante
             </label>
-            <textarea
+            <textarea aria-label="Ej: Compra de 2 bidones de agua y café para el salón..."
               rows={2}
               required
               placeholder="Ej: Compra de 2 bidones de agua y café para el salón..."

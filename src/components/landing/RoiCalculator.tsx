@@ -53,7 +53,7 @@ export default function RoiCalculator() {
                 {barbersCount} {barbersCount === 1 ? 'barbero' : 'barberos'}
               </span>
             </div>
-            <input
+            <input aria-label="input"
               type="range"
               min={1}
               max={15}
@@ -76,7 +76,7 @@ export default function RoiCalculator() {
                 {cutsPerDay} servicios/día
               </span>
             </div>
-            <input
+            <input aria-label="input"
               type="range"
               min={4}
               max={25}
@@ -99,7 +99,7 @@ export default function RoiCalculator() {
                 S/ {averagePrice}.00 PEN
               </span>
             </div>
-            <input
+            <input aria-label="input"
               type="range"
               min={20}
               max={120}

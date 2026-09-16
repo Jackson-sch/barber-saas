@@ -115,7 +115,7 @@ export default function PricingSection() {
           return (
             <div
               key={plan.name}
-              className={`p-7 rounded-3xl flex flex-col justify-between transition-all duration-300 relative ${
+              className={`p-7 rounded-3xl flex flex-col justify-between transition duration-300 relative ${
                 plan.isPopular
                   ? 'bg-gradient-to-b from-[#181B26] to-[#0E1017] border-2 border-amber-500 shadow-2xl shadow-amber-500/15 scale-[1.02]'
                   : 'bg-[#0E1017] border border-white/[0.08] hover:border-white/[0.15]'

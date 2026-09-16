@@ -23,7 +23,7 @@ export default function BookingStepperHeader({ currentStep }: BookingStepperHead
           return (
             <div key={item.id} className="text-center">
               <div
-                className={`h-1.5 rounded-full transition-all duration-300 mb-2 ${
+                className={`h-1.5 rounded-full transition duration-300 mb-2 ${
                   isCurrent
                     ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
                     : isCompleted

@@ -187,7 +187,7 @@ export default function LoyaltyHistoryModal({
           {/* Barra de progreso */}
           <div className="w-full bg-neutral-900 rounded-full h-2.5 overflow-hidden border border-white/5">
             <div
-              className="bg-gradient-to-r from-amber-500 to-amber-300 h-full rounded-full transition-all duration-500"
+              className="bg-gradient-to-r from-amber-500 to-amber-300 h-full rounded-full transition duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -221,7 +221,7 @@ export default function LoyaltyHistoryModal({
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
             <div className="sm:col-span-3">
-              <input
+              <input aria-label="input"
                 type="number"
                 min="1"
                 value={adjustAmount}
@@ -231,7 +231,7 @@ export default function LoyaltyHistoryModal({
               />
             </div>
             <div className="sm:col-span-5">
-              <input
+              <input aria-label="input"
                 type="text"
                 value={adjustReason}
                 onChange={(e) => setAdjustReason(e.target.value)}

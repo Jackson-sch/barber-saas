@@ -181,7 +181,7 @@ export default function AppointmentDetailModal({
                     if (onOpenWhatsApp) {
                       onOpenWhatsApp(appointment)
                     } else if (waUrl) {
-                      window.open(waUrl, '_blank')
+                      window.open(waUrl, '_blank', 'noopener,noreferrer')
                     }
                   }}
                   className="py-1.5 px-3 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-1.5 transition border border-emerald-500/20 cursor-pointer"

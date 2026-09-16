@@ -69,8 +69,8 @@ export default function StepClientDetails({
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-neutral-300 mb-1.5">Nombre Completo</label>
-        <input
+        <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">Nombre Completo</label>
+        <input aria-label="Ej: Rodrigo Valenzuela"
           type="text"
           required
           placeholder="Ej: Rodrigo Valenzuela"
@@ -81,8 +81,8 @@ export default function StepClientDetails({
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-neutral-300 mb-1.5">WhatsApp / Celular</label>
-        <input
+        <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">WhatsApp / Celular</label>
+        <input aria-label="+51 987 654 321"
           type="tel"
           required
           placeholder="+51 987 654 321"
@@ -93,10 +93,10 @@ export default function StepClientDetails({
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+        <label htmlFor="field" className="block text-xs font-medium text-neutral-300 mb-1.5">
           Notas adicionales (opcional)
         </label>
-        <input
+        <input aria-label="Ej: Preferencia de corte o barba..."
           type="text"
           placeholder="Ej: Preferencia de corte o barba..."
           value={clientNotes}

@@ -119,10 +119,10 @@ export default function BarberFormModal({
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Nombre y Apellido *
               </label>
-              <input
+              <input aria-label="input"
                 type="text"
                 required
                 value={fullName}
@@ -133,10 +133,10 @@ export default function BarberFormModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Apodo o Nombre de Silla
               </label>
-              <input
+              <input aria-label="input"
                 type="text"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
@@ -148,10 +148,10 @@ export default function BarberFormModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Rol en Sistema
               </label>
-              <select
+              <select aria-label="select"
                 value={role}
                 onChange={(e) => setRole(e.target.value as any)}
                 className="w-full px-3 py-2.5 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs focus:outline-none focus:border-amber-500 transition"
@@ -164,10 +164,10 @@ export default function BarberFormModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Teléfono / WhatsApp
               </label>
-              <input
+              <input aria-label="input"
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -177,10 +177,10 @@ export default function BarberFormModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
                 Comisión (%) *
               </label>
-              <input
+              <input aria-label="input"
                 type="number"
                 min="0"
                 max="100"
@@ -194,10 +194,10 @@ export default function BarberFormModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+            <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Especialidades (Separadas por comas)
             </label>
-            <input
+            <input aria-label="input"
               type="text"
               value={specialtiesText}
               onChange={(e) => setSpecialtiesText(e.target.value)}

@@ -170,14 +170,14 @@ export default function BarberScheduleModal({
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-neutral-500" />
-                      <input
+                      <input aria-label="input"
                         type="time"
                         value={item.start_time}
                         onChange={(e) => handleScheduleChange(idx, 'start_time', e.target.value)}
                         className="px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-white focus:outline-none focus:border-amber-500 text-xs"
                       />
                       <span className="text-neutral-500">-</span>
-                      <input
+                      <input aria-label="input"
                         type="time"
                         value={item.end_time}
                         onChange={(e) => handleScheduleChange(idx, 'end_time', e.target.value)}
@@ -187,14 +187,14 @@ export default function BarberScheduleModal({
 
                     <div className="flex items-center gap-1.5 text-neutral-400">
                       <span className="text-[11px] text-neutral-500">Refrigerio:</span>
-                      <input
+                      <input aria-label="input"
                         type="time"
                         value={item.lunch_start || '13:00'}
                         onChange={(e) => handleScheduleChange(idx, 'lunch_start', e.target.value)}
                         className="px-1.5 py-1 rounded bg-neutral-900 border border-neutral-800 text-neutral-300 focus:outline-none focus:border-amber-500 text-[11px]"
                       />
                       <span className="text-neutral-500">-</span>
-                      <input
+                      <input aria-label="input"
                         type="time"
                         value={item.lunch_end || '14:00'}
                         onChange={(e) => handleScheduleChange(idx, 'lunch_end', e.target.value)}

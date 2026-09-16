@@ -161,12 +161,12 @@ export default function RegisterForm() {
             {/* Grid 1: Owner & Barbershop Name */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
+                <label htmlFor="field" className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
                   Nombre del Dueño
                 </label>
                 <div className="relative">
                   <User className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
+                  <input aria-label="ownerName"
                     type="text"
                     name="ownerName"
                     required
@@ -177,12 +177,12 @@ export default function RegisterForm() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
+                <label htmlFor="field" className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
                   Nombre de la Barbería
                 </label>
                 <div className="relative">
                   <Building2 className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
+                  <input aria-label="barbershopName"
                     type="text"
                     name="barbershopName"
                     required
@@ -213,12 +213,12 @@ export default function RegisterForm() {
             {/* Grid 2: Phone & City */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
+                <label htmlFor="field" className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
                   WhatsApp / Celular
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
+                  <input aria-label="phone"
                     type="tel"
                     name="phone"
                     required
@@ -229,12 +229,12 @@ export default function RegisterForm() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
+                <label htmlFor="field" className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
                   Ciudad o Distrito
                 </label>
                 <div className="relative">
                   <MapPin className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
+                  <input aria-label="city"
                     type="text"
                     name="city"
                     placeholder="Lima, Miraflores"
@@ -246,12 +246,12 @@ export default function RegisterForm() {
 
             {/* Email Field */}
             <div className="space-y-1.5">
-              <label className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
+              <label htmlFor="field" className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
                 Correo Electrónico de Acceso
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
+                <input aria-label="email"
                   type="email"
                   name="email"
                   required
@@ -264,14 +264,14 @@ export default function RegisterForm() {
             {/* Password Field */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
+                <label htmlFor="field" className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
                   Contraseña de Administrador
                 </label>
                 <span className="text-[11px] text-neutral-400">Mínimo 6 caracteres</span>
               </div>
               <div className="relative">
                 <Lock className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
+                <input aria-label="password"
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   required
@@ -299,8 +299,8 @@ export default function RegisterForm() {
 
             {/* Terms and conditions checkbox */}
             <div className="pt-1">
-              <label className="flex items-start gap-2.5 cursor-pointer select-none text-xs text-neutral-400">
-                <input
+              <label htmlFor="field" className="flex items-start gap-2.5 cursor-pointer select-none text-xs text-neutral-400">
+                <input aria-label="input"
                   type="checkbox"
                   checked={acceptTerms}
                   onChange={(e) => setAcceptTerms(e.target.checked)}

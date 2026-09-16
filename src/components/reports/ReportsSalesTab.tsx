@@ -76,7 +76,7 @@ export default function ReportsSalesTab({
                       className="flex-1 min-w-[42px] max-w-[64px] flex flex-col items-center justify-end h-full group relative hover:z-30"
                     >
                       {/* Tooltip on hover */}
-                      <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-150 bg-[#090A0E] border border-white/20 text-white text-[11px] font-mono py-1.5 px-3 rounded-xl pointer-events-none shadow-2xl z-50 whitespace-nowrap flex items-center gap-1.5 ring-1 ring-black/50">
+                      <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition duration-150 bg-[#090A0E] border border-white/20 text-white text-[11px] font-mono py-1.5 px-3 rounded-xl pointer-events-none shadow-2xl z-50 whitespace-nowrap flex items-center gap-1.5 ring-1 ring-black/50">
                         <span className="font-medium text-neutral-300">{item.label}:</span>
                         <span className="font-extrabold text-amber-400">{formatPrice(item.total)}</span>
                         <span className="text-[10px] text-neutral-400">({item.count} tickets)</span>
@@ -85,7 +85,7 @@ export default function ReportsSalesTab({
                       {/* Bar */}
                       <div
                         style={{ height: `${heightPercent}%` }}
-                        className="w-full rounded-t-lg bg-gradient-to-t from-amber-500/30 to-amber-400 group-hover:to-amber-300 transition-all cursor-pointer relative"
+                        className="w-full rounded-t-lg bg-gradient-to-t from-amber-500/30 to-amber-400 group-hover:to-amber-300 transition cursor-pointer relative"
                       >
                         {item.total > 0 && (
                           <span className="hidden sm:block absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] font-mono text-neutral-400 truncate pointer-events-none">

@@ -95,12 +95,12 @@ export default function ForgotPasswordModal({
             )}
 
             <div>
-              <label className="block text-[11px] font-semibold text-neutral-300 uppercase tracking-wider mb-2">
+              <label htmlFor="field" className="block text-[11px] font-semibold text-neutral-300 uppercase tracking-wider mb-2">
                 Correo Electrónico
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
+                <input aria-label="input"
                   type="email"
                   required
                   value={email}
