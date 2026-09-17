@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Loader2, CreditCard, Store, ShieldCheck } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 
 interface StepClientDetailsProps {
@@ -9,8 +9,13 @@ interface StepClientDetailsProps {
   setClientName: (v: string) => void
   clientPhone: string
   setClientPhone: (v: string) => void
+  clientEmail: string
+  setClientEmail: (v: string) => void
   clientNotes: string
   setClientNotes: (v: string) => void
+  paymentMode: 'IN_PERSON' | 'CULQI_ONLINE'
+  setPaymentMode: (mode: 'IN_PERSON' | 'CULQI_ONLINE') => void
+  culqiAvailable: boolean
   loading: boolean
   activeServiceName?: string
   activeServicePrice?: number
@@ -26,8 +31,13 @@ export default function StepClientDetails({
   setClientName,
   clientPhone,
   setClientPhone,
+  clientEmail,
+  setClientEmail,
   clientNotes,
   setClientNotes,
+  paymentMode,
+  setPaymentMode,
+  culqiAvailable,
   loading,
   activeServiceName,
   activeServicePrice,
@@ -105,6 +115,74 @@ export default function StepClientDetails({
         />
       </div>
 
+      {/* Selector de Modalidad de Pago (si Culqi está habilitado en la barbería) */}
+      {culqiAvailable && (
+        <div className="pt-3 border-t border-white/10 space-y-3">
+          <label className="block text-xs font-bold text-neutral-300 uppercase tracking-wider font-mono">
+            Modalidad de Pago
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={() => setPaymentMode('IN_PERSON')}
+              className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-start gap-2.5 ${
+                paymentMode === 'IN_PERSON'
+                  ? 'bg-amber-500/10 border-amber-500 text-white shadow-sm'
+                  : 'bg-[#090A0E] border-white/10 text-neutral-400 hover:border-white/20'
+              }`}
+            >
+              <Store className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="text-xs font-bold block text-white">Pagar en el Salón</span>
+                <span className="text-[11px] text-neutral-400 block mt-0.5 leading-snug">
+                  Efectivo, POS físico o Yape al llegar al local.
+                </span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPaymentMode('CULQI_ONLINE')}
+              className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-start gap-2.5 ${
+                paymentMode === 'CULQI_ONLINE'
+                  ? 'bg-amber-500/10 border-amber-500 text-white shadow-sm'
+                  : 'bg-[#090A0E] border-white/10 text-neutral-400 hover:border-white/20'
+              }`}
+            >
+              <CreditCard className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>Pagar Ahora Online</span>
+                  <span className="text-[9px] font-mono font-bold px-1 py-0.2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded">
+                    Culqi
+                  </span>
+                </span>
+                <span className="text-[11px] text-neutral-400 block mt-0.5 leading-snug">
+                  Tarjeta Débito/Crédito o Yape en vivo.
+                </span>
+              </div>
+            </button>
+          </div>
+
+          {paymentMode === 'CULQI_ONLINE' && (
+            <div className="space-y-1.5 animate-in fade-in duration-150">
+              <label htmlFor="client_email" className="block text-xs font-medium text-neutral-300">
+                Correo Electrónico (para tu comprobante Culqi)
+              </label>
+              <input
+                id="client_email"
+                type="email"
+                required
+                placeholder="tu-correo@ejemplo.com"
+                value={clientEmail}
+                onChange={(e) => setClientEmail(e.target.value)}
+                className="w-full p-3 rounded-xl bg-[#090A0E] border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500 transition"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center gap-3 mt-4">
         <button
           type="button"
@@ -122,12 +200,23 @@ export default function StepClientDetails({
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Confirmando Cita...</span>
+              <span>
+                {paymentMode === 'CULQI_ONLINE' ? 'Conectando con Culqi...' : 'Confirmando Cita...'}
+              </span>
             </>
           ) : (
             <>
-              <span>Confirmar Reserva</span>
-              <CheckCircle2 className="w-4 h-4" />
+              {paymentMode === 'CULQI_ONLINE' ? (
+                <>
+                  <CreditCard className="w-4 h-4" />
+                  <span>Pagar {formatPrice(Number(activeServicePrice || 0))} con Culqi</span>
+                </>
+              ) : (
+                <>
+                  <span>Confirmar Reserva</span>
+                  <CheckCircle2 className="w-4 h-4" />
+                </>
+              )}
             </>
           )}
         </button>

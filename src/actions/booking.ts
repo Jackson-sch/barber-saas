@@ -300,3 +300,121 @@ export async function createPublicBookingAction(params: CreateBookingParams) {
     startTime: start.toISOString(),
   }
 }
+
+export interface CulqiBookingChargeParams {
+  organizationId: string
+  tokenId: string
+  email: string
+  clientName: string
+  clientPhone: string
+  serviceId: string
+  barberId: string
+  startTime: string
+  notes?: string
+}
+
+/**
+ * Procesa un pago con tarjeta o Yape vía Culqi y confirma la cita online.
+ */
+export async function createCulqiBookingChargeAction(params: CulqiBookingChargeParams) {
+  const supabase = await createClient()
+
+  // 1. Obtener la barbería y su llave secreta de Culqi
+  const { data: org, error: orgErr } = await supabase
+    .from('organizations')
+    .select('id, name, slug, settings')
+    .eq('id', params.organizationId)
+    .single()
+
+  if (orgErr || !org) {
+    return { error: 'Barbería no encontrada.' }
+  }
+
+  const orgSettings = (org.settings as Record<string, any>) || {}
+  const culqi = orgSettings.culqi_settings
+
+  if (!culqi?.enabled || !culqi?.secret_key) {
+    return { error: 'Esta barbería no tiene habilitada la pasarela Culqi.' }
+  }
+
+  // 2. Obtener datos del servicio para calcular el monto exacto
+  const { data: service, error: srvErr } = await supabase
+    .from('services')
+    .select('id, name, price')
+    .eq('id', params.serviceId)
+    .single()
+
+  if (srvErr || !service) {
+    return { error: 'Servicio no encontrado.' }
+  }
+
+  const amountCents = Math.round(Number(service.price) * 100)
+  const clientEmail = params.email?.trim() || `${params.clientPhone.replace(/\D/g, '')}@barberos.app`
+
+  // 3. Llamar a la API de Culqi para procesar el cargo
+  try {
+    const culqiRes = await fetch('https://api.culqi.com/v2/charges', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${culqi.secret_key.trim()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        amount: amountCents,
+        currency_code: 'PEN',
+        email: clientEmail,
+        source_id: params.tokenId,
+        description: `Cita: ${service.name} - ${org.name}`,
+        antifraud_details: {
+          first_name: params.clientName.split(' ')[0] || 'Cliente',
+          last_name: params.clientName.split(' ').slice(1).join(' ') || 'General',
+          phone_number: params.clientPhone.replace(/\D/g, ''),
+        },
+      }),
+    })
+
+    const chargeData = await culqiRes.json()
+
+    if (!culqiRes.ok) {
+      console.error('Culqi charge failed:', chargeData)
+      return {
+        error:
+          chargeData.user_message ||
+          chargeData.message ||
+          'El pago fue rechazado por la pasarela o banco emisor. Por favor intenta nuevamente.',
+      }
+    }
+
+    // 4. Crear la cita con nota de pago online verificado
+    const bookingRes = await createPublicBookingAction({
+      organizationId: params.organizationId,
+      organizationSlug: org.slug,
+      clientName: params.clientName,
+      clientPhone: params.clientPhone,
+      clientEmail: clientEmail,
+      serviceId: params.serviceId,
+      barberId: params.barberId,
+      startTime: params.startTime,
+      notes: `${params.notes || ''} [PAGADO ONLINE CULQI: Cargo ID ${chargeData.id}]`.trim(),
+    })
+
+    if (bookingRes.error) {
+      return { error: bookingRes.error }
+    }
+
+    return {
+      success: true,
+      chargeId: chargeData.id,
+      appointmentId: bookingRes.appointmentId,
+      serviceName: bookingRes.serviceName,
+      startTime: bookingRes.startTime,
+      isPaidOnline: true,
+    }
+  } catch (err: any) {
+    console.error('Error creating Culqi charge:', err)
+    return {
+      error: 'Error de comunicación con la pasarela Culqi. Intenta nuevamente.',
+    }
+  }
+}
+

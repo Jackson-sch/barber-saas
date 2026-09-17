@@ -506,6 +506,14 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
                     phone: org.phone,
                     address: org.address,
                     city: org.city,
+                    culqiSettings:
+                      orgSettings.culqi_settings?.enabled && orgSettings.culqi_settings?.public_key
+                        ? {
+                            enabled: true,
+                            public_key: orgSettings.culqi_settings.public_key,
+                            environment: orgSettings.culqi_settings.environment || 'test',
+                          }
+                        : null,
                   }}
                   services={(services as any[]) || []}
                   barbers={(barbers as any[]) || []}

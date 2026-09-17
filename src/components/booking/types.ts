@@ -20,9 +20,16 @@ export interface BookingOrganization {
   phone: string | null
   address: string | null
   city: string | null
+  culqiSettings?: {
+    enabled: boolean
+    public_key: string
+    environment?: 'test' | 'production'
+  } | null
 }
 
 export interface ConfirmedBookingInfo {
   serviceName: string
   startTime: string
+  isPaidOnline?: boolean
+  chargeId?: string
 }

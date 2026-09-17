@@ -82,6 +82,19 @@ export default function StepConfirmation({
             <span className="text-neutral-400">Contacto</span>
             <span className="font-mono text-neutral-300">{clientPhone}</span>
           </div>
+          {confirmedBooking.isPaidOnline ? (
+            <div className="flex justify-between items-center pt-2 border-t border-dashed border-white/10">
+              <span className="text-emerald-400 font-semibold">Estado de Pago</span>
+              <span className="font-mono text-emerald-400 font-bold text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30">
+                PAGADO VÍA CULQI
+              </span>
+            </div>
+          ) : (
+            <div className="flex justify-between items-center pt-2 border-t border-dashed border-white/10">
+              <span className="text-neutral-400">Modalidad</span>
+              <span className="text-amber-400 font-medium">Pago presencial en el local</span>
+            </div>
+          )}
         </div>
       </div>
 
