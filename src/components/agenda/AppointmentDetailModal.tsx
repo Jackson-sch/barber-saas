@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   X,
   Clock,
@@ -72,6 +72,33 @@ export default function AppointmentDetailModal({
   const [loading, setLoading] = useState(false)
   const [showVoucherZoom, setShowVoucherZoom] = useState(false)
 
+  // Cerrar zoom si el modal se desmonta o cierra
+  useEffect(() => {
+    if (!isOpen) {
+      setShowVoucherZoom(false)
+    }
+  }, [isOpen])
+
+  // Soporte para tecla Esc (cierra primero el zoom, o el modal si no hay zoom)
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        if (showVoucherZoom) {
+          setShowVoucherZoom(false)
+        } else {
+          onClose()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, showVoucherZoom, onClose])
+
   if (!isOpen || !appointment) return null
 
   const startTime = new Date(appointment.start_time).toLocaleTimeString('es-PE', {
@@ -118,7 +145,14 @@ export default function AppointmentDetailModal({
     : null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose()
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+    >
       <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-2xl relative">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
@@ -347,29 +381,75 @@ export default function AppointmentDetailModal({
 
       {/* Modal de visualización completa del comprobante */}
       {showVoucherZoom && appointment.voucher_url && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative max-w-2xl w-full max-h-[90vh] flex flex-col items-center">
-            <button
-              type="button"
-              onClick={() => setShowVoucherZoom(false)}
-              className="absolute -top-12 right-0 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
-              title="Cerrar vista"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <div className="bg-[#090A0E] border border-white/15 rounded-2xl p-2.5 overflow-hidden shadow-2xl flex flex-col items-center">
+        <div
+          onClick={() => setShowVoucherZoom(false)}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-150 cursor-zoom-out"
+        >
+          {/* Botón flotante siempre accesible en la esquina superior derecha */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowVoucherZoom(false)
+            }}
+            className="fixed top-4 right-4 z-[110] px-3.5 py-2 rounded-full bg-neutral-900/90 hover:bg-neutral-800 text-white text-xs font-semibold shadow-2xl border border-white/20 flex items-center gap-2 transition cursor-pointer"
+            title="Cerrar vista (Esc)"
+          >
+            <X className="w-4 h-4 text-neutral-300" />
+            <span>Cerrar (Esc)</span>
+          </button>
+
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-xl w-full max-h-[92vh] bg-[#0c0e14] border border-white/15 rounded-2xl p-4 shadow-2xl flex flex-col items-center cursor-default gap-3 animate-in zoom-in-95 duration-150"
+          >
+            {/* Header del modal de zoom */}
+            <div className="w-full flex items-center justify-between pb-2.5 border-b border-neutral-800">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <CheckCircle2 className="w-4 h-4" />
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Comprobante de Pago
+                  </h4>
+                  <p className="text-[11px] text-neutral-400">
+                    Cliente: <strong className="text-white">{appointment.client?.full_name}</strong>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowVoucherZoom(false)}
+                className="p-1.5 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white text-xs font-medium flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Cerrar</span>
+              </button>
+            </div>
+
+            {/* Imagen del comprobante */}
+            <div className="w-full flex items-center justify-center overflow-auto max-h-[70vh] rounded-xl bg-neutral-950/70 p-2 border border-neutral-800/80">
               <img
                 src={appointment.voucher_url}
                 alt="Comprobante en detalle"
-                className="max-h-[80vh] w-auto object-contain rounded-xl"
+                className="max-h-[66vh] w-auto max-w-full object-contain rounded-lg select-none shadow-md"
               />
-              <div className="pt-3 pb-1 text-center">
-                <span className="text-xs text-neutral-400">
-                  Comprobante enviado por{' '}
-                  <strong className="text-white">{appointment.client?.full_name}</strong> para el turno de las{' '}
-                  <strong className="text-amber-400">{startTime}</strong>
-                </span>
-              </div>
+            </div>
+
+            {/* Footer con información del turno */}
+            <div className="w-full flex items-center justify-between pt-2 border-t border-neutral-800/80 text-xs text-neutral-400 px-1">
+              <span className="text-[11px]">
+                Turno: <strong className="text-amber-400">{startTime}</strong> · Clic fuera o presiona <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 font-mono text-[10px] border border-neutral-700">Esc</kbd>
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowVoucherZoom(false)}
+                className="text-xs text-amber-400 hover:text-amber-300 font-semibold cursor-pointer underline transition"
+              >
+                Volver al detalle
+              </button>
             </div>
           </div>
         </div>
