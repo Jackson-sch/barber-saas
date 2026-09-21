@@ -2,7 +2,13 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { Database, LoyaltyProgramSettings, WhatsAppNotificationSettings, CulqiSettings } from '@/types/database.types'
+import type {
+  Database,
+  LoyaltyProgramSettings,
+  WhatsAppNotificationSettings,
+  CulqiSettings,
+  ManualPaymentSettings,
+} from '@/types/database.types'
 
 export interface UpdateOrgByAdminInput {
   orgId: string
@@ -28,6 +34,7 @@ export interface UpdateTenantSettingsInput {
   loyaltyProgram?: LoyaltyProgramSettings
   whatsappSettings?: WhatsAppNotificationSettings
   culqiSettings?: CulqiSettings
+  manualPaymentSettings?: ManualPaymentSettings
   logoUrl?: string | null
   primaryColor?: string
   secondaryColor?: string
@@ -191,6 +198,9 @@ export async function updateTenantSettingsAction(input: UpdateTenantSettingsInpu
     ...(input.loyaltyProgram !== undefined ? { loyalty_program: input.loyaltyProgram } : {}),
     ...(input.whatsappSettings !== undefined ? { whatsapp_notifications: input.whatsappSettings } : {}),
     ...(input.culqiSettings !== undefined ? { culqi_settings: input.culqiSettings } : {}),
+    ...(input.manualPaymentSettings !== undefined
+      ? { manual_payment_settings: input.manualPaymentSettings }
+      : {}),
     ...(input.bannerUrl !== undefined ? { banner_url: input.bannerUrl } : {}),
     ...(input.tagline !== undefined ? { tagline: input.tagline } : {}),
   }

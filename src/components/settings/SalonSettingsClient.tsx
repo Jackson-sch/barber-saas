@@ -87,6 +87,33 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
   const [culqiPublicKey, setCulqiPublicKey] = useState(cs?.public_key || '')
   const [culqiSecretKey, setCulqiSecretKey] = useState(cs?.secret_key || '')
 
+  // 6. Cobros Rápidos con QR (Yape, Plin & Billeteras Móviles)
+  const mps = organization.manualPaymentSettings
+  const [manualPaymentEnabled, setManualPaymentEnabled] = useState(mps?.enabled ?? false)
+  const [qrImageUrl, setQrImageUrl] = useState(mps?.qr_image_url || '')
+  const [paymentPhone, setPaymentPhone] = useState(mps?.payment_phone || organization.phone || '')
+  const [beneficiaryName, setBeneficiaryName] = useState(mps?.beneficiary_name || '')
+  const [walletType, setWalletType] = useState(mps?.wallet_type || 'Yape / Plin')
+  const [paymentInstructions, setPaymentInstructions] = useState(
+    mps?.instructions || 'Escanea el código QR o transfiere al número indicado para confirmar tu cita.'
+  )
+
+  function handleQrUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) {
+      setError('El archivo de imagen del QR no debe superar los 2MB.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setQrImageUrl(reader.result)
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
   // Navegación por pestañas y estados de formulario
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
   const [loading, setLoading] = useState(false)
@@ -178,6 +205,14 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
           environment: culqiEnvironment,
           public_key: culqiPublicKey.trim(),
           secret_key: culqiSecretKey.trim(),
+        },
+        manualPaymentSettings: {
+          enabled: manualPaymentEnabled,
+          qr_image_url: qrImageUrl.trim() || null,
+          payment_phone: paymentPhone.trim() || null,
+          beneficiary_name: beneficiaryName.trim() || null,
+          wallet_type: walletType.trim() || 'Yape / Plin',
+          instructions: paymentInstructions.trim() || null,
         },
         logoUrl: logoUrl.trim() || null,
         primaryColor: primaryColor.trim() || '#F59E0B',
@@ -440,6 +475,20 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
             setCulqiPublicKey={setCulqiPublicKey}
             culqiSecretKey={culqiSecretKey}
             setCulqiSecretKey={setCulqiSecretKey}
+            manualPaymentEnabled={manualPaymentEnabled}
+            setManualPaymentEnabled={setManualPaymentEnabled}
+            qrImageUrl={qrImageUrl}
+            setQrImageUrl={setQrImageUrl}
+            handleQrUpload={handleQrUpload}
+            paymentPhone={paymentPhone}
+            setPaymentPhone={setPaymentPhone}
+            beneficiaryName={beneficiaryName}
+            setBeneficiaryName={setBeneficiaryName}
+            walletType={walletType}
+            setWalletType={setWalletType}
+            paymentInstructions={paymentInstructions}
+            setPaymentInstructions={setPaymentInstructions}
+            salonPhone={phone}
           />
         )}
 

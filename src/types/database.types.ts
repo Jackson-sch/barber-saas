@@ -864,3 +864,12 @@ export interface CulqiSettings {
   public_key: string
   secret_key: string
 }
+
+export interface ManualPaymentSettings {
+  enabled: boolean
+  qr_image_url?: string | null
+  payment_phone?: string | null
+  beneficiary_name?: string | null
+  wallet_type?: string | null
+  instructions?: string | null
+}

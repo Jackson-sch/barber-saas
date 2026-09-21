@@ -31,7 +31,10 @@ export default function StepConfirmation({
     minute: '2-digit',
   })
 
-  const waText = `¡Hola ${organization.name}! Acabo de confirmar mi cita para *${confirmedBooking.serviceName}* el ${formattedDate} a nombre de *${clientName}*. ¡Nos vemos!`
+  const isQrPayment = confirmedBooking.paymentMethod === 'QR_WALLET'
+  const waText = isQrPayment
+    ? `¡Hola ${organization.name}! Acabo de reservar mi cita para *${confirmedBooking.serviceName}* el ${formattedDate} a nombre de *${clientName}*. Adjunto mi constancia de pago vía Yape/Plin${confirmedBooking.opReference ? ` (Ref: ${confirmedBooking.opReference})` : ''}. ¡Muchas gracias!`
+    : `¡Hola ${organization.name}! Acabo de confirmar mi cita para *${confirmedBooking.serviceName}* el ${formattedDate} a nombre de *${clientName}*. ¡Nos vemos!`
   const waUrl = organization.phone ? formatWhatsAppUrl(organization.phone, waText) : ''
 
   return (
@@ -48,15 +51,17 @@ export default function StepConfirmation({
       </span>
       <h2 className="text-2xl font-bold text-white tracking-tight">¡Tu Lugar está Asegurado!</h2>
       <p className="text-xs sm:text-sm text-neutral-400 mt-1.5 max-w-sm mx-auto">
-        Te esperamos en <span className="text-white font-medium">{organization.name}</span> para brindarte el mejor corte y experiencia.
+        Te esperamos con puntualidad en <span className="text-white font-medium">{organization.name}</span>.
       </p>
 
-      {/* Digital Ticket */}
-      <div className="my-6 rounded-2xl bg-[#090A0E] border border-white/10 p-5 text-left relative shadow-inner">
-        <div className="flex items-center justify-between pb-3 border-b border-dashed border-white/15 mb-3">
+      {/* Ticket Card */}
+      <div className="my-6 rounded-2xl bg-[#090A0E] border border-white/10 p-5 text-left space-y-3 relative overflow-hidden">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
             <Ticket className="w-4 h-4 text-amber-400" />
-            <span className="text-xs font-mono font-medium text-neutral-300">TICKET DE ATENCIÓN</span>
+            <span className="font-bold text-xs uppercase tracking-wider text-white">
+              Comprobante de Reserva
+            </span>
           </div>
           <span className="text-[10px] font-mono text-neutral-500 uppercase">Reserva Inmediata</span>
         </div>
@@ -89,6 +94,21 @@ export default function StepConfirmation({
                 PAGADO VÍA CULQI
               </span>
             </div>
+          ) : confirmedBooking.paymentMethod === 'QR_WALLET' ? (
+            <div className="flex flex-col gap-1.5 pt-2 border-t border-dashed border-white/10">
+              <div className="flex justify-between items-center">
+                <span className="text-emerald-400 font-semibold">Modalidad</span>
+                <span className="font-mono text-emerald-400 font-bold text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30">
+                  PAGO VÍA QR (YAPE / PLIN)
+                </span>
+              </div>
+              {confirmedBooking.opReference && (
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-neutral-400">Ref / Op:</span>
+                  <span className="font-mono text-neutral-200">{confirmedBooking.opReference}</span>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="flex justify-between items-center pt-2 border-t border-dashed border-white/10">
               <span className="text-neutral-400">Modalidad</span>
@@ -103,9 +123,15 @@ export default function StepConfirmation({
           href={waUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-semibold text-sm flex items-center justify-center gap-2 transition shadow-lg shadow-amber-500/20 mb-3 cursor-pointer"
+          className={`w-full py-3.5 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition shadow-lg mb-3 cursor-pointer ${
+            isQrPayment
+              ? 'bg-emerald-500 hover:bg-emerald-400 text-black shadow-emerald-500/20'
+              : 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/20'
+          }`}
         >
-          <span>Notificar por WhatsApp</span>
+          <span>
+            {isQrPayment ? '📲 Enviar Constancia por WhatsApp' : 'Notificar por WhatsApp'}
+          </span>
           <ArrowRight className="w-4 h-4" />
         </a>
       )}

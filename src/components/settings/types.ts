@@ -1,4 +1,9 @@
-import type { LoyaltyProgramSettings, WhatsAppNotificationSettings, CulqiSettings } from '@/types/database.types'
+import type {
+  LoyaltyProgramSettings,
+  WhatsAppNotificationSettings,
+  CulqiSettings,
+  ManualPaymentSettings,
+} from '@/types/database.types'
 
 export type SettingsTab = 'general' | 'branding' | 'loyalty' | 'whatsapp' | 'payments'
 
@@ -16,6 +21,7 @@ export interface SalonSettingsProps {
     loyaltyProgram?: LoyaltyProgramSettings | null
     whatsappSettings?: WhatsAppNotificationSettings | null
     culqiSettings?: CulqiSettings | null
+    manualPaymentSettings?: ManualPaymentSettings | null
     logoUrl?: string | null
     primaryColor?: string
     secondaryColor?: string

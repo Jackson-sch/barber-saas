@@ -514,6 +514,21 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
                             environment: orgSettings.culqi_settings.environment || 'test',
                           }
                         : null,
+                    manualPaymentSettings:
+                      orgSettings.manual_payment_settings?.enabled
+                        ? {
+                            enabled: true,
+                            qrImageUrl: orgSettings.manual_payment_settings.qr_image_url || null,
+                            paymentPhone:
+                              orgSettings.manual_payment_settings.payment_phone || org.phone || null,
+                            beneficiaryName:
+                              orgSettings.manual_payment_settings.beneficiary_name || null,
+                            walletType:
+                              orgSettings.manual_payment_settings.wallet_type || 'Yape / Plin',
+                            instructions:
+                              orgSettings.manual_payment_settings.instructions || null,
+                          }
+                        : null,
                   }}
                   services={(services as any[]) || []}
                   barbers={(barbers as any[]) || []}

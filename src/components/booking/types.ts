@@ -13,6 +13,15 @@ export interface BookingBarber {
   specialties: string[]
 }
 
+export interface ManualPaymentSettings {
+  enabled: boolean
+  qrImageUrl?: string | null
+  paymentPhone?: string | null
+  beneficiaryName?: string | null
+  walletType?: string | null
+  instructions?: string | null
+}
+
 export interface BookingOrganization {
   id: string
   name: string
@@ -25,6 +34,7 @@ export interface BookingOrganization {
     public_key: string
     environment?: 'test' | 'production'
   } | null
+  manualPaymentSettings?: ManualPaymentSettings | null
 }
 
 export interface ConfirmedBookingInfo {
@@ -32,4 +42,6 @@ export interface ConfirmedBookingInfo {
   startTime: string
   isPaidOnline?: boolean
   chargeId?: string
+  paymentMethod?: 'IN_PERSON' | 'QR_WALLET' | 'CULQI_ONLINE'
+  opReference?: string
 }

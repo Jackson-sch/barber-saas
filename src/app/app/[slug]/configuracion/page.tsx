@@ -31,6 +31,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
           orgSettings.whatsappSettings ||
           null,
         culqiSettings: orgSettings.culqi_settings || null,
+        manualPaymentSettings: orgSettings.manual_payment_settings || null,
         logoUrl: org.logo_url || null,
         primaryColor: org.primary_color || '#F59E0B',
         secondaryColor: org.secondary_color || '#0F172A',

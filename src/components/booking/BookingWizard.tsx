@@ -28,11 +28,13 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
   const [selectedService, setSelectedService] = useState<string | null>(null)
   const [selectedBarber, setSelectedBarber] = useState<string | null>(null)
 
-  // Disponibilidad de Culqi en la barbería
+  // Disponibilidad de métodos de pago en la barbería
   const culqiAvailable = Boolean(organization.culqiSettings?.enabled && organization.culqiSettings?.public_key)
-  const [paymentMode, setPaymentMode] = useState<'IN_PERSON' | 'CULQI_ONLINE'>(
-    culqiAvailable ? 'CULQI_ONLINE' : 'IN_PERSON'
+  const qrAvailable = Boolean(organization.manualPaymentSettings?.enabled)
+  const [paymentMode, setPaymentMode] = useState<'IN_PERSON' | 'QR_WALLET' | 'CULQI_ONLINE'>(
+    qrAvailable ? 'QR_WALLET' : culqiAvailable ? 'CULQI_ONLINE' : 'IN_PERSON'
   )
+  const [paymentReference, setPaymentReference] = useState('')
   const [clientEmail, setClientEmail] = useState('')
 
   // Fechas locales de la barbería (America/Lima UTC-5)
@@ -199,6 +201,7 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
                   serviceName: res.serviceName || activeService?.name || 'Servicio',
                   startTime: res.startTime || bookingIso,
                   isPaidOnline: true,
+                  paymentMethod: 'CULQI_ONLINE',
                   chargeId: res.chargeId,
                 })
                 setStep(5)
@@ -222,7 +225,47 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
       return
     }
 
-    // CASO B: Pago Presencial en el Salón
+    // CASO B: Pago con Código QR (Yape, Plin o Transferencia)
+    if (paymentMode === 'QR_WALLET' && qrAvailable) {
+      try {
+        const walletLabel = organization.manualPaymentSettings?.walletType || 'Yape / Plin'
+        const refNote = paymentReference.trim() ? ` - Ref/Op: ${paymentReference.trim()}` : ''
+        const notesWithQr = `${clientNotes ? clientNotes + ' | ' : ''}[PAGO VÍA ${walletLabel}${refNote}]`.trim()
+
+        const res = await createPublicBookingAction({
+          organizationId: organization.id,
+          organizationSlug: organization.slug,
+          clientName,
+          clientPhone,
+          clientEmail: clientEmail || undefined,
+          serviceId: selectedService,
+          barberId: selectedBarber,
+          startTime: bookingIso,
+          notes: notesWithQr,
+        })
+
+        if (res?.error) {
+          setError(res.error)
+          setLoading(false)
+        } else if (res?.success) {
+          setConfirmedBooking({
+            serviceName: res.serviceName || activeService?.name || 'Servicio',
+            startTime: res.startTime || bookingIso,
+            isPaidOnline: false,
+            paymentMethod: 'QR_WALLET',
+            opReference: paymentReference.trim() || undefined,
+          })
+          setStep(5)
+          setLoading(false)
+        }
+      } catch {
+        setError('Error al procesar la reserva con QR. Inténtalo de nuevo.')
+        setLoading(false)
+      }
+      return
+    }
+
+    // CASO C: Pago Presencial en el Salón
     try {
       const res = await createPublicBookingAction({
         organizationId: organization.id,
@@ -232,7 +275,7 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
         serviceId: selectedService,
         barberId: selectedBarber,
         startTime: bookingIso,
-        notes: clientNotes,
+        notes: `${clientNotes ? clientNotes + ' | ' : ''}[PAGO EN EL SALÓN]`.trim(),
       })
 
       if (res?.error) {
@@ -243,6 +286,7 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
           serviceName: res.serviceName || activeService?.name || 'Servicio',
           startTime: res.startTime || bookingIso,
           isPaidOnline: false,
+          paymentMethod: 'IN_PERSON',
         })
         setStep(5)
       }
@@ -260,6 +304,7 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
     setClientName('')
     setClientPhone('')
     setClientEmail('')
+    setPaymentReference('')
     setClientNotes('')
   }
 
@@ -341,6 +386,10 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
           paymentMode={paymentMode}
           setPaymentMode={setPaymentMode}
           culqiAvailable={culqiAvailable}
+          qrAvailable={qrAvailable}
+          manualPaymentSettings={organization.manualPaymentSettings}
+          paymentReference={paymentReference}
+          setPaymentReference={setPaymentReference}
           loading={loading}
           activeServiceName={activeService?.name}
           activeServicePrice={activeService?.price}
