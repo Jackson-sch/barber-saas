@@ -20,6 +20,7 @@ export interface ManualPaymentSettings {
   beneficiaryName?: string | null
   walletType?: string | null
   instructions?: string | null
+  requireVoucher?: boolean
 }
 
 export interface BookingOrganization {
@@ -44,4 +45,5 @@ export interface ConfirmedBookingInfo {
   chargeId?: string
   paymentMethod?: 'IN_PERSON' | 'QR_WALLET' | 'CULQI_ONLINE'
   opReference?: string
+  voucherUrl?: string
 }

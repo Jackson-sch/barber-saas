@@ -470,6 +470,7 @@ export interface Database {
           source: 'ONLINE' | 'WALK_IN' | 'PHONE' | 'WHATSAPP'
           notes: string | null
           total_price: number
+          voucher_url: string | null
           created_at: string
           updated_at: string
         }
@@ -486,6 +487,7 @@ export interface Database {
           source?: 'ONLINE' | 'WALK_IN' | 'PHONE' | 'WHATSAPP'
           notes?: string | null
           total_price: number
+          voucher_url?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -502,6 +504,7 @@ export interface Database {
           source?: 'ONLINE' | 'WALK_IN' | 'PHONE' | 'WHATSAPP'
           notes?: string | null
           total_price?: number
+          voucher_url?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -872,4 +875,5 @@ export interface ManualPaymentSettings {
   beneficiary_name?: string | null
   wallet_type?: string | null
   instructions?: string | null
+  require_voucher?: boolean
 }

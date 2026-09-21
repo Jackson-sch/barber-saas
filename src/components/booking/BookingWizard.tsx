@@ -36,6 +36,65 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
   )
   const [paymentReference, setPaymentReference] = useState('')
   const [clientEmail, setClientEmail] = useState('')
+  const [voucherImage, setVoucherImage] = useState('')
+  const [voucherFileName, setVoucherFileName] = useState('')
+
+  function compressImage(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const maxDim = 1200
+          let width = img.width
+          let height = img.height
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width)
+              width = maxDim
+            } else {
+              width = Math.round((width * maxDim) / height)
+              height = maxDim
+            }
+          }
+
+          const canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            resolve(reader.result as string)
+            return
+          }
+          ctx.drawImage(img, 0, 0, width, height)
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.82)
+          resolve(dataUrl)
+        }
+        img.onerror = () => resolve(reader.result as string)
+        img.src = e.target?.result as string
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  async function handleVoucherUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 8 * 1024 * 1024) {
+      setError('La imagen de la constancia no debe superar los 8MB.')
+      return
+    }
+    setError(null)
+    try {
+      const compressed = await compressImage(file)
+      setVoucherImage(compressed)
+      setVoucherFileName(file.name)
+    } catch {
+      setError('No se pudo procesar la imagen del comprobante.')
+    }
+  }
 
   // Fechas locales de la barbería (America/Lima UTC-5)
   const todayStr = getLocalDateString(new Date(), 'America/Lima')
@@ -227,10 +286,17 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
 
     // CASO B: Pago con Código QR (Yape, Plin o Transferencia)
     if (paymentMode === 'QR_WALLET' && qrAvailable) {
+      if (organization.manualPaymentSettings?.requireVoucher && !voucherImage) {
+        setError('Por favor adjunta la captura de pantalla de tu constancia de pago Yape/Plin para continuar.')
+        setLoading(false)
+        return
+      }
+
       try {
         const walletLabel = organization.manualPaymentSettings?.walletType || 'Yape / Plin'
         const refNote = paymentReference.trim() ? ` - Ref/Op: ${paymentReference.trim()}` : ''
-        const notesWithQr = `${clientNotes ? clientNotes + ' | ' : ''}[PAGO VÍA ${walletLabel}${refNote}]`.trim()
+        const voucherNote = voucherImage ? ' [VOUCHER ADJUNTO]' : ''
+        const notesWithQr = `${clientNotes ? clientNotes + ' | ' : ''}[PAGO VÍA ${walletLabel}${refNote}]${voucherNote}`.trim()
 
         const res = await createPublicBookingAction({
           organizationId: organization.id,
@@ -242,6 +308,7 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
           barberId: selectedBarber,
           startTime: bookingIso,
           notes: notesWithQr,
+          voucherUrl: voucherImage || null,
         })
 
         if (res?.error) {
@@ -254,6 +321,7 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
             isPaidOnline: false,
             paymentMethod: 'QR_WALLET',
             opReference: paymentReference.trim() || undefined,
+            voucherUrl: voucherImage || undefined,
           })
           setStep(5)
           setLoading(false)
@@ -305,6 +373,8 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
     setClientPhone('')
     setClientEmail('')
     setPaymentReference('')
+    setVoucherImage('')
+    setVoucherFileName('')
     setClientNotes('')
   }
 
@@ -390,6 +460,10 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
           manualPaymentSettings={organization.manualPaymentSettings}
           paymentReference={paymentReference}
           setPaymentReference={setPaymentReference}
+          voucherImage={voucherImage}
+          setVoucherImage={setVoucherImage}
+          voucherFileName={voucherFileName}
+          handleVoucherUpload={handleVoucherUpload}
           loading={loading}
           activeServiceName={activeService?.name}
           activeServicePrice={activeService?.price}

@@ -15,6 +15,7 @@ interface CreateBookingParams {
   barberId: string
   startTime: string // ISO string
   notes?: string
+  voucherUrl?: string | null
 }
 
 export interface SlotAvailability {
@@ -268,6 +269,7 @@ export async function createPublicBookingAction(params: CreateBookingParams) {
       source: 'ONLINE',
       total_price: Number(service.price),
       notes: notes || null,
+      voucher_url: params.voucherUrl || null,
     })
     .select('id')
     .single()
@@ -298,6 +300,7 @@ export async function createPublicBookingAction(params: CreateBookingParams) {
     appointmentId: appointment.id,
     serviceName: service.name,
     startTime: start.toISOString(),
+    voucherUrl: params.voucherUrl || null,
   }
 }
 

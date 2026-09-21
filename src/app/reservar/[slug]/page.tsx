@@ -527,6 +527,8 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
                               orgSettings.manual_payment_settings.wallet_type || 'Yape / Plin',
                             instructions:
                               orgSettings.manual_payment_settings.instructions || null,
+                            requireVoucher:
+                              orgSettings.manual_payment_settings.require_voucher || false,
                           }
                         : null,
                   }}

@@ -16,6 +16,7 @@ import {
   ExternalLink,
   MessageCircle,
   Loader2,
+  Eye,
 } from 'lucide-react'
 import { formatPrice, formatMinutes } from '@/lib/utils'
 import { updateAppointmentStatusAction } from '@/actions/agenda'
@@ -33,6 +34,7 @@ export interface AppointmentWithDetails {
   source: string
   notes: string | null
   total_price: number
+  voucher_url?: string | null
   client?: {
     full_name: string
     phone: string
@@ -68,6 +70,7 @@ export default function AppointmentDetailModal({
   onOpenWhatsApp,
 }: AppointmentDetailModalProps) {
   const [loading, setLoading] = useState(false)
+  const [showVoucherZoom, setShowVoucherZoom] = useState(false)
 
   if (!isOpen || !appointment) return null
 
@@ -234,6 +237,41 @@ export default function AppointmentDetailModal({
             </div>
           )}
 
+          {/* Comprobante de Pago Adjunto (Yape/Plin/Transferencia) */}
+          {appointment.voucher_url && (
+            <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/25 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider font-mono">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Comprobante de Pago Adjunto</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowVoucherZoom(true)}
+                  className="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 transition cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Ampliar</span>
+                </button>
+              </div>
+
+              <div
+                onClick={() => setShowVoucherZoom(true)}
+                className="w-full max-h-48 rounded-lg overflow-hidden border border-white/10 bg-neutral-950 flex items-center justify-center cursor-pointer hover:border-emerald-500/50 transition group relative p-1"
+              >
+                <img
+                  src={appointment.voucher_url}
+                  alt="Comprobante de pago"
+                  className="max-h-44 object-contain rounded group-hover:scale-102 transition duration-200"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold gap-1.5 transition rounded-lg">
+                  <Eye className="w-4 h-4 text-emerald-400" />
+                  <span>Clic para ver comprobante completo</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Actions depending on status */}
           <div className="pt-4 border-t border-neutral-800 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -306,6 +344,36 @@ export default function AppointmentDetailModal({
           </div>
         </div>
       </div>
+
+      {/* Modal de visualización completa del comprobante */}
+      {showVoucherZoom && appointment.voucher_url && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative max-w-2xl w-full max-h-[90vh] flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setShowVoucherZoom(false)}
+              className="absolute -top-12 right-0 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+              title="Cerrar vista"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="bg-[#090A0E] border border-white/15 rounded-2xl p-2.5 overflow-hidden shadow-2xl flex flex-col items-center">
+              <img
+                src={appointment.voucher_url}
+                alt="Comprobante en detalle"
+                className="max-h-[80vh] w-auto object-contain rounded-xl"
+              />
+              <div className="pt-3 pb-1 text-center">
+                <span className="text-xs text-neutral-400">
+                  Comprobante enviado por{' '}
+                  <strong className="text-white">{appointment.client?.full_name}</strong> para el turno de las{' '}
+                  <strong className="text-amber-400">{startTime}</strong>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

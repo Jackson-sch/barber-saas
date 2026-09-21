@@ -108,6 +108,15 @@ export default function StepConfirmation({
                   <span className="font-mono text-neutral-200">{confirmedBooking.opReference}</span>
                 </div>
               )}
+              {confirmedBooking.voucherUrl && (
+                <div className="flex justify-between items-center text-[11px] pt-1 border-t border-white/5">
+                  <span className="text-neutral-400">Constancia:</span>
+                  <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>Captura adjuntada</span>
+                  </span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex justify-between items-center pt-2 border-t border-dashed border-white/10">

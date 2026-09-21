@@ -50,6 +50,8 @@ interface PaymentSettingsTabProps {
   setWalletType: (val: string) => void
   paymentInstructions: string
   setPaymentInstructions: (val: string) => void
+  requireVoucher: boolean
+  setRequireVoucher: (val: boolean) => void
   salonPhone?: string | null
 }
 
@@ -76,6 +78,8 @@ export default function PaymentSettingsTab({
   setWalletType,
   paymentInstructions,
   setPaymentInstructions,
+  requireVoucher,
+  setRequireVoucher,
   salonPhone,
 }: PaymentSettingsTabProps) {
   const [showSecret, setShowSecret] = useState(false)
@@ -399,6 +403,30 @@ export default function PaymentSettingsTab({
                   placeholder="Ej: Yapea el monto exacto y al terminar pulsa Confirmar Cita. Envíanos tu constancia por WhatsApp..."
                   className="w-full p-3 rounded-xl bg-[#090A0E] border border-white/[0.08] text-white text-xs placeholder-neutral-600 focus:outline-none focus:border-emerald-500 transition resize-none"
                 />
+              </div>
+
+              {/* Toggle: Exigir captura de comprobante obligatoria */}
+              <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between gap-4">
+                <div>
+                  <span className="text-xs font-semibold text-white block">
+                    Exigir Captura de Pantalla Obligatoria
+                  </span>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                    El cliente no podrá confirmar la reserva por QR sin adjuntar la foto o captura de su constancia Yape/Plin.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={requireVoucher}
+                  disabled={!isOwner}
+                  onClick={() => setRequireVoucher(!requireVoucher)}
+                  className={`w-12 h-6 flex items-center rounded-full p-1 transition cursor-pointer shrink-0 ${
+                    requireVoucher ? 'bg-emerald-500 justify-end' : 'bg-neutral-800 justify-start'
+                  } ${!isOwner ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span className="w-4 h-4 rounded-full bg-white shadow-md transition" />
+                </button>
               </div>
             </div>
           </div>

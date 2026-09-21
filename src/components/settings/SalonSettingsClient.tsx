@@ -97,6 +97,7 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
   const [paymentInstructions, setPaymentInstructions] = useState(
     mps?.instructions || 'Escanea el código QR o transfiere al número indicado para confirmar tu cita.'
   )
+  const [requireVoucher, setRequireVoucher] = useState(mps?.require_voucher ?? true)
 
   function handleQrUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -213,6 +214,7 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
           beneficiary_name: beneficiaryName.trim() || null,
           wallet_type: walletType.trim() || 'Yape / Plin',
           instructions: paymentInstructions.trim() || null,
+          require_voucher: requireVoucher,
         },
         logoUrl: logoUrl.trim() || null,
         primaryColor: primaryColor.trim() || '#F59E0B',
@@ -488,6 +490,8 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
             setWalletType={setWalletType}
             paymentInstructions={paymentInstructions}
             setPaymentInstructions={setPaymentInstructions}
+            requireVoucher={requireVoucher}
+            setRequireVoucher={setRequireVoucher}
             salonPhone={phone}
           />
         )}
