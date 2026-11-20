@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import { Pool } from 'pg'
+import { createClient as createSupabaseAdminClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { buildCloudinaryUploadUrl, resolveCloudinaryFolder } from '@/lib/cloudinary'
 
@@ -219,6 +220,27 @@ export async function getPlatformSecretsServer(): Promise<PlatformSecretsData> {
     // Fallback al pool PostgreSQL en servidor
   }
 
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (serviceRoleKey && supabaseUrl) {
+    try {
+      const adminClient = createSupabaseAdminClient(supabaseUrl, serviceRoleKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+      const { data, error } = await adminClient
+        .from('platform_secrets')
+        .select('*')
+        .eq('id', 'default')
+        .maybeSingle()
+
+      if (!error && data) {
+        return normalizePlatformSecrets(data)
+      }
+    } catch {
+      // Fallback al pool PostgreSQL
+    }
+  }
+
   const pool = getPgPool()
   if (pool) {
     try {
@@ -231,6 +253,10 @@ export async function getPlatformSecretsServer(): Promise<PlatformSecretsData> {
         console.warn('[platform-secrets] Error querying PostgreSQL:', err?.message || err)
       }
     }
+  } else if (!serviceRoleKey) {
+    console.warn(
+      '[platform-secrets] Ni SUPABASE_SERVICE_ROLE_KEY ni DATABASE_URL/DIRECT_URL están configurados en este entorno; un usuario cliente no puede leer platform_secrets.'
+    )
   }
 
   return DEFAULT_PLATFORM_SECRETS
