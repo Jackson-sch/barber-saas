@@ -1,5 +1,6 @@
 import { getTenantAuthContext } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
+import { getPlatformSettings } from '@/lib/platform-settings'
 import SubscriptionClient from '@/components/subscription/SubscriptionClient'
 import type { OrganizationSubscription, SubscriptionPayment } from '@/types/database.types'
 
@@ -12,25 +13,27 @@ export default async function SuscripcionPage({ params }: SuscripcionPageProps) 
   const { org } = await getTenantAuthContext(slug)
   const supabase = await createClient()
 
-  // 1. Obtener Suscripción actual
-  const { data: subscription } = await supabase
-    .from('organization_subscriptions')
-    .select('*')
-    .eq('organization_id', org.id)
-    .single()
-
-  // 2. Obtener Historial de pagos/vouchers enviados
-  const { data: payments } = await supabase
-    .from('subscription_payments')
-    .select('*')
-    .eq('organization_id', org.id)
-    .order('submitted_at', { ascending: false })
+  // 1. Obtener Suscripción actual, historial de pagos y configuración global de cobros
+  const [{ data: subscription }, { data: payments }, platformSettings] = await Promise.all([
+    supabase
+      .from('organization_subscriptions')
+      .select('*')
+      .eq('organization_id', org.id)
+      .single(),
+    supabase
+      .from('subscription_payments')
+      .select('*')
+      .eq('organization_id', org.id)
+      .order('submitted_at', { ascending: false }),
+    getPlatformSettings(),
+  ])
 
   return (
     <SubscriptionClient
       org={org}
       subscription={subscription as unknown as OrganizationSubscription | null}
       payments={(payments || []) as unknown as SubscriptionPayment[]}
+      platformSettings={platformSettings}
       slug={slug}
     />
   )

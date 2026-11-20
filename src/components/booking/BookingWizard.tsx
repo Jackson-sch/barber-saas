@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { getLocalDateString } from '@/lib/utils'
+import { uploadImageWithCloudinary } from '@/lib/cloudinary'
 import {
   createPublicBookingAction,
   createCulqiBookingChargeAction,
@@ -39,46 +40,6 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
   const [voucherImage, setVoucherImage] = useState('')
   const [voucherFileName, setVoucherFileName] = useState('')
 
-  function compressImage(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const img = new Image()
-        img.onload = () => {
-          const maxDim = 1200
-          let width = img.width
-          let height = img.height
-
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width)
-              width = maxDim
-            } else {
-              width = Math.round((width * maxDim) / height)
-              height = maxDim
-            }
-          }
-
-          const canvas = document.createElement('canvas')
-          canvas.width = width
-          canvas.height = height
-          const ctx = canvas.getContext('2d')
-          if (!ctx) {
-            resolve(reader.result as string)
-            return
-          }
-          ctx.drawImage(img, 0, 0, width, height)
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.82)
-          resolve(dataUrl)
-        }
-        img.onerror = () => resolve(reader.result as string)
-        img.src = e.target?.result as string
-      }
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
-  }
-
   async function handleVoucherUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -88,8 +49,12 @@ export function BookingWizard({ organization, services, barbers }: BookingWizard
     }
     setError(null)
     try {
-      const compressed = await compressImage(file)
-      setVoucherImage(compressed)
+      const result = await uploadImageWithCloudinary({
+        file,
+        settings: organization.cloudinarySettings,
+        subFolder: 'vouchers',
+      })
+      setVoucherImage(result.url)
       setVoucherFileName(file.name)
     } catch {
       setError('No se pudo procesar la imagen del comprobante.')

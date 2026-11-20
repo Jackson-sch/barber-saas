@@ -43,14 +43,21 @@ export async function getBarberAvailabilityAction(params: {
   const [y, m, d] = date.split('-').map(Number)
   const dayOfWeek = new Date(y, m - 1, d).getDay() // 0=Sun, 1=Mon, ..., 6=Sat
 
-  // 1. Obtener horario del barbero en ese día de la semana
-  const { data: schedule } = await supabase
-    .from('barber_schedules')
-    .select('*')
-    .eq('organization_id', organizationId)
-    .eq('member_id', barberId)
-    .eq('day_of_week', dayOfWeek)
-    .maybeSingle()
+  // 1. Obtener horario del barbero y configuración de la organización en paralelo
+  const [{ data: schedule }, { data: org }] = await Promise.all([
+    supabase
+      .from('barber_schedules')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('member_id', barberId)
+      .eq('day_of_week', dayOfWeek)
+      .maybeSingle(),
+    supabase
+      .from('organizations')
+      .select('settings')
+      .eq('id', organizationId)
+      .maybeSingle(),
+  ])
 
   if (schedule && !schedule.is_working) {
     return {
@@ -60,20 +67,21 @@ export async function getBarberAvailabilityAction(params: {
     }
   }
 
+  const settings = (org?.settings as Record<string, any>) || {}
+  const configuredInterval = Number(settings.slot_interval)
+  const stepMinutes =
+    !isNaN(configuredInterval) && configuredInterval >= 15 && configuredInterval <= 120
+      ? configuredInterval
+      : 40
+
   // Horario base de atención
   let startHourStr = schedule?.start_time ? String(schedule.start_time).slice(0, 5) : '09:00'
   let endHourStr = schedule?.end_time ? String(schedule.end_time).slice(0, 5) : '20:00'
   const lunchStartStr = schedule?.lunch_start ? String(schedule.lunch_start).slice(0, 5) : null
   const lunchEndStr = schedule?.lunch_end ? String(schedule.lunch_end).slice(0, 5) : null
 
-  // Si no hay horario particular para el barbero, consultar el de la organización
+  // Si no hay horario particular para el barbero, usar el de la organización
   if (!schedule) {
-    const { data: org } = await supabase
-      .from('organizations')
-      .select('settings')
-      .eq('id', organizationId)
-      .single()
-    const settings = (org?.settings as Record<string, any>) || {}
     if (settings.opening_time) startHourStr = String(settings.opening_time).slice(0, 5)
     if (settings.closing_time) endHourStr = String(settings.closing_time).slice(0, 5)
   }
@@ -90,7 +98,7 @@ export async function getBarberAvailabilityAction(params: {
     .gte('start_time', startOfDay)
     .lte('start_time', endOfDay)
 
-  // 3. Generar slots cada 40 min
+  // 3. Generar slots según el intervalo configurado
   const [startH, startM] = startHourStr.split(':').map(Number)
   const [endH, endM] = endHourStr.split(':').map(Number)
   const startTotalMinutes = (isNaN(startH) ? 9 : startH) * 60 + (isNaN(startM) ? 0 : startM)
@@ -101,7 +109,6 @@ export async function getBarberAvailabilityAction(params: {
   const currentTotalMinutes = nowLima.getHours() * 60 + nowLima.getMinutes()
 
   const slots: SlotAvailability[] = []
-  const stepMinutes = 40
 
   for (let min = startTotalMinutes; min + 25 <= endTotalMinutes; min += stepMinutes) {
     const slotH = String(Math.floor(min / 60)).padStart(2, '0')
@@ -173,11 +180,12 @@ export async function createPublicBookingAction(params: CreateBookingParams) {
   const supabase = await createClient()
 
 
-  // 1. Obtener datos del servicio para calcular duración y precio
+  // 1. Obtener datos del servicio para calcular duración y precio (validando que pertenezca al tenant)
   const { data: service, error: serviceError } = await supabase
     .from('services')
     .select('price, duration_minutes, name')
     .eq('id', serviceId)
+    .eq('organization_id', organizationId)
     .single()
 
   if (serviceError || !service) {
@@ -206,14 +214,15 @@ export async function createPublicBookingAction(params: CreateBookingParams) {
     }
   }
 
-  // 3. Verificar o crear cliente
+  // 3. Verificar o crear cliente (normalizando teléfono y sin incrementar total_visits hasta que se complete/cobre el servicio)
+  const phoneClean = clientPhone.trim().replace(/\s+/g, '')
   let clientId: string | null = null
   const { data: existingClient } = await supabase
     .from('clients')
-    .select('id, total_visits')
+    .select('id')
     .eq('organization_id', organizationId)
-    .eq('phone', clientPhone)
-    .single()
+    .eq('phone', phoneClean)
+    .maybeSingle()
 
   if (existingClient) {
     clientId = existingClient.id
@@ -221,22 +230,22 @@ export async function createPublicBookingAction(params: CreateBookingParams) {
     await supabase
       .from('clients')
       .update({
-        full_name: clientName,
-        email: clientEmail || null,
-        total_visits: (existingClient.total_visits || 0) + 1,
-        last_visit_at: new Date().toISOString(),
+        full_name: clientName.trim(),
+        email: clientEmail?.trim() || null,
+        updated_at: new Date().toISOString(),
       })
       .eq('id', clientId)
+      .eq('organization_id', organizationId)
   } else {
     const { data: newClient, error: clientError } = await supabase
       .from('clients')
       .insert({
         organization_id: organizationId,
-        full_name: clientName,
-        phone: clientPhone,
-        email: clientEmail || null,
-        total_visits: 1,
-        last_visit_at: new Date().toISOString(),
+        full_name: clientName.trim(),
+        phone: phoneClean,
+        email: clientEmail?.trim() || null,
+        total_visits: 0,
+        total_spent: 0,
       })
       .select('id')
       .single()
@@ -340,15 +349,39 @@ export async function createCulqiBookingChargeAction(params: CulqiBookingChargeP
     return { error: 'Esta barbería no tiene habilitada la pasarela Culqi.' }
   }
 
-  // 2. Obtener datos del servicio para calcular el monto exacto
+  // 2. Obtener datos del servicio para calcular el monto exacto y duración (validando que pertenezca al tenant)
   const { data: service, error: srvErr } = await supabase
     .from('services')
-    .select('id, name, price')
+    .select('id, name, price, duration_minutes')
     .eq('id', params.serviceId)
+    .eq('organization_id', params.organizationId)
     .single()
 
   if (srvErr || !service) {
     return { error: 'Servicio no encontrado.' }
+  }
+
+  // 2.5 Validar disponibilidad del horario ANTES de cobrar la tarjeta en Culqi
+  const duration = service.duration_minutes || 30
+  const start = new Date(params.startTime)
+  const end = new Date(start.getTime() + duration * 60 * 1000)
+
+  const { data: conflict } = await supabase
+    .from('appointments')
+    .select('id')
+    .eq('organization_id', params.organizationId)
+    .eq('barber_id', params.barberId)
+    .neq('status', 'CANCELLED')
+    .neq('status', 'NO_SHOW')
+    .lt('start_time', end.toISOString())
+    .gt('end_time', start.toISOString())
+    .limit(1)
+
+  if (conflict && conflict.length > 0) {
+    return {
+      error:
+        'El horario seleccionado acaba de ser reservado por otro cliente. No se ha realizado ningún cargo a tu tarjeta; por favor selecciona otro horario.',
+    }
   }
 
   const amountCents = Math.round(Number(service.price) * 100)

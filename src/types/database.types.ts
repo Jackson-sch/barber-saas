@@ -801,6 +801,66 @@ export interface Database {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          id: string
+          platform_name: string
+          yape_phone: string | null
+          yape_holder: string | null
+          yape_qr_url: string | null
+          plin_phone: string | null
+          bank_name: string | null
+          bank_account: string | null
+          bank_cci: string | null
+          bank_holder: string | null
+          starter_price: number
+          pro_price: number
+          enterprise_price: number
+          trial_days: number
+          support_whatsapp: string | null
+          support_email: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          platform_name?: string
+          yape_phone?: string | null
+          yape_holder?: string | null
+          yape_qr_url?: string | null
+          plin_phone?: string | null
+          bank_name?: string | null
+          bank_account?: string | null
+          bank_cci?: string | null
+          bank_holder?: string | null
+          starter_price?: number
+          pro_price?: number
+          enterprise_price?: number
+          trial_days?: number
+          support_whatsapp?: string | null
+          support_email?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          platform_name?: string
+          yape_phone?: string | null
+          yape_holder?: string | null
+          yape_qr_url?: string | null
+          plin_phone?: string | null
+          bank_name?: string | null
+          bank_account?: string | null
+          bank_cci?: string | null
+          bank_holder?: string | null
+          starter_price?: number
+          pro_price?: number
+          enterprise_price?: number
+          trial_days?: number
+          support_whatsapp?: string | null
+          support_email?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -836,6 +896,7 @@ export type SaleItem = Database['public']['Tables']['sale_items']['Row']
 export type Commission = Database['public']['Tables']['commissions']['Row']
 export type CashMovement = Database['public']['Tables']['cash_movements']['Row']
 export type LoyaltyLog = Database['public']['Tables']['loyalty_logs']['Row']
+export type PlatformSettings = Database['public']['Tables']['platform_settings']['Row']
 
 export interface LoyaltyProgramSettings {
   enabled: boolean
@@ -876,4 +937,11 @@ export interface ManualPaymentSettings {
   wallet_type?: string | null
   instructions?: string | null
   require_voucher?: boolean
+}
+
+export interface CloudinarySettings {
+  enabled: boolean
+  cloud_name: string
+  upload_preset: string
+  folder?: string | null
 }

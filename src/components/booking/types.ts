@@ -36,6 +36,12 @@ export interface BookingOrganization {
     environment?: 'test' | 'production'
   } | null
   manualPaymentSettings?: ManualPaymentSettings | null
+  cloudinarySettings?: {
+    enabled: boolean
+    cloud_name: string
+    upload_preset: string
+    folder?: string | null
+  } | null
 }
 
 export interface ConfirmedBookingInfo {

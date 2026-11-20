@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import type { Organization, OrganizationSubscription, OrganizationMember, Profile } from '@/types/database.types'
 
+export type MemberRole = 'OWNER' | 'ADMIN' | 'RECEPTIONIST' | 'BARBER'
+
 export type TenantWithSubscription = Organization & {
   subscription: OrganizationSubscription | null
 }
@@ -97,6 +99,88 @@ export async function getTenantAuthContext(slug: string) {
     user,
     org,
     member: member as unknown as OrganizationMember,
+    isSuperAdmin,
+  }
+}
+
+/**
+ * Valida en Server Actions que el usuario autenticado pertenezca a la organización
+ * solicitada (`organizationId`) y posea uno de los roles permitidos (o sea SuperAdmin).
+ */
+export async function verifyOrgAccess(
+  organizationId: string,
+  allowedRoles?: MemberRole[]
+): Promise<{
+  authorized: boolean
+  error?: string
+  supabase: Awaited<ReturnType<typeof createClient>>
+  user?: { id: string; email?: string }
+  member?: OrganizationMember | null
+  isSuperAdmin?: boolean
+}> {
+  const supabase = await createClient()
+
+  if (!organizationId) {
+    return { authorized: false, error: 'Organización no especificada.', supabase }
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { authorized: false, error: 'No autorizado. Inicia sesión nuevamente.', supabase }
+  }
+
+  const [{ data: memberData }, { data: profileData }] = await Promise.all([
+    supabase
+      .from('organization_members')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('user_id', user.id)
+      .maybeSingle(),
+    supabase
+      .from('profiles')
+      .select('is_super_admin')
+      .eq('id', user.id)
+      .maybeSingle(),
+  ])
+
+  const member = memberData ? (memberData as unknown as OrganizationMember) : null
+  const profile = profileData ? (profileData as unknown as Pick<Profile, 'is_super_admin'>) : null
+  const isSuperAdmin = profile?.is_super_admin ?? false
+
+  if (!member && !isSuperAdmin) {
+    return {
+      authorized: false,
+      error: 'Acceso denegado: no perteneces a esta barbería.',
+      supabase,
+    }
+  }
+
+  if (member && !member.is_active && !isSuperAdmin) {
+    return {
+      authorized: false,
+      error: 'Tu cuenta de miembro está desactivada en esta barbería.',
+      supabase,
+    }
+  }
+
+  if (allowedRoles && allowedRoles.length > 0 && !isSuperAdmin) {
+    if (!member || !allowedRoles.includes(member.role)) {
+      return {
+        authorized: false,
+        error: 'Permisos insuficientes para realizar esta acción.',
+        supabase,
+      }
+    }
+  }
+
+  return {
+    authorized: true,
+    supabase,
+    user: { id: user.id, email: user.email },
+    member,
     isSuperAdmin,
   }
 }

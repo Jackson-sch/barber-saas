@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { verifyOrgAccess } from '@/lib/tenant'
 import { revalidatePath } from 'next/cache'
 
 export interface CartItemInput {
@@ -38,15 +38,9 @@ export async function openCashShiftAction(
   notes: string | null,
   slug: string
 ) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) return { error: 'No autenticado.' }
+  const access = await verifyOrgAccess(organization_id, ['OWNER', 'ADMIN', 'RECEPTIONIST'])
+  if (!access.authorized || !access.user) return { error: access.error || 'No autorizado' }
+  const { supabase, user } = access
 
   // Verificar si ya hay un turno abierto
   const { data: existingShift } = await supabase
@@ -86,15 +80,9 @@ export async function closeCashShiftAction(
   notes: string | null,
   slug: string
 ) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) return { error: 'No autenticado.' }
+  const access = await verifyOrgAccess(organization_id, ['OWNER', 'ADMIN', 'RECEPTIONIST'])
+  if (!access.authorized || !access.user) return { error: access.error || 'No autorizado' }
+  const { supabase, user } = access
 
   // Obtener el turno actual
   const { data: shift, error: shiftErr } = await supabase
@@ -162,13 +150,9 @@ export async function closeCashShiftAction(
 
 // 3. Registrar Venta (POS)
 export async function createSaleAction(input: CreateSaleInput) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const access = await verifyOrgAccess(input.organization_id, ['OWNER', 'ADMIN', 'RECEPTIONIST', 'BARBER'])
+  if (!access.authorized || !access.user) return { error: access.error || 'No autorizado' }
+  const { supabase, user } = access
 
   if (!input.items || input.items.length === 0) {
     return { error: 'El carrito de venta no puede estar vacío.' }
@@ -187,6 +171,65 @@ export async function createSaleAction(input: CreateSaleInput) {
   if (shiftErr || !openShift) {
     return {
       error: 'La caja está cerrada. Debes abrir un turno de caja con fondo inicial antes de realizar un cobro.',
+    }
+  }
+
+  // 1.5 Validar stock disponible de todos los productos ANTES de crear la venta
+  const productQuantities: Record<string, { qty: number; name: string }> = {}
+  for (const it of input.items) {
+    if (it.item_type === 'PRODUCT' && it.product_id) {
+      if (!productQuantities[it.product_id]) {
+        productQuantities[it.product_id] = { qty: 0, name: it.name }
+      }
+      productQuantities[it.product_id].qty += Number(it.quantity) || 1
+    }
+  }
+
+  const productIdsToCheck = Object.keys(productQuantities)
+  const currentStockMap = new Map<string, number>()
+
+  if (productIdsToCheck.length > 0) {
+    const { data: dbProducts, error: prodCheckErr } = await supabase
+      .from('products')
+      .select('id, name, stock, is_active')
+      .eq('organization_id', input.organization_id)
+      .in('id', productIdsToCheck)
+
+    if (prodCheckErr || !dbProducts) {
+      return { error: 'No se pudo verificar el stock de los productos seleccionados.' }
+    }
+
+    for (const p of dbProducts) {
+      currentStockMap.set(p.id, Number(p.stock || 0))
+    }
+
+    for (const [prodId, reqInfo] of Object.entries(productQuantities)) {
+      const available = currentStockMap.get(prodId)
+      if (available === undefined) {
+        return { error: `El producto "${reqInfo.name}" no existe en el inventario de esta barbería.` }
+      }
+      if (available < reqInfo.qty) {
+        return {
+          error: `Stock insuficiente para "${reqInfo.name}". Disponible: ${available}, solicitado: ${reqInfo.qty}.`,
+        }
+      }
+    }
+  }
+
+  // 1.8 Si viene de una cita, consultar su estado previo antes de completarla
+  let appointmentWasAlreadyCompleted = false
+  let appointmentPreviousPrice = 0
+  if (input.appointment_id) {
+    const { data: prevApp } = await supabase
+      .from('appointments')
+      .select('status, total_price')
+      .eq('id', input.appointment_id)
+      .eq('organization_id', input.organization_id)
+      .maybeSingle()
+
+    if (prevApp?.status === 'COMPLETED') {
+      appointmentWasAlreadyCompleted = true
+      appointmentPreviousPrice = Number(prevApp.total_price || 0)
     }
   }
 
@@ -384,16 +427,24 @@ export async function createSaleAction(input: CreateSaleInput) {
         }
       }
 
+      // Si la cita ya había sido marcada como COMPLETED manualmente en la agenda antes de pasar por POS,
+      // evitamos duplicar la visita o el monto del servicio base.
+      const visitsIncrement = appointmentWasAlreadyCompleted ? 0 : 1
+      const spentIncrement = appointmentWasAlreadyCompleted
+        ? Math.max(0, total - appointmentPreviousPrice)
+        : total
+
       await supabase
         .from('clients')
         .update({
-          total_visits: (client.total_visits || 0) + 1,
-          total_spent: Number(client.total_spent || 0) + total,
+          total_visits: (client.total_visits || 0) + visitsIncrement,
+          total_spent: Number(client.total_spent || 0) + spentIncrement,
           loyalty_points: currentPoints,
           last_visit_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', clientId)
+        .eq('organization_id', input.organization_id)
     }
   }
 

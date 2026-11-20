@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { verifyOrgAccess } from '@/lib/tenant'
 import { revalidatePath } from 'next/cache'
 import type {
   Database,
@@ -8,6 +9,7 @@ import type {
   WhatsAppNotificationSettings,
   CulqiSettings,
   ManualPaymentSettings,
+  CloudinarySettings,
 } from '@/types/database.types'
 
 export interface UpdateOrgByAdminInput {
@@ -35,6 +37,7 @@ export interface UpdateTenantSettingsInput {
   whatsappSettings?: WhatsAppNotificationSettings
   culqiSettings?: CulqiSettings
   manualPaymentSettings?: ManualPaymentSettings
+  cloudinarySettings?: CloudinarySettings
   logoUrl?: string | null
   primaryColor?: string
   secondaryColor?: string
@@ -124,37 +127,17 @@ export async function updateOrganizationByAdminAction(input: UpdateOrgByAdminInp
   return { success: true, newSlug: slug }
 }
 
-// 2. Edición por el Dueño / Admin de la barbería
+// 2. Edición por el Dueño / SuperAdmin de la barbería
 export async function updateTenantSettingsAction(input: UpdateTenantSettingsInput) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) return { error: 'No autenticado.' }
-
-  // Verificar rol del usuario en la barbería
-  const { data: member } = await supabase
-    .from('organization_members')
-    .select('role')
-    .eq('organization_id', input.organizationId)
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_super_admin')
-    .eq('id', user.id)
-    .single()
-
-  const isOwner = member?.role === 'OWNER'
-
-  if (!isOwner) {
-    return { error: 'Solo el dueño legítimo de la barbería puede modificar la configuración del salón.' }
+  const access = await verifyOrgAccess(input.organizationId, ['OWNER'])
+  if (!access.authorized) {
+    return {
+      error:
+        access.error ||
+        'Solo el dueño legítimo de la barbería puede modificar la configuración del salón.',
+    }
   }
+  const { supabase } = access
 
   const name = input.name.trim()
   if (!name || name.length < 2) {
@@ -201,6 +184,7 @@ export async function updateTenantSettingsAction(input: UpdateTenantSettingsInpu
     ...(input.manualPaymentSettings !== undefined
       ? { manual_payment_settings: input.manualPaymentSettings }
       : {}),
+    ...(input.cloudinarySettings !== undefined ? { cloudinary_settings: input.cloudinarySettings } : {}),
     ...(input.bannerUrl !== undefined ? { banner_url: input.bannerUrl } : {}),
     ...(input.tagline !== undefined ? { tagline: input.tagline } : {}),
   }
@@ -294,6 +278,66 @@ export async function testCulqiConnectionAction(secretKey: string) {
     console.error('Error testing Culqi connection:', err)
     return {
       error: 'No se pudo contactar los servidores de Culqi. Verifica tu conexión a internet.',
+    }
+  }
+}
+
+/**
+ * Prueba en vivo de las credenciales de Cloudinary (Cloud Name + Upload Preset Unsigned).
+ */
+export async function testCloudinaryConnectionAction(cloudName: string, uploadPreset: string) {
+  const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) return { error: 'No autorizado' }
+
+  const cleanCloud = cloudName.trim()
+  const cleanPreset = uploadPreset.trim()
+
+  if (!cleanCloud || !cleanPreset) {
+    return { error: 'Ingresa el Cloud Name y el Upload Preset para probar la conexión.' }
+  }
+
+  // Imagen PNG transparente 1x1 px en Base64 para validar que el preset acepte subidas unsigned
+  const tinyPngBase64 =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+
+  try {
+    const formData = new FormData()
+    formData.append('file', tinyPngBase64)
+    formData.append('upload_preset', cleanPreset)
+    formData.append('folder', 'barberos-connection-test')
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${encodeURIComponent(cleanCloud)}/image/upload`,
+      {
+        method: 'POST',
+        body: formData,
+      }
+    )
+
+    const result = await response.json()
+
+    if (response.ok && result.secure_url) {
+      return {
+        success: true,
+        message: `¡Conexión exitosa con Cloudinary ("${cleanCloud}")! El preset "${cleanPreset}" está listo para recibir imágenes.`,
+      }
+    }
+
+    const errMsg = result?.error?.message || `Error HTTP ${response.status} de Cloudinary.`
+    if (errMsg.toLowerCase().includes('whitelisted') || errMsg.toLowerCase().includes('unsigned')) {
+      return {
+        error: `El Upload Preset "${cleanPreset}" debe estar configurado en modo "Unsigned" (Sin firma) en tu panel de Cloudinary.`,
+      }
+    }
+
+    return {
+      error: `Cloudinary rechazó la prueba: ${errMsg}`,
+    }
+  } catch (err: any) {
+    console.error('Error testing Cloudinary connection:', err)
+    return {
+      error: 'No se pudo contactar con Cloudinary. Verifica tu conexión a internet.',
     }
   }
 }

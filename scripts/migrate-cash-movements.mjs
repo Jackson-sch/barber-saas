@@ -1,9 +1,8 @@
 import pg from 'pg'
+import { getDatabaseUrl } from './db-config.mjs'
 
 const { Client } = pg
-
-const connectionString =
-  'postgresql://postgres.uxictdavgghiuyhxwcoh:aflDSfUFhU5PkrAu@aws-0-us-west-2.pooler.supabase.com:5432/postgres'
+const connectionString = getDatabaseUrl()
 
 async function run() {
   console.log('Conectando a Supabase PostgreSQL...')

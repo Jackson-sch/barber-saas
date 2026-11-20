@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { verifyOrgAccess } from '@/lib/tenant'
 import { revalidatePath } from 'next/cache'
 
 export interface DailySalesStat {
@@ -11,7 +11,7 @@ export interface DailySalesStat {
 }
 
 export interface PaymentMethodStat {
-  method: 'CASH' | 'CARD' | 'YAPE' | 'PLIN' | 'TRANSFER'
+  method: 'CASH' | 'CARD' | 'YAPE' | 'PLIN' | 'TRANSFER' | 'MIXED'
   label: string
   total: number
   count: number
@@ -66,9 +66,9 @@ export async function getReportsDataAction(
   endDateStr: string
 ): Promise<{ data?: ReportsData; error?: string }> {
   try {
-    const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+    const access = await verifyOrgAccess(organizationId, ['OWNER', 'ADMIN', 'RECEPTIONIST', 'BARBER'])
+    if (!access.authorized) return { error: access.error || 'No autorizado' }
+    const { supabase } = access
 
 
     // 1. Obtener miembros (barberos) de la organización
@@ -155,6 +155,7 @@ export async function getReportsDataAction(
       YAPE: { total: 0, count: 0 },
       PLIN: { total: 0, count: 0 },
       TRANSFER: { total: 0, count: 0 },
+      MIXED: { total: 0, count: 0 },
     }
 
     const dailyMap: Record<string, { total: number; count: number }> = {}
@@ -283,11 +284,16 @@ export async function getReportsDataAction(
       PLIN: 'Plin',
       CARD: 'Tarjeta',
       TRANSFER: 'Transferencia',
+      MIXED: 'Mixto',
     }
 
-    const paymentMethods: PaymentMethodStat[] = (
-      ['CASH', 'YAPE', 'PLIN', 'CARD', 'TRANSFER'] as const
-    ).map((m) => {
+    const baseMethods = ['CASH', 'YAPE', 'PLIN', 'CARD', 'TRANSFER'] as const
+    const activeMethods: Array<'CASH' | 'YAPE' | 'PLIN' | 'CARD' | 'TRANSFER' | 'MIXED'> = [
+      ...baseMethods,
+      ...(paymentMap.MIXED.count > 0 ? (['MIXED'] as const) : []),
+    ]
+
+    const paymentMethods: PaymentMethodStat[] = activeMethods.map((m) => {
       const stat = paymentMap[m] || { total: 0, count: 0 }
       const percentage = totalRevenue > 0 ? (stat.total / totalRevenue) * 100 : 0
       return {
@@ -406,9 +412,9 @@ export async function settleBarberCommissionsAction({
   slug: string
 }): Promise<{ success?: boolean; error?: string }> {
   try {
-    const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+    const access = await verifyOrgAccess(organization_id, ['OWNER', 'ADMIN'])
+    if (!access.authorized) return { error: access.error || 'No autorizado' }
+    const { supabase } = access
 
     const now = new Date().toISOString()
 
@@ -475,9 +481,9 @@ export async function getDetailedSalesReportAction(
   endDateStr: string
 ): Promise<{ data?: DetailedSaleRow[]; error?: string }> {
   try {
-    const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+    const access = await verifyOrgAccess(organizationId, ['OWNER', 'ADMIN', 'RECEPTIONIST'])
+    if (!access.authorized) return { error: access.error || 'No autorizado' }
+    const { supabase } = access
 
 
     // 1. Clientes
@@ -587,9 +593,9 @@ export async function getCashMovementsReportAction(
   endDateStr: string
 ): Promise<{ data?: DetailedCashMovementRow[]; error?: string }> {
   try {
-    const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+    const access = await verifyOrgAccess(organizationId, ['OWNER', 'ADMIN', 'RECEPTIONIST'])
+    if (!access.authorized) return { error: access.error || 'No autorizado' }
+    const { supabase } = access
 
 
     // 1. Miembros / Barberos

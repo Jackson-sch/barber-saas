@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { verifyOrgAccess } from '@/lib/tenant'
 import { revalidatePath } from 'next/cache'
 
 export interface BarberInput {
@@ -28,13 +28,40 @@ export interface DayScheduleInput {
 }
 
 export async function createBarberAction(input: BarberInput) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-
   if (!input.full_name || !input.organization_id) {
     return { error: 'El nombre completo es obligatorio.' }
+  }
+
+  const access = await verifyOrgAccess(input.organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
+
+  // Validar límite de miembros activos según el plan de suscripción
+  const [{ data: sub }, { count: activeCount }] = await Promise.all([
+    supabase
+      .from('organization_subscriptions')
+      .select('plan_tier')
+      .eq('organization_id', input.organization_id)
+      .maybeSingle(),
+    supabase
+      .from('organization_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', input.organization_id)
+      .eq('is_active', true),
+  ])
+
+  const planTier = sub?.plan_tier || 'TRIAL'
+  const maxBarbersByPlan: Record<string, number> = {
+    STARTER: 3,
+    TRIAL: 8,
+    PRO: 8,
+    ENTERPRISE: 999,
+  }
+  const limit = maxBarbersByPlan[planTier] ?? 8
+  if ((activeCount ?? 0) >= limit) {
+    return {
+      error: `Tu plan actual (${planTier}) permite hasta ${limit} barberos activos. Actualiza tu suscripción para agregar más especialistas.`,
+    }
   }
 
   const { data: member, error } = await supabase
@@ -91,14 +118,13 @@ export async function createBarberAction(input: BarberInput) {
 }
 
 export async function updateBarberAction(input: BarberInput) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-
   if (!input.id || !input.full_name || !input.organization_id) {
     return { error: 'Datos incompletos para actualizar.' }
   }
+
+  const access = await verifyOrgAccess(input.organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
   const { error } = await supabase
     .from('organization_members')
@@ -127,9 +153,9 @@ export async function updateBarberAction(input: BarberInput) {
 }
 
 export async function toggleBarberStatusAction(id: string, organization_id: string, is_active: boolean, slug: string) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+  const access = await verifyOrgAccess(organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
 
   const { error } = await supabase
@@ -153,9 +179,9 @@ export async function saveBarberSchedulesAction(
   schedules: DayScheduleInput[],
   slug: string
 ) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+  const access = await verifyOrgAccess(organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
 
   for (const s of schedules) {

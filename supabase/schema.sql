@@ -193,9 +193,11 @@ CREATE TABLE IF NOT EXISTS public.appointments (
     source TEXT NOT NULL DEFAULT 'ONLINE', -- ONLINE, WALK_IN, PHONE, WHATSAPP
     notes TEXT,
     total_price NUMERIC(10,2) NOT NULL,
+    voucher_url TEXT,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
+ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS voucher_url TEXT;
 
 -- 14. TURNOS DE CAJA
 CREATE TABLE IF NOT EXISTS public.cash_shifts (
@@ -301,6 +303,27 @@ CREATE TABLE IF NOT EXISTS public.loyalty_logs (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 20. CONFIGURACIÓN GLOBAL DE LA PLATAFORMA (SUPERADMIN)
+CREATE TABLE IF NOT EXISTS public.platform_settings (
+    id TEXT PRIMARY KEY DEFAULT 'default',
+    platform_name TEXT NOT NULL DEFAULT 'BarberOS',
+    yape_phone TEXT,
+    yape_holder TEXT,
+    yape_qr_url TEXT,
+    plin_phone TEXT,
+    bank_name TEXT DEFAULT 'BCP Soles',
+    bank_account TEXT,
+    bank_cci TEXT,
+    bank_holder TEXT,
+    starter_price NUMERIC(10,2) NOT NULL DEFAULT 59.00,
+    pro_price NUMERIC(10,2) NOT NULL DEFAULT 99.00,
+    enterprise_price NUMERIC(10,2) NOT NULL DEFAULT 179.00,
+    trial_days INT NOT NULL DEFAULT 14,
+    support_whatsapp TEXT,
+    support_email TEXT,
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- TRIGGER AUTOMÁTICO PARA CREAR PROFILE CUANDO UN USUARIO SE REGISTRA EN AUTH
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -334,3 +357,312 @@ CREATE INDEX IF NOT EXISTS idx_sales_org ON public.sales(organization_id);
 CREATE INDEX IF NOT EXISTS idx_products_org ON public.products(organization_id);
 CREATE INDEX IF NOT EXISTS idx_loyalty_logs_client ON public.loyalty_logs(client_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_loyalty_logs_org ON public.loyalty_logs(organization_id);
+
+-- =========================================================
+-- 20. FUNCIONES HELPER Y POLÍTICAS RLS (ROW LEVEL SECURITY)
+-- =========================================================
+
+-- Verifica si el usuario actual es SuperAdmin global
+CREATE OR REPLACE FUNCTION public.is_super_admin()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND is_super_admin = true
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- Verifica si el usuario actual pertenece a la organización indicada
+CREATE OR REPLACE FUNCTION public.is_org_member(org_id UUID)
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.organization_members
+    WHERE organization_id = org_id
+      AND user_id = auth.uid()
+      AND is_active = true
+  ) OR public.is_super_admin();
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- Verifica si el usuario actual es OWNER o ADMIN de la organización indicada
+CREATE OR REPLACE FUNCTION public.is_org_admin(org_id UUID)
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.organization_members
+    WHERE organization_id = org_id
+      AND user_id = auth.uid()
+      AND role IN ('OWNER', 'ADMIN')
+      AND is_active = true
+  ) OR public.is_super_admin();
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- Habilitar RLS en las 19 tablas del esquema
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.organization_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subscription_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.branches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.service_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.client_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.barber_schedules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cash_shifts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sales ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sale_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.commissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cash_movements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.loyalty_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
+
+-- 1. PROFILES
+DROP POLICY IF EXISTS "profiles_select_own_or_admin" ON public.profiles;
+CREATE POLICY "profiles_select_own_or_admin" ON public.profiles
+  FOR SELECT USING (id = auth.uid() OR public.is_super_admin());
+
+DROP POLICY IF EXISTS "profiles_update_own_or_admin" ON public.profiles;
+CREATE POLICY "profiles_update_own_or_admin" ON public.profiles
+  FOR UPDATE USING (id = auth.uid() OR public.is_super_admin())
+  WITH CHECK (id = auth.uid() OR public.is_super_admin());
+
+-- 2. ORGANIZATIONS (Lectura pública por slug para portal de citas y login; inserción en onboarding; edición por dueño/admin)
+DROP POLICY IF EXISTS "organizations_select_public" ON public.organizations;
+CREATE POLICY "organizations_select_public" ON public.organizations
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "organizations_insert_authenticated" ON public.organizations;
+CREATE POLICY "organizations_insert_authenticated" ON public.organizations
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "organizations_update_admin" ON public.organizations;
+CREATE POLICY "organizations_update_admin" ON public.organizations
+  FOR UPDATE USING (public.is_org_admin(id))
+  WITH CHECK (public.is_org_admin(id));
+
+DROP POLICY IF EXISTS "organizations_delete_superadmin" ON public.organizations;
+CREATE POLICY "organizations_delete_superadmin" ON public.organizations
+  FOR DELETE USING (public.is_super_admin());
+
+-- 3. ORGANIZATION_SUBSCRIPTIONS
+DROP POLICY IF EXISTS "org_subscriptions_select" ON public.organization_subscriptions;
+CREATE POLICY "org_subscriptions_select" ON public.organization_subscriptions
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "org_subscriptions_insert" ON public.organization_subscriptions;
+CREATE POLICY "org_subscriptions_insert" ON public.organization_subscriptions
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "org_subscriptions_update_superadmin" ON public.organization_subscriptions;
+CREATE POLICY "org_subscriptions_update_superadmin" ON public.organization_subscriptions
+  FOR UPDATE USING (public.is_super_admin())
+  WITH CHECK (public.is_super_admin());
+
+-- 4. SUBSCRIPTION_PAYMENTS
+DROP POLICY IF EXISTS "sub_payments_select_member" ON public.subscription_payments;
+CREATE POLICY "sub_payments_select_member" ON public.subscription_payments
+  FOR SELECT USING (public.is_org_member(organization_id));
+
+DROP POLICY IF EXISTS "sub_payments_insert_member" ON public.subscription_payments;
+CREATE POLICY "sub_payments_insert_member" ON public.subscription_payments
+  FOR INSERT WITH CHECK (public.is_org_member(organization_id));
+
+DROP POLICY IF EXISTS "sub_payments_update_superadmin" ON public.subscription_payments;
+CREATE POLICY "sub_payments_update_superadmin" ON public.subscription_payments
+  FOR UPDATE USING (public.is_super_admin())
+  WITH CHECK (public.is_super_admin());
+
+-- 5. BRANCHES
+DROP POLICY IF EXISTS "branches_select_public" ON public.branches;
+CREATE POLICY "branches_select_public" ON public.branches
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "branches_insert_auth" ON public.branches;
+CREATE POLICY "branches_insert_auth" ON public.branches
+  FOR INSERT WITH CHECK (
+    public.is_org_admin(organization_id)
+    OR (auth.uid() IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.organization_members m WHERE m.organization_id = branches.organization_id))
+  );
+
+DROP POLICY IF EXISTS "branches_update_admin" ON public.branches;
+CREATE POLICY "branches_update_admin" ON public.branches
+  FOR UPDATE USING (public.is_org_admin(organization_id))
+  WITH CHECK (public.is_org_admin(organization_id));
+
+DROP POLICY IF EXISTS "branches_delete_admin" ON public.branches;
+CREATE POLICY "branches_delete_admin" ON public.branches
+  FOR DELETE USING (public.is_org_admin(organization_id));
+
+-- 6. ORGANIZATION_MEMBERS (Lectura pública de barberos activos para portal de reservas)
+DROP POLICY IF EXISTS "org_members_select_public" ON public.organization_members;
+CREATE POLICY "org_members_select_public" ON public.organization_members
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "org_members_insert" ON public.organization_members;
+CREATE POLICY "org_members_insert" ON public.organization_members
+  FOR INSERT WITH CHECK (
+    public.is_org_admin(organization_id)
+    OR (
+      auth.uid() = user_id
+      AND role = 'OWNER'
+      AND NOT EXISTS (SELECT 1 FROM public.organization_members m WHERE m.organization_id = organization_members.organization_id)
+    )
+  );
+
+DROP POLICY IF EXISTS "org_members_update" ON public.organization_members;
+CREATE POLICY "org_members_update" ON public.organization_members
+  FOR UPDATE USING (public.is_org_admin(organization_id) OR user_id = auth.uid())
+  WITH CHECK (public.is_org_admin(organization_id) OR user_id = auth.uid());
+
+DROP POLICY IF EXISTS "org_members_delete" ON public.organization_members;
+CREATE POLICY "org_members_delete" ON public.organization_members
+  FOR DELETE USING (public.is_org_admin(organization_id));
+
+-- 7. SERVICE_CATEGORIES
+DROP POLICY IF EXISTS "service_categories_select_public" ON public.service_categories;
+CREATE POLICY "service_categories_select_public" ON public.service_categories
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "service_categories_write_member" ON public.service_categories;
+CREATE POLICY "service_categories_write_member" ON public.service_categories
+  FOR ALL USING (public.is_org_member(organization_id))
+  WITH CHECK (public.is_org_member(organization_id));
+
+-- 8. SERVICES
+DROP POLICY IF EXISTS "services_select_public" ON public.services;
+CREATE POLICY "services_select_public" ON public.services
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "services_write_member" ON public.services;
+CREATE POLICY "services_write_member" ON public.services
+  FOR ALL USING (public.is_org_member(organization_id))
+  WITH CHECK (public.is_org_member(organization_id));
+
+-- 9. BARBER_SCHEDULES
+DROP POLICY IF EXISTS "barber_schedules_select_public" ON public.barber_schedules;
+CREATE POLICY "barber_schedules_select_public" ON public.barber_schedules
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "barber_schedules_write_member" ON public.barber_schedules;
+CREATE POLICY "barber_schedules_write_member" ON public.barber_schedules
+  FOR ALL USING (public.is_org_member(organization_id))
+  WITH CHECK (public.is_org_member(organization_id));
+
+-- 10. CLIENTS (Soporta reserva pública online y gestión del tenant)
+DROP POLICY IF EXISTS "clients_select_public_or_member" ON public.clients;
+CREATE POLICY "clients_select_public_or_member" ON public.clients
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "clients_insert_public_or_member" ON public.clients;
+CREATE POLICY "clients_insert_public_or_member" ON public.clients
+  FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "clients_update_public_or_member" ON public.clients;
+CREATE POLICY "clients_update_public_or_member" ON public.clients
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "clients_delete_member" ON public.clients;
+CREATE POLICY "clients_delete_member" ON public.clients
+  FOR DELETE USING (public.is_org_admin(organization_id));
+
+-- 11. CLIENT_PREFERENCES
+DROP POLICY IF EXISTS "client_preferences_select" ON public.client_preferences;
+CREATE POLICY "client_preferences_select" ON public.client_preferences
+  FOR SELECT USING (public.is_org_member(organization_id));
+
+DROP POLICY IF EXISTS "client_preferences_insert_public_or_member" ON public.client_preferences;
+CREATE POLICY "client_preferences_insert_public_or_member" ON public.client_preferences
+  FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "client_preferences_update_member" ON public.client_preferences;
+CREATE POLICY "client_preferences_update_member" ON public.client_preferences
+  FOR UPDATE USING (public.is_org_member(organization_id))
+  WITH CHECK (public.is_org_member(organization_id));
+
+DROP POLICY IF EXISTS "client_preferences_delete_member" ON public.client_preferences;
+CREATE POLICY "client_preferences_delete_member" ON public.client_preferences
+  FOR DELETE USING (public.is_org_admin(organization_id));
+
+-- 12. APPOINTMENTS (Lectura de disponibilidad y creación pública; actualización/borrado solo miembros del tenant)
+DROP POLICY IF EXISTS "appointments_select_public_or_member" ON public.appointments;
+CREATE POLICY "appointments_select_public_or_member" ON public.appointments
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "appointments_insert_public_or_member" ON public.appointments;
+CREATE POLICY "appointments_insert_public_or_member" ON public.appointments
+  FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "appointments_update_member" ON public.appointments;
+CREATE POLICY "appointments_update_member" ON public.appointments
+  FOR UPDATE USING (public.is_org_member(organization_id))
+  WITH CHECK (public.is_org_member(organization_id));
+
+DROP POLICY IF EXISTS "appointments_delete_member" ON public.appointments;
+CREATE POLICY "appointments_delete_member" ON public.appointments
+  FOR DELETE USING (public.is_org_admin(organization_id));
+
+-- 13. CASH_SHIFTS
+DROP POLICY IF EXISTS "cash_shifts_member_all" ON public.cash_shifts;
+CREATE POLICY "cash_shifts_member_all" ON public.cash_shifts
+  FOR ALL USING (public.is_org_member(organization_id))
+  WITH CHECK (public.is_org_member(organization_id));
+
+-- 14. PRODUCTS
+DROP POLICY IF EXISTS "products_member_all" ON public.products;
+CREATE POLICY "products_member_all" ON public.products
+  FOR ALL USING (public.is_org_member(organization_id))
+  WITH CHECK (public.is_org_member(organization_id));
+
+-- 15. SALES
+DROP POLICY IF EXISTS "sales_member_all" ON public.sales;
+CREATE POLICY "sales_member_all" ON public.sales
+  FOR ALL USING (public.is_org_member(organization_id))
+  WITH CHECK (public.is_org_member(organization_id));
+
+-- 16. SALE_ITEMS (Vinculada a sales.organization_id)
+DROP POLICY IF EXISTS "sale_items_member_all" ON public.sale_items;
+CREATE POLICY "sale_items_member_all" ON public.sale_items
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM public.sales s
+      WHERE s.id = sale_items.sale_id AND public.is_org_member(s.organization_id)
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.sales s
+      WHERE s.id = sale_items.sale_id AND public.is_org_member(s.organization_id)
+    )
+  );
+
+-- 17. COMMISSIONS
+DROP POLICY IF EXISTS "commissions_member_all" ON public.commissions;
+CREATE POLICY "commissions_member_all" ON public.commissions
+  FOR ALL USING (public.is_org_member(organization_id))
+  WITH CHECK (public.is_org_member(organization_id));
+
+-- 18. CASH_MOVEMENTS
+DROP POLICY IF EXISTS "Users can view cash_movements of their organization" ON public.cash_movements;
+DROP POLICY IF EXISTS "Users can insert cash_movements in their organization" ON public.cash_movements;
+DROP POLICY IF EXISTS "cash_movements_member_all" ON public.cash_movements;
+CREATE POLICY "cash_movements_member_all" ON public.cash_movements
+  FOR ALL USING (public.is_org_member(organization_id))
+  WITH CHECK (public.is_org_member(organization_id));
+
+-- 19. LOYALTY_LOGS
+DROP POLICY IF EXISTS "Users can view loyalty_logs of their organization" ON public.loyalty_logs;
+DROP POLICY IF EXISTS "Users can insert loyalty_logs in their organization" ON public.loyalty_logs;
+DROP POLICY IF EXISTS "loyalty_logs_member_all" ON public.loyalty_logs;
+CREATE POLICY "loyalty_logs_member_all" ON public.loyalty_logs
+  FOR ALL USING (public.is_org_member(organization_id))
+  WITH CHECK (public.is_org_member(organization_id));
+
+-- 20. PLATFORM_SETTINGS (Lectura para mostrar datos de pago SaaS; edición solo SuperAdmin)
+DROP POLICY IF EXISTS "platform_settings_select_all" ON public.platform_settings;
+CREATE POLICY "platform_settings_select_all" ON public.platform_settings
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "platform_settings_write_superadmin" ON public.platform_settings;
+CREATE POLICY "platform_settings_write_superadmin" ON public.platform_settings
+  FOR ALL USING (public.is_super_admin())
+  WITH CHECK (public.is_super_admin());

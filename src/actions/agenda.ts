@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { verifyOrgAccess } from '@/lib/tenant'
 import { revalidatePath } from 'next/cache'
 
 export interface CreateAppointmentInput {
@@ -25,11 +26,12 @@ export async function createAppointmentAction(input: CreateAppointmentInput) {
     return { error: 'Por favor completa todos los campos obligatorios.' }
   }
 
-  // 1. Obtener precio y duración del servicio
+  // 1. Obtener precio y duración del servicio (validando que pertenezca al tenant)
   const { data: service, error: svcError } = await supabase
     .from('services')
     .select('price, duration_minutes')
     .eq('id', input.service_id)
+    .eq('organization_id', input.organization_id)
     .single()
 
   if (svcError || !service) {
@@ -136,24 +138,34 @@ export async function updateAppointmentStatusAction(
   status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW',
   slug: string
 ) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+  const access = await verifyOrgAccess(organization_id)
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
-
-  // Si pasa a COMPLETED, actualizar estadísticas del cliente
+  // Si pasa a COMPLETED y aún no tiene una venta en POS asociada, actualizar estadísticas del cliente
   if (status === 'COMPLETED') {
-    const { data: appointment } = await supabase
-      .from('appointments')
-      .select('client_id, total_price')
-      .eq('id', id)
-      .single()
+    const [{ data: appointment }, { data: existingSale }] = await Promise.all([
+      supabase
+        .from('appointments')
+        .select('client_id, total_price, status')
+        .eq('id', id)
+        .eq('organization_id', organization_id)
+        .single(),
+      supabase
+        .from('sales')
+        .select('id')
+        .eq('appointment_id', id)
+        .eq('organization_id', organization_id)
+        .eq('status', 'COMPLETED')
+        .maybeSingle(),
+    ])
 
-    if (appointment?.client_id) {
+    if (appointment?.client_id && appointment.status !== 'COMPLETED' && !existingSale) {
       const { data: client } = await supabase
         .from('clients')
         .select('total_visits, total_spent')
         .eq('id', appointment.client_id)
+        .eq('organization_id', organization_id)
         .single()
 
       if (client) {
@@ -166,6 +178,7 @@ export async function updateAppointmentStatusAction(
             updated_at: new Date().toISOString(),
           })
           .eq('id', appointment.client_id)
+          .eq('organization_id', organization_id)
       }
     }
   }
@@ -197,15 +210,15 @@ export async function rescheduleAppointmentAction(
   barber_id: string,
   slug: string
 ) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
+  const access = await verifyOrgAccess(organization_id)
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
   const { data: appointment } = await supabase
     .from('appointments')
     .select('service_id, services(duration_minutes)')
     .eq('id', id)
+    .eq('organization_id', organization_id)
     .single()
 
   if (!appointment) {
@@ -213,8 +226,26 @@ export async function rescheduleAppointmentAction(
   }
 
   const duration = (appointment.services as unknown as { duration_minutes: number })?.duration_minutes || 30
-  const startDateTime = new Date(`${date}T${time}:00`)
+  // Usar siempre el offset de la barbería (America/Lima UTC-5) para evitar desfases de 5h en servidores UTC
+  const startDateTime = new Date(`${date}T${time}:00-05:00`)
   const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 1000)
+
+  // Validar si el barbero ya tiene otra cita activa en el nuevo rango de horario
+  const { data: conflict } = await supabase
+    .from('appointments')
+    .select('id')
+    .eq('organization_id', organization_id)
+    .eq('barber_id', barber_id)
+    .neq('id', id)
+    .neq('status', 'CANCELLED')
+    .neq('status', 'NO_SHOW')
+    .lt('start_time', endDateTime.toISOString())
+    .gt('end_time', startDateTime.toISOString())
+    .limit(1)
+
+  if (conflict && conflict.length > 0) {
+    return { error: 'El barbero seleccionado ya tiene otra cita programada en ese horario.' }
+  }
 
   const { error } = await supabase
     .from('appointments')

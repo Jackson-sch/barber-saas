@@ -17,66 +17,133 @@ import {
 } from 'lucide-react'
 import { formatPrice, formatDateOnly } from '@/lib/utils'
 import { submitSubscriptionPaymentAction } from '@/actions/subscription'
-import type { Organization, OrganizationSubscription, SubscriptionPayment } from '@/types/database.types'
+import type {
+  Organization,
+  OrganizationSubscription,
+  SubscriptionPayment,
+  PlatformSettings,
+} from '@/types/database.types'
 
 interface SubscriptionClientProps {
   org: Organization
   subscription: OrganizationSubscription | null
   payments: SubscriptionPayment[]
+  platformSettings: PlatformSettings
   slug: string
 }
 
-const PLANS = [
-  {
-    id: 'STARTER',
-    name: 'Plan Starter',
-    price: 59,
-    description: 'Ideal para barberos independientes y estudios pequeños.',
-    features: ['Hasta 3 barberos', 'Agenda & Calendario en vivo', 'Punto de Venta (POS)', 'Portal público de citas'],
-  },
-  {
-    id: 'PRO',
-    name: 'Plan Pro (Más Popular)',
-    price: 99,
-    popular: true,
-    description: 'Para barberías consolidadas que necesitan control total.',
-    features: [
-      'Hasta 8 barberos',
-      'Control de Caja & Arqueos',
-      'Cálculo de comisiones automático',
-      'Fichas Técnicas de Estilo',
-      'Recordatorios por WhatsApp',
-    ],
-  },
-  {
-    id: 'ENTERPRISE',
-    name: 'Plan Enterprise',
-    price: 179,
-    description: 'Para franquicias y cadenas con alto volumen de atención.',
-    features: [
-      'Barberos ilimitados',
-      'Múltiples sedes',
-      'Reportes financieros avanzados',
-      'Soporte prioritario 24/7',
-    ],
-  },
-]
+function buildPlans(settings: PlatformSettings) {
+  return [
+    {
+      id: 'STARTER',
+      name: 'Plan Starter',
+      price: Number(settings.starter_price ?? 59),
+      description: 'Ideal para barberos independientes y estudios pequeños.',
+      features: ['Hasta 3 barberos', 'Agenda & Calendario en vivo', 'Punto de Venta (POS)', 'Portal público de citas'],
+    },
+    {
+      id: 'PRO',
+      name: 'Plan Pro (Más Popular)',
+      price: Number(settings.pro_price ?? 99),
+      popular: true,
+      description: 'Para barberías consolidadas que necesitan control total.',
+      features: [
+        'Hasta 8 barberos',
+        'Control de Caja & Arqueos',
+        'Cálculo de comisiones automático',
+        'Fichas Técnicas de Estilo',
+        'Recordatorios por WhatsApp',
+      ],
+    },
+    {
+      id: 'ENTERPRISE',
+      name: 'Plan Enterprise',
+      price: Number(settings.enterprise_price ?? 179),
+      description: 'Para franquicias y cadenas con alto volumen de atención.',
+      features: [
+        'Barberos ilimitados',
+        'Múltiples sedes',
+        'Reportes financieros avanzados',
+        'Soporte prioritario 24/7',
+      ],
+    },
+  ]
+}
 
 export default function SubscriptionClient({
   org,
   subscription,
   payments,
+  platformSettings,
   slug,
 }: SubscriptionClientProps) {
+  const PLANS = buildPlans(platformSettings)
   const [selectedPlan, setSelectedPlan] = useState('PRO')
   const [months, setMonths] = useState(1)
   const [paymentMethod, setPaymentMethod] = useState<'YAPE' | 'PLIN' | 'TRANSFER'>('YAPE')
   const [voucherUrl, setVoucherUrl] = useState('')
+  const [voucherFileName, setVoucherFileName] = useState('')
   const [referenceCode, setReferenceCode] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  function compressImage(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const maxDim = 1200
+          let width = img.width
+          let height = img.height
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width)
+              width = maxDim
+            } else {
+              width = Math.round((width * maxDim) / height)
+              height = maxDim
+            }
+          }
+
+          const canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            resolve(reader.result as string)
+            return
+          }
+          ctx.drawImage(img, 0, 0, width, height)
+          resolve(canvas.toDataURL('image/jpeg', 0.82))
+        }
+        img.onerror = () => resolve(reader.result as string)
+        img.src = e.target?.result as string
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  async function handleVoucherFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 8 * 1024 * 1024) {
+      setError('La imagen del comprobante no debe superar los 8MB.')
+      return
+    }
+    setError(null)
+    try {
+      const compressed = await compressImage(file)
+      setVoucherUrl(compressed)
+      setVoucherFileName(file.name)
+    } catch {
+      setError('No se pudo procesar la imagen del comprobante.')
+    }
+  }
 
   // Plan actual y cálculo de días
   const currentPlan = subscription?.plan_tier || 'TRIAL'
@@ -116,6 +183,7 @@ export default function SubscriptionClient({
     } else {
       setSuccess(true)
       setVoucherUrl('')
+      setVoucherFileName('')
       setReferenceCode('')
       setNotes('')
     }
@@ -242,22 +310,53 @@ export default function SubscriptionClient({
 
           <div className="space-y-3 pt-2">
             {/* Yape / Plin */}
-            <div className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800">
-              <span className="text-[11px] font-bold text-purple-400 uppercase tracking-wider block mb-1">
-                Yape / Plin
-              </span>
-              <p className="text-lg font-mono font-bold text-white tracking-wider">999 888 777</p>
-              <p className="text-xs text-neutral-400 mt-0.5">Titular: Darwin Jackson (BarberOS)</p>
-            </div>
+            {(platformSettings.yape_phone || platformSettings.plin_phone || platformSettings.yape_qr_url) && (
+              <div className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 space-y-2.5">
+                <span className="text-[11px] font-bold text-purple-400 uppercase tracking-wider block">
+                  Yape / Plin
+                </span>
+                {platformSettings.yape_qr_url && (
+                  <div className="w-36 h-36 mx-auto bg-white rounded-xl p-2 flex items-center justify-center overflow-hidden">
+                    <img
+                      src={platformSettings.yape_qr_url}
+                      alt="Código QR oficial de pago"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
+                {platformSettings.yape_phone && (
+                  <p className="text-lg font-mono font-bold text-white tracking-wider">
+                    Yape: {platformSettings.yape_phone}
+                  </p>
+                )}
+                {platformSettings.plin_phone && platformSettings.plin_phone !== platformSettings.yape_phone && (
+                  <p className="text-sm font-mono font-bold text-cyan-300 tracking-wider">
+                    Plin: {platformSettings.plin_phone}
+                  </p>
+                )}
+                {platformSettings.yape_holder && (
+                  <p className="text-xs text-neutral-400">
+                    Titular: {platformSettings.yape_holder}
+                  </p>
+                )}
+              </div>
+            )}
 
-            {/* BCP */}
-            <div className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800">
-              <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider block mb-1">
-                BCP Soles
-              </span>
-              <p className="text-sm font-mono font-bold text-white">193-98765432-0-12</p>
-              <p className="text-xs text-neutral-400 mt-0.5">CCI: 002-193009876543201211</p>
-            </div>
+            {/* Cuenta Bancaria */}
+            {platformSettings.bank_account && (
+              <div className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800">
+                <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider block mb-1">
+                  {platformSettings.bank_name || 'Cuenta Bancaria'}
+                </span>
+                <p className="text-sm font-mono font-bold text-white">{platformSettings.bank_account}</p>
+                {platformSettings.bank_cci && (
+                  <p className="text-xs text-neutral-400 mt-0.5 font-mono">CCI: {platformSettings.bank_cci}</p>
+                )}
+                {platformSettings.bank_holder && (
+                  <p className="text-xs text-neutral-400 mt-0.5">Titular: {platformSettings.bank_holder}</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -294,9 +393,9 @@ export default function SubscriptionClient({
                   onChange={(e) => setSelectedPlan(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white text-xs focus:outline-none focus:border-amber-500"
                 >
-                  <option value="STARTER">Starter (S/ 59)</option>
-                  <option value="PRO">Pro (S/ 99)</option>
-                  <option value="ENTERPRISE">Enterprise (S/ 179)</option>
+                  <option value="STARTER">Starter ({formatPrice(PLANS[0].price)})</option>
+                  <option value="PRO">Pro ({formatPrice(PLANS[1].price)})</option>
+                  <option value="ENTERPRISE">Enterprise ({formatPrice(PLANS[2].price)})</option>
                 </select>
               </div>
 
@@ -334,17 +433,56 @@ export default function SubscriptionClient({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label htmlFor="field" className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
-                  URL o Enlace de la Captura / Voucher *
+                <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                  Captura / Voucher de Pago *
                 </label>
-                <input aria-label="input"
-                  type="url"
-                  required
-                  value={voucherUrl}
-                  onChange={(e) => setVoucherUrl(e.target.value)}
-                  placeholder="https://imgur.com/... o enlace de imagen"
-                  className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-amber-500"
-                />
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <label className="py-2 px-3 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shrink-0">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{voucherFileName ? 'Cambiar Captura' : 'Subir Captura'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleVoucherFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <input
+                      aria-label="URL del comprobante"
+                      type="text"
+                      value={voucherUrl.startsWith('data:') ? `[Imagen adjunta: ${voucherFileName}]` : voucherUrl}
+                      onChange={(e) => {
+                        setVoucherFileName('')
+                        setVoucherUrl(e.target.value)
+                      }}
+                      placeholder="O pega un enlace (https://...)"
+                      className="w-full px-3 py-2 rounded-lg bg-neutral-950 border border-neutral-800 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  {voucherUrl.startsWith('data:image') && (
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-neutral-950 border border-emerald-500/30">
+                      <img
+                        src={voucherUrl}
+                        alt="Vista previa voucher"
+                        className="w-10 h-10 rounded object-cover border border-neutral-800"
+                      />
+                      <span className="text-[11px] text-emerald-400 truncate flex-1">
+                        ✓ {voucherFileName || 'Comprobante cargado'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVoucherUrl('')
+                          setVoucherFileName('')
+                        }}
+                        className="text-[11px] text-red-400 hover:underline px-1.5 cursor-pointer"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>

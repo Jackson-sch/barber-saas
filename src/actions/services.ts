@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { verifyOrgAccess } from '@/lib/tenant'
 import { revalidatePath } from 'next/cache'
 
 export interface ServiceInput {
@@ -17,14 +17,13 @@ export interface ServiceInput {
 }
 
 export async function createServiceAction(input: ServiceInput) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-
   if (!input.name || !input.price || !input.organization_id) {
     return { error: 'Nombre y precio son obligatorios.' }
   }
+
+  const access = await verifyOrgAccess(input.organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
   const { error } = await supabase.from('services').insert({
     organization_id: input.organization_id,
@@ -48,14 +47,13 @@ export async function createServiceAction(input: ServiceInput) {
 }
 
 export async function updateServiceAction(input: ServiceInput) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-
   if (!input.id || !input.name || !input.price || !input.organization_id) {
     return { error: 'Datos incompletos para actualizar.' }
   }
+
+  const access = await verifyOrgAccess(input.organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
   const { error } = await supabase
     .from('services')
@@ -83,9 +81,9 @@ export async function updateServiceAction(input: ServiceInput) {
 }
 
 export async function toggleServiceStatusAction(id: string, organization_id: string, is_active: boolean, slug: string) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+  const access = await verifyOrgAccess(organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
 
   const { error } = await supabase
@@ -104,9 +102,9 @@ export async function toggleServiceStatusAction(id: string, organization_id: str
 }
 
 export async function deleteServiceAction(id: string, organization_id: string, slug: string) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+  const access = await verifyOrgAccess(organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
 
   const { error } = await supabase
@@ -126,14 +124,13 @@ export async function deleteServiceAction(id: string, organization_id: string, s
 }
 
 export async function createCategoryAction(organization_id: string, name: string, slug: string) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-
   if (!name.trim()) {
     return { error: 'El nombre de la categoría es obligatorio.' }
   }
+
+  const access = await verifyOrgAccess(organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
   const { error } = await supabase.from('service_categories').insert({
     organization_id,
@@ -150,9 +147,9 @@ export async function createCategoryAction(organization_id: string, name: string
 }
 
 export async function deleteCategoryAction(id: string, organization_id: string, slug: string) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+  const access = await verifyOrgAccess(organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
 
   const { error } = await supabase

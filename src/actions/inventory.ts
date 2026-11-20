@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { verifyOrgAccess } from '@/lib/tenant'
 import { revalidatePath } from 'next/cache'
 
 export interface ProductInput {
@@ -18,14 +18,13 @@ export interface ProductInput {
 }
 
 export async function createProductAction(input: ProductInput) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-
   if (!input.name?.trim() || !input.organization_id) {
     return { error: 'El nombre del producto y la organización son requeridos.' }
   }
+
+  const access = await verifyOrgAccess(input.organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
   const { data, error } = await supabase
     .from('products')
@@ -55,14 +54,13 @@ export async function createProductAction(input: ProductInput) {
 }
 
 export async function updateProductAction(input: ProductInput) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-
   if (!input.id || !input.name?.trim() || !input.organization_id) {
     return { error: 'Datos incompletos para actualizar el producto.' }
   }
+
+  const access = await verifyOrgAccess(input.organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
   const { error } = await supabase
     .from('products')
@@ -96,9 +94,9 @@ export async function adjustStockAction(
   delta: number,
   slug: string
 ) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+  const access = await verifyOrgAccess(organizationId, ['OWNER', 'ADMIN', 'RECEPTIONIST'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
 
   const { data: prod, error: fetchErr } = await supabase
@@ -138,9 +136,9 @@ export async function deleteProductAction(
   organizationId: string,
   slug: string
 ) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+  const access = await verifyOrgAccess(organizationId, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
 
   // Verificar si tiene ventas asociadas

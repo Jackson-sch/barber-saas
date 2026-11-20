@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { verifyOrgAccess } from '@/lib/tenant'
 import { revalidatePath } from 'next/cache'
 
 export interface RecordCashMovementInput {
@@ -16,15 +16,11 @@ export interface RecordCashMovementInput {
 
 export async function recordCashMovementAction(input: RecordCashMovementInput) {
   try {
-    const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) return { error: 'No autenticado.' }
+    const access = await verifyOrgAccess(input.organization_id, ['OWNER', 'ADMIN', 'RECEPTIONIST'])
+    if (!access.authorized || !access.user) {
+      return { error: access.error || 'No autorizado' }
+    }
+    const { supabase, user } = access
 
     if (!input.amount || input.amount <= 0) {
       return { error: 'El monto debe ser mayor a 0.' }

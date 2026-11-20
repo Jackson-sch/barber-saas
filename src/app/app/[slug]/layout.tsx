@@ -24,6 +24,13 @@ export default async function TenantLayout({ children, params }: TenantLayoutPro
           trial_ends_at: org.trial_ends_at,
           logo_url: org.logo_url,
           primary_color: org.primary_color,
+          subscription: org.subscription
+            ? {
+                plan_tier: org.subscription.plan_tier,
+                status: org.subscription.status,
+                current_period_end: org.subscription.current_period_end,
+              }
+            : null,
         }}
         member={
           member

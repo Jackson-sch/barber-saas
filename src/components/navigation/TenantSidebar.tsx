@@ -34,6 +34,11 @@ interface TenantSidebarProps {
     trial_ends_at: string | null
     logo_url?: string | null
     primary_color?: string | null
+    subscription?: {
+      plan_tier: 'TRIAL' | 'STARTER' | 'PRO' | 'ENTERPRISE'
+      status: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'SUSPENDED'
+      current_period_end: string | null
+    } | null
   }
   member: {
     id: string
@@ -48,12 +53,23 @@ export function TenantSidebar({ slug, org, member, userEmail, isSuperAdmin = fal
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  // Días de prueba restantes
-  const trialEnds = org.trial_ends_at ? new Date(org.trial_ends_at) : null
+  // Estado real del plan y días restantes de suscripción
+  const planTier = org.subscription?.plan_tier || 'TRIAL'
+  const subStatus = org.subscription?.status || 'TRIAL'
+  const periodEndStr = org.subscription?.current_period_end || org.trial_ends_at
+  const periodEnds = periodEndStr ? new Date(periodEndStr) : null
   const now = new Date()
-  const daysLeft = trialEnds
-    ? Math.max(0, Math.ceil((trialEnds.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+  const daysLeft = periodEnds
+    ? Math.max(0, Math.ceil((periodEnds.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
     : 0
+  const isPaidPlanActive = planTier !== 'TRIAL' && subStatus === 'ACTIVE' && daysLeft > 0
+  const planDisplayLabels: Record<string, string> = {
+    TRIAL: 'Plan Trial',
+    STARTER: 'Plan Starter',
+    PRO: 'Plan Pro',
+    ENTERPRISE: 'Plan Enterprise',
+  }
+  const planLabel = planDisplayLabels[planTier] || `Plan ${planTier}`
 
   const navGroups = [
     {
@@ -178,25 +194,51 @@ export function TenantSidebar({ slug, org, member, userEmail, isSuperAdmin = fal
 
       {/* Subscription Status Widget */}
       <div className="p-3 border-t border-white/[0.08] bg-[#0A0B10]">
-        <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 text-xs">
-          <div className="flex items-center justify-between font-semibold text-amber-400 mb-1">
+        <div
+          className={`p-3 rounded-xl border text-xs ${
+            isPaidPlanActive
+              ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/25'
+              : 'bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20'
+          }`}
+        >
+          <div
+            className={`flex items-center justify-between font-semibold mb-1 ${
+              isPaidPlanActive ? 'text-emerald-400' : 'text-amber-400'
+            }`}
+          >
             <div className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Plan Trial</span>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{planLabel}</span>
             </div>
-            <span className="font-mono text-[11px] bg-amber-500/20 px-1.5 py-0.5 rounded text-amber-300">
-              {daysLeft}d restantes
+            <span
+              className={`font-mono text-[11px] px-1.5 py-0.5 rounded ${
+                daysLeft > 0
+                  ? isPaidPlanActive
+                    ? 'bg-emerald-500/20 text-emerald-300'
+                    : 'bg-amber-500/20 text-amber-300'
+                  : 'bg-red-500/20 text-red-300'
+              }`}
+            >
+              {daysLeft > 0 ? `${daysLeft}d restantes` : 'Vencido'}
             </span>
           </div>
           <p className="text-neutral-400 text-[11px] leading-relaxed mt-1">
-            Acceso completo a todos los módulos y funciones.
+            {isPaidPlanActive
+              ? 'Suscripción activa y verificada.'
+              : daysLeft > 0
+                ? 'Acceso completo a todos los módulos y funciones.'
+                : 'Renueva tu suscripción para mantener tu cuenta activa.'}
           </p>
           <Link
             href={`/app/${slug}/suscripcion`}
             onClick={() => setMobileOpen(false)}
-            className="mt-2.5 block text-center py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold transition text-[11px] border border-amber-500/30"
+            className={`mt-2.5 block text-center py-1.5 rounded-lg font-semibold transition text-[11px] border ${
+              isPaidPlanActive
+                ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/30'
+                : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/30'
+            }`}
           >
-            Activar Plan Anual / Mensual
+            {isPaidPlanActive ? 'Gestionar Suscripción' : 'Activar Plan Anual / Mensual'}
           </Link>
         </div>
 

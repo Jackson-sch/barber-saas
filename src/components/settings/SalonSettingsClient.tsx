@@ -14,10 +14,12 @@ import {
   Loader2,
   Save,
   CreditCard,
+  Cloud,
 } from 'lucide-react'
 import { updateTenantSettingsAction } from '@/actions/organizations'
 import { slugify } from '@/lib/utils'
 import { DEFAULT_WHATSAPP_TEMPLATES } from '@/lib/whatsapp'
+import { uploadImageWithCloudinary } from '@/lib/cloudinary'
 import type { SalonSettingsProps, SettingsTab } from './types'
 
 import GeneralSettingsTab from './tabs/GeneralSettingsTab'
@@ -25,6 +27,7 @@ import BrandingSettingsTab from './tabs/BrandingSettingsTab'
 import LoyaltySettingsTab from './tabs/LoyaltySettingsTab'
 import WhatsAppSettingsTab from './tabs/WhatsAppSettingsTab'
 import PaymentSettingsTab from './tabs/PaymentSettingsTab'
+import CloudinarySettingsTab from './tabs/CloudinarySettingsTab'
 
 export default function SalonSettingsClient({ organization, isOwner, slug }: SalonSettingsProps) {
   const router = useRouter()
@@ -99,20 +102,34 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
   )
   const [requireVoucher, setRequireVoucher] = useState(mps?.require_voucher ?? true)
 
-  function handleQrUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  // 7. Cloudinary BYOK (Almacenamiento de imágenes propio por barbería)
+  const cld = organization.cloudinarySettings
+  const [cloudinaryEnabled, setCloudinaryEnabled] = useState(cld?.enabled ?? false)
+  const [cloudName, setCloudName] = useState(cld?.cloud_name || '')
+  const [uploadPreset, setUploadPreset] = useState(cld?.upload_preset || '')
+  const [cloudinaryFolder, setCloudinaryFolder] = useState(cld?.folder || `barberos/${slug}`)
+
+  const currentCloudinarySettings = {
+    enabled: cloudinaryEnabled,
+    cloud_name: cloudName.trim(),
+    upload_preset: uploadPreset.trim(),
+    folder: cloudinaryFolder.trim() || null,
+  }
+
+  async function handleQrUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 2 * 1024 * 1024) {
-      setError('El archivo de imagen del QR no debe superar los 2MB.')
+    if (file.size > 4 * 1024 * 1024) {
+      setError('El archivo de imagen del QR no debe superar los 4MB.')
       return
     }
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setQrImageUrl(reader.result)
-      }
-    }
-    reader.readAsDataURL(file)
+    setError(null)
+    const result = await uploadImageWithCloudinary({
+      file,
+      settings: currentCloudinarySettings,
+      subFolder: 'qr',
+    })
+    setQrImageUrl(result.url)
   }
 
   // Navegación por pestañas y estados de formulario
@@ -128,36 +145,38 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
     setCustomSlug(slugify(newName))
   }
 
-  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 2 * 1024 * 1024) {
-      setError('El archivo de imagen no debe superar los 2MB.')
+    if (file.size > 4 * 1024 * 1024) {
+      setError('El archivo de imagen no debe superar los 4MB.')
       return
     }
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setLogoUrl(reader.result)
-      }
-    }
-    reader.readAsDataURL(file)
+    setError(null)
+    const result = await uploadImageWithCloudinary({
+      file,
+      settings: currentCloudinarySettings,
+      subFolder: 'branding',
+      maxDim: 800,
+    })
+    setLogoUrl(result.url)
   }
 
-  function handleBannerUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleBannerUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 3 * 1024 * 1024) {
-      setError('La imagen de portada no debe superar los 3MB.')
+    if (file.size > 5 * 1024 * 1024) {
+      setError('La imagen de portada no debe superar los 5MB.')
       return
     }
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setBannerUrl(reader.result)
-      }
-    }
-    reader.readAsDataURL(file)
+    setError(null)
+    const result = await uploadImageWithCloudinary({
+      file,
+      settings: currentCloudinarySettings,
+      subFolder: 'branding',
+      maxDim: 1600,
+    })
+    setBannerUrl(result.url)
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -216,6 +235,7 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
           instructions: paymentInstructions.trim() || null,
           require_voucher: requireVoucher,
         },
+        cloudinarySettings: currentCloudinarySettings,
         logoUrl: logoUrl.trim() || null,
         primaryColor: primaryColor.trim() || '#F59E0B',
         bannerUrl: bannerUrl.trim() || null,
@@ -298,8 +318,8 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
         </div>
       )}
 
-      {/* Selector de Pestañas de Configuración */}
-      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[#090A0E] border border-white/[0.08] overflow-x-auto select-none">
+      {/* Selector de Pestañas de Configuración (Grid responsivo para mostrar todas las opciones sin cortes) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-[#090A0E] border border-white/[0.08] select-none">
         {[
           {
             id: 'general',
@@ -323,15 +343,22 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
             id: 'whatsapp',
             label: 'WhatsApp API',
             icon: MessageCircle,
-            desc: 'Credenciales en BD y plantillas',
+            desc: 'Credenciales y plantillas',
             badge: waProvider !== 'MANUAL' ? 'API Activa' : undefined,
           },
           {
             id: 'payments',
             label: 'Pasarela Culqi',
             icon: CreditCard,
-            desc: 'Tarjetas, Yape y pagos online',
+            desc: 'Tarjetas, Yape y QR',
             badge: culqiEnabled && culqiPublicKey ? 'Culqi Activo' : undefined,
+          },
+          {
+            id: 'cloudinary',
+            label: 'Cloudinary CDN',
+            icon: Cloud,
+            desc: 'Imágenes y vouchers',
+            badge: cloudinaryEnabled && cloudName && uploadPreset ? 'CDN Activo' : undefined,
           },
         ].map((tab) => {
           const Icon = tab.icon
@@ -341,17 +368,17 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id as SettingsTab)}
-              className={`py-3 px-4 rounded-xl text-xs font-bold transition flex items-center gap-2.5 cursor-pointer shrink-0 ${
+              className={`py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center gap-2.5 cursor-pointer min-w-0 ${
                 isActive
                   ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20'
                   : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
               }`}
             >
               <Icon className="w-4 h-4 shrink-0" />
-              <div className="text-left">
-                <span className="block leading-tight">{tab.label}</span>
+              <div className="text-left min-w-0 flex-1">
+                <span className="block leading-tight truncate">{tab.label}</span>
                 <span
-                  className={`text-[10px] hidden sm:block font-normal mt-0.5 ${
+                  className={`text-[10px] hidden sm:block font-normal mt-0.5 truncate ${
                     isActive ? 'text-black/80' : 'text-neutral-500'
                   }`}
                 >
@@ -360,7 +387,7 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
               </div>
               {tab.badge && (
                 <span
-                  className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold ml-1 ${
+                  className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold shrink-0 hidden md:inline-block ${
                     isActive
                       ? 'bg-black/20 text-black'
                       : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
@@ -493,6 +520,21 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
             requireVoucher={requireVoucher}
             setRequireVoucher={setRequireVoucher}
             salonPhone={phone}
+          />
+        )}
+
+        {activeTab === 'cloudinary' && (
+          <CloudinarySettingsTab
+            isOwner={isOwner}
+            slug={slug}
+            cloudinaryEnabled={cloudinaryEnabled}
+            setCloudinaryEnabled={setCloudinaryEnabled}
+            cloudName={cloudName}
+            setCloudName={setCloudName}
+            uploadPreset={uploadPreset}
+            setUploadPreset={setUploadPreset}
+            folder={cloudinaryFolder}
+            setFolder={setCloudinaryFolder}
           />
         )}
 

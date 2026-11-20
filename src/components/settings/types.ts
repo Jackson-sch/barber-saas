@@ -3,9 +3,10 @@ import type {
   WhatsAppNotificationSettings,
   CulqiSettings,
   ManualPaymentSettings,
+  CloudinarySettings,
 } from '@/types/database.types'
 
-export type SettingsTab = 'general' | 'branding' | 'loyalty' | 'whatsapp' | 'payments'
+export type SettingsTab = 'general' | 'branding' | 'loyalty' | 'whatsapp' | 'payments' | 'cloudinary'
 
 export interface SalonSettingsProps {
   organization: {
@@ -22,6 +23,7 @@ export interface SalonSettingsProps {
     whatsappSettings?: WhatsAppNotificationSettings | null
     culqiSettings?: CulqiSettings | null
     manualPaymentSettings?: ManualPaymentSettings | null
+    cloudinarySettings?: CloudinarySettings | null
     logoUrl?: string | null
     primaryColor?: string
     secondaryColor?: string

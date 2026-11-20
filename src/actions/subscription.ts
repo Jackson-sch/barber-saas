@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { verifyOrgAccess } from '@/lib/tenant'
 import { revalidatePath } from 'next/cache'
 
 export interface SubmitVoucherInput {
@@ -17,14 +18,13 @@ export interface SubmitVoucherInput {
 
 // 1. Enviar comprobante de pago por parte del tenant
 export async function submitSubscriptionPaymentAction(input: SubmitVoucherInput) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-
   if (!input.voucher_url || !input.amount || !input.organization_id) {
     return { error: 'Comprobante y monto son obligatorios.' }
   }
+
+  const access = await verifyOrgAccess(input.organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
   const { error } = await supabase.from('subscription_payments').insert({
     organization_id: input.organization_id,
@@ -272,9 +272,16 @@ export async function approveOrganizationAction(orgId: string) {
     return { error: 'Error al actualizar el estado de la barbería.' }
   }
 
-  // Iniciar el período de prueba de 14 días a partir de hoy
+  // Iniciar el período de prueba configurado por el SuperAdmin (14 días por defecto)
+  const { data: platformCfg } = await supabase
+    .from('platform_settings')
+    .select('trial_days')
+    .eq('id', 'default')
+    .maybeSingle()
+
+  const trialDays = Math.max(1, Number(platformCfg?.trial_days ?? 14))
   const now = new Date()
-  const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+  const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000)
 
   await supabase
     .from('organization_subscriptions')

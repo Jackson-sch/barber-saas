@@ -86,6 +86,8 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
   const tagline = orgSettings.tagline || 'Cortes clásicos, perfilado de barba de autor y la mejor experiencia de cuidado masculino.'
   const primaryColor = org.primary_color || '#F59E0B'
   const logoUrl = org.logo_url || null
+  const openingTime = orgSettings.opening_time ? String(orgSettings.opening_time).slice(0, 5) : '09:00'
+  const closingTime = orgSettings.closing_time ? String(orgSettings.closing_time).slice(0, 5) : '21:00'
 
   const waUrl = org.phone
     ? formatWhatsAppUrl(org.phone, `¡Hola ${org.name}! Tengo una consulta sobre los servicios y reservas.`)
@@ -168,7 +170,7 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Abierto Hoy • 09:00 - 21:00
+              Abierto Hoy • {openingTime} - {closingTime}
             </span>
 
             {waUrl && (
@@ -433,12 +435,14 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
                 </div>
                 <div className="space-y-1.5 text-[11px]">
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Lun - Sáb</span>
-                    <span className="font-mono text-neutral-200 font-medium">9am - 9pm</span>
+                    <span className="text-neutral-400">Atención General</span>
+                    <span className="font-mono text-neutral-200 font-medium">
+                      {openingTime} - {closingTime}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Domingos</span>
-                    <span className="font-mono text-neutral-400">10am - 6pm</span>
+                    <span className="text-neutral-400">Reservas Web</span>
+                    <span className="font-mono text-emerald-400">24/7 Activo</span>
                   </div>
                 </div>
               </div>
@@ -529,6 +533,17 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
                               orgSettings.manual_payment_settings.instructions || null,
                             requireVoucher:
                               orgSettings.manual_payment_settings.require_voucher || false,
+                          }
+                        : null,
+                    cloudinarySettings:
+                      orgSettings.cloudinary_settings?.enabled &&
+                      orgSettings.cloudinary_settings?.cloud_name &&
+                      orgSettings.cloudinary_settings?.upload_preset
+                        ? {
+                            enabled: true,
+                            cloud_name: orgSettings.cloudinary_settings.cloud_name,
+                            upload_preset: orgSettings.cloudinary_settings.upload_preset,
+                            folder: orgSettings.cloudinary_settings.folder || null,
                           }
                         : null,
                   }}

@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { verifyOrgAccess } from '@/lib/tenant'
 import { revalidatePath } from 'next/cache'
 
 export interface ClientInput {
@@ -26,14 +26,13 @@ export interface ClientPreferencesInput {
 }
 
 export async function createClientAction(input: ClientInput) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-
   if (!input.full_name || !input.phone || !input.organization_id) {
     return { error: 'Nombre y teléfono son obligatorios.' }
   }
+
+  const access = await verifyOrgAccess(input.organization_id)
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
   const phoneClean = input.phone.trim().replace(/\s+/g, '')
 
@@ -79,14 +78,13 @@ export async function createClientAction(input: ClientInput) {
 }
 
 export async function updateClientAction(input: ClientInput) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-
-  if (!input.id || !input.full_name || !input.phone) {
+  if (!input.id || !input.full_name || !input.phone || !input.organization_id) {
     return { error: 'Datos incompletos para actualizar el cliente.' }
   }
+
+  const access = await verifyOrgAccess(input.organization_id)
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
   const phoneClean = input.phone.trim().replace(/\s+/g, '')
 
@@ -112,9 +110,9 @@ export async function updateClientAction(input: ClientInput) {
 }
 
 export async function saveClientPreferencesAction(input: ClientPreferencesInput) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+  const access = await verifyOrgAccess(input.organization_id)
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
 
   const { error } = await supabase
@@ -144,9 +142,9 @@ export async function saveClientPreferencesAction(input: ClientPreferencesInput)
 }
 
 export async function deleteClientAction(id: string, organization_id: string, slug: string) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+  const access = await verifyOrgAccess(organization_id, ['OWNER', 'ADMIN'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
 
   const { error } = await supabase
@@ -173,14 +171,13 @@ export interface AdjustLoyaltyInput {
 }
 
 export async function adjustClientLoyaltyAction(input: AdjustLoyaltyInput) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
-
-
   if (!input.clientId || !input.organizationId) {
     return { error: 'Cliente y organización son requeridos.' }
   }
+
+  const access = await verifyOrgAccess(input.organizationId, ['OWNER', 'ADMIN', 'RECEPTIONIST'])
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
   if (input.pointsDelta === 0) {
     return { error: 'El ajuste debe ser distinto de cero.' }
@@ -232,9 +229,9 @@ export async function adjustClientLoyaltyAction(input: AdjustLoyaltyInput) {
 }
 
 export async function getClientLoyaltyLogsAction(clientId: string, organizationId: string) {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+  const access = await verifyOrgAccess(organizationId)
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
 
   const { data: logs, error } = await supabase
@@ -279,9 +276,9 @@ export async function getClientHistoryAction(
   clientId: string,
   organizationId: string
 ): Promise<{ error?: string; data?: ClientHistoryResponse }> {
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+  const access = await verifyOrgAccess(organizationId)
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
 
   const { data: apps, error } = await supabase
@@ -353,9 +350,9 @@ export async function searchGlobalClientsAction(
 ): Promise<{ error?: string; clients?: Array<{ id: string; full_name: string; phone: string; total_visits: number }> }> {
   if (!query || query.trim().length < 2) return { clients: [] }
 
-  const supabase = await createClient()
-  const { data: authData } = await supabase.auth.getUser()
-  if (!authData.user) return { error: 'No autorizado' }
+  const access = await verifyOrgAccess(organizationId)
+  if (!access.authorized) return { error: access.error || 'No autorizado' }
+  const { supabase } = access
 
   const cleanQ = query.trim()
 

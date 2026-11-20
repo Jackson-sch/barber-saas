@@ -8,8 +8,7 @@ import {
   CreditCard,
   Building2,
   LogOut,
-  ExternalLink,
-  Scissors,
+  Settings,
 } from 'lucide-react'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -37,6 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/admin', label: 'Dashboard Global', icon: LayoutDashboard },
     { href: '/admin/pagos', label: 'Aprobación de Pagos', icon: CreditCard },
     { href: '/admin/barberias', label: 'Barberías (Tenants)', icon: Building2 },
+    { href: '/admin/configuracion', label: 'Configuración Global', icon: Settings },
   ]
 
   return (

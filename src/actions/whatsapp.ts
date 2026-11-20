@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { verifyOrgAccess } from '@/lib/tenant'
 import {
   dispatchWhatsAppMessage,
   type WhatsAppDispatchResult,
@@ -26,16 +27,16 @@ export async function sendWhatsAppHybridAction({
   templateType = 'custom',
 }: SendWhatsAppParams): Promise<WhatsAppDispatchResult> {
   try {
-    const supabase = await createClient()
-    const { data: authData } = await supabase.auth.getUser()
-    if (!authData.user) {
+    const access = await verifyOrgAccess(organizationId)
+    if (!access.authorized) {
       return {
         success: false,
         mode: 'MANUAL',
         fallbackUrl: formatWhatsAppUrl(toPhone, message),
-        error: 'No autorizado',
+        error: access.error || 'No autorizado',
       }
     }
+    const { supabase } = access
 
 
     // 1. Obtener settings de la organización
@@ -92,6 +93,17 @@ export async function testWhatsAppCredentialsAction({
   settings,
   organizationName = 'BarberOS',
 }: TestCredentialsParams): Promise<WhatsAppDispatchResult> {
+  const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  if (!authData.user) {
+    return {
+      success: false,
+      mode: 'MANUAL',
+      fallbackUrl: formatWhatsAppUrl(testPhone, ''),
+      error: 'No autorizado',
+    }
+  }
+
   const testMessage = `💈 ¡Hola! Este es un mensaje de prueba exitoso enviado desde ${organizationName} a través del sistema BarberOS. ✂️ Si recibiste esto, tu conexión de WhatsApp está 100% activa.`
 
   return await dispatchWhatsAppMessage({
