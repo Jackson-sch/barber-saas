@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { verifyOrgAccess } from '@/lib/tenant'
+import { getOrganizationSecretsServer } from '@/lib/organization-secrets'
 import {
   dispatchWhatsAppMessage,
   type WhatsAppDispatchResult,
@@ -57,10 +58,19 @@ export async function sendWhatsAppHybridAction({
     }
 
     const orgSettings = (org.settings as any) || {}
-    const waSettings: WhatsAppNotificationSettings | undefined =
+    const rawWaSettings: WhatsAppNotificationSettings | undefined =
       orgSettings.whatsapp_notifications ||
       orgSettings.whatsapp_settings ||
       orgSettings.whatsappSettings
+
+    const secrets = await getOrganizationSecretsServer(organizationId)
+    const waSettings: WhatsAppNotificationSettings | undefined = rawWaSettings
+      ? {
+          ...rawWaSettings,
+          accessToken: secrets.whatsapp_access_token || rawWaSettings.accessToken,
+          webhookBearerToken: secrets.whatsapp_webhook_token || rawWaSettings.webhookBearerToken,
+        }
+      : undefined
 
     return await dispatchWhatsAppMessage({
       toPhone,

@@ -1,5 +1,5 @@
 import { Plus, User } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, formatTimeOnly } from '@/lib/utils'
 import type { CashMovement } from '@/types/database.types'
 
 interface CajaMovementsListProps {
@@ -34,10 +34,7 @@ export default function CajaMovementsList({
   return (
     <div className="divide-y divide-neutral-800 max-h-80 overflow-y-auto">
       {movements.map((mov) => {
-        const timeStr = new Date(mov.created_at).toLocaleTimeString('es-PE', {
-          hour: '2-digit',
-          minute: '2-digit',
-        })
+        const timeStr = formatTimeOnly(mov.created_at)
         const isExpense = mov.type === 'EXPENSE'
         const catLabel = movementCategoryLabels[mov.category] || mov.category
         const barberAssigned = mov.barber_id ? barberMap.get(mov.barber_id) : null

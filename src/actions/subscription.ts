@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { verifyOrgAccess } from '@/lib/tenant'
+import { uploadImageToPlatformCloudinary } from '@/lib/platform-secrets'
 import { revalidatePath } from 'next/cache'
 
 export interface SubmitVoucherInput {
@@ -26,13 +27,24 @@ export async function submitSubscriptionPaymentAction(input: SubmitVoucherInput)
   if (!access.authorized) return { error: access.error || 'No autorizado' }
   const { supabase } = access
 
+  let finalVoucherUrl = input.voucher_url.trim()
+  if (finalVoucherUrl.startsWith('data:image/')) {
+    const uploaded = await uploadImageToPlatformCloudinary(
+      finalVoucherUrl,
+      `vouchers/${input.organization_id}`
+    )
+    if (uploaded?.url) {
+      finalVoucherUrl = uploaded.url
+    }
+  }
+
   const { error } = await supabase.from('subscription_payments').insert({
     organization_id: input.organization_id,
     plan_tier: input.plan_tier,
     amount: Number(input.amount),
     months_paid: Number(input.months_paid) || 1,
     payment_method: input.payment_method,
-    voucher_url: input.voucher_url,
+    voucher_url: finalVoucherUrl,
     reference_code: input.reference_code?.trim() || null,
     notes: input.notes?.trim() || null,
     status: 'PENDING',

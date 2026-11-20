@@ -49,11 +49,11 @@ export default function StepDateTimeSelect({
       </div>
 
       {/* Quick date selector chips */}
-      <div className="flex items-center gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <button
           type="button"
           onClick={() => setSelectedDate(todayStr)}
-          className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition cursor-pointer border ${
+          className={`py-2 px-3 rounded-lg text-xs font-medium transition cursor-pointer border ${
             selectedDate === todayStr
               ? 'bg-amber-500/15 border-amber-500/50 text-amber-400'
               : 'bg-[#090A0E] border-white/5 text-neutral-400 hover:text-white'
@@ -64,7 +64,7 @@ export default function StepDateTimeSelect({
         <button
           type="button"
           onClick={() => setSelectedDate(tomorrowStr)}
-          className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition cursor-pointer border ${
+          className={`py-2 px-3 rounded-lg text-xs font-medium transition cursor-pointer border ${
             selectedDate === tomorrowStr
               ? 'bg-amber-500/15 border-amber-500/50 text-amber-400'
               : 'bg-[#090A0E] border-white/5 text-neutral-400 hover:text-white'
@@ -72,8 +72,9 @@ export default function StepDateTimeSelect({
         >
           Mañana
         </button>
-        <div className="relative flex-1">
-          <input aria-label="input"
+        <div className="relative col-span-2 sm:col-span-1">
+          <input
+            aria-label="Seleccionar fecha personalizada"
             type="date"
             value={selectedDate}
             min={todayStr}

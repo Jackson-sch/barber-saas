@@ -8,6 +8,8 @@ import {
   AlertTriangle,
   UserCheck,
   ArrowUpRight,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import type { CashShift, Product } from '@/types/database.types'
@@ -91,8 +93,14 @@ export default function DashboardKpiCards({
         </div>
 
         <div className="mt-2.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-mono">
-          <span className="text-emerald-400">✓ {completedAppointments} listos</span>
-          <span className="text-neutral-300">⏳ {pendingAppointments} pendientes</span>
+          <span className="text-emerald-400 inline-flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" />
+            <span>{completedAppointments} listos</span>
+          </span>
+          <span className="text-neutral-300 inline-flex items-center gap-1">
+            <Clock className="w-3 h-3 text-amber-400" />
+            <span>{pendingAppointments} pendientes</span>
+          </span>
         </div>
       </div>
 

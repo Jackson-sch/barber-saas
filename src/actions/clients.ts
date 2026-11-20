@@ -347,7 +347,16 @@ export async function getClientHistoryAction(
 export async function searchGlobalClientsAction(
   organizationId: string,
   query: string
-): Promise<{ error?: string; clients?: Array<{ id: string; full_name: string; phone: string; total_visits: number }> }> {
+): Promise<{
+  error?: string
+  clients?: Array<{
+    id: string
+    full_name: string
+    phone: string
+    total_visits: number
+    loyalty_points: number
+  }>
+}> {
   if (!query || query.trim().length < 2) return { clients: [] }
 
   const access = await verifyOrgAccess(organizationId)
@@ -358,11 +367,11 @@ export async function searchGlobalClientsAction(
 
   const { data, error } = await supabase
     .from('clients')
-    .select('id, full_name, phone, total_visits')
+    .select('id, full_name, phone, total_visits, loyalty_points')
     .eq('organization_id', organizationId)
     .or(`full_name.ilike.%${cleanQ}%,phone.ilike.%${cleanQ}%`)
     .order('total_visits', { ascending: false })
-    .limit(8)
+    .limit(10)
 
   if (error) {
     console.error('Error searching clients:', error)

@@ -9,6 +9,7 @@ import {
   Scissors,
   Store,
   CalendarCheck,
+  Lightbulb,
 } from 'lucide-react'
 import type { Metadata } from 'next'
 
@@ -96,8 +97,11 @@ export default async function PendingRegistrationPage({ searchParams }: PendingR
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-amber-500/[0.05] border border-amber-500/20 text-xs text-amber-200/90 leading-relaxed">
-            💡 <span className="font-semibold text-amber-300">¿Por qué este paso?</span> Para garantizar la seguridad de la plataforma y evitar registros automatizados, un administrador verifica cada salón antes de activar el panel.
+          <div className="p-3 rounded-xl bg-amber-500/[0.05] border border-amber-500/20 text-xs text-amber-200/90 leading-relaxed flex items-start gap-2.5 text-left">
+            <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-semibold text-amber-300">¿Por qué este paso?</span> Para garantizar la seguridad de la plataforma y evitar registros automatizados, un administrador verifica cada salón antes de activar el panel.
+            </div>
           </div>
         </div>
 

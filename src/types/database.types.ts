@@ -861,6 +861,120 @@ export interface Database {
         }
         Relationships: []
       }
+      organization_secrets: {
+        Row: {
+          organization_id: string
+          culqi_secret_key: string | null
+          whatsapp_access_token: string | null
+          whatsapp_webhook_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          organization_id: string
+          culqi_secret_key?: string | null
+          whatsapp_access_token?: string | null
+          whatsapp_webhook_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          organization_id?: string
+          culqi_secret_key?: string | null
+          whatsapp_access_token?: string | null
+          whatsapp_webhook_token?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_secrets: {
+        Row: {
+          id: string
+          cloudinary_enabled: boolean
+          cloudinary_cloud_name: string | null
+          cloudinary_api_key: string | null
+          cloudinary_api_secret: string | null
+          cloudinary_upload_preset: string | null
+          cloudinary_folder: string | null
+          email_provider: string
+          email_from_name: string | null
+          email_from_address: string | null
+          resend_api_key: string | null
+          smtp_host: string | null
+          smtp_port: number | null
+          smtp_user: string | null
+          smtp_password: string | null
+          whatsapp_provider: string
+          whatsapp_phone_number_id: string | null
+          whatsapp_access_token: string | null
+          whatsapp_gateway_url: string | null
+          whatsapp_admin_notify_phone: string | null
+          culqi_public_key: string | null
+          culqi_secret_key: string | null
+          mercadopago_public_key: string | null
+          mercadopago_access_token: string | null
+          cron_secret: string | null
+          webhook_notify_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          cloudinary_enabled?: boolean
+          cloudinary_cloud_name?: string | null
+          cloudinary_api_key?: string | null
+          cloudinary_api_secret?: string | null
+          cloudinary_upload_preset?: string | null
+          cloudinary_folder?: string | null
+          email_provider?: string
+          email_from_name?: string | null
+          email_from_address?: string | null
+          resend_api_key?: string | null
+          smtp_host?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
+          smtp_password?: string | null
+          whatsapp_provider?: string
+          whatsapp_phone_number_id?: string | null
+          whatsapp_access_token?: string | null
+          whatsapp_gateway_url?: string | null
+          whatsapp_admin_notify_phone?: string | null
+          culqi_public_key?: string | null
+          culqi_secret_key?: string | null
+          mercadopago_public_key?: string | null
+          mercadopago_access_token?: string | null
+          cron_secret?: string | null
+          webhook_notify_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          cloudinary_enabled?: boolean
+          cloudinary_cloud_name?: string | null
+          cloudinary_api_key?: string | null
+          cloudinary_api_secret?: string | null
+          cloudinary_upload_preset?: string | null
+          cloudinary_folder?: string | null
+          email_provider?: string
+          email_from_name?: string | null
+          email_from_address?: string | null
+          resend_api_key?: string | null
+          smtp_host?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
+          smtp_password?: string | null
+          whatsapp_provider?: string
+          whatsapp_phone_number_id?: string | null
+          whatsapp_access_token?: string | null
+          whatsapp_gateway_url?: string | null
+          whatsapp_admin_notify_phone?: string | null
+          culqi_public_key?: string | null
+          culqi_secret_key?: string | null
+          mercadopago_public_key?: string | null
+          mercadopago_access_token?: string | null
+          cron_secret?: string | null
+          webhook_notify_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -897,6 +1011,8 @@ export type Commission = Database['public']['Tables']['commissions']['Row']
 export type CashMovement = Database['public']['Tables']['cash_movements']['Row']
 export type LoyaltyLog = Database['public']['Tables']['loyalty_logs']['Row']
 export type PlatformSettings = Database['public']['Tables']['platform_settings']['Row']
+export type PlatformSecrets = Database['public']['Tables']['platform_secrets']['Row']
+export type OrganizationSecret = Database['public']['Tables']['organization_secrets']['Row']
 
 export interface LoyaltyProgramSettings {
   enabled: boolean

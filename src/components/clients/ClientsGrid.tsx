@@ -8,6 +8,7 @@ import {
   Award,
   Edit2,
   Trash2,
+  Trophy,
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import type { ClientWithPreferences } from './ClientsClient'
@@ -145,13 +146,20 @@ export default function ClientsGrid({
                         <span>{isPoints ? 'Puntos de Consumo' : 'Sellos de Fidelidad'}</span>
                       </span>
                       <span
-                        className={`font-bold font-mono px-1.5 py-0.2 rounded text-[10px] ${
+                        className={`font-bold font-mono px-1.5 py-0.2 rounded text-[10px] inline-flex items-center gap-1 ${
                           isReady
                             ? 'bg-amber-400 text-black animate-pulse'
                             : 'text-neutral-300 bg-neutral-900 border border-neutral-800'
                         }`}
                       >
-                        {isReady ? '🏆 ¡Premio Listo!' : `${points} / ${target}`}
+                        {isReady ? (
+                          <>
+                            <Trophy className="w-3 h-3" />
+                            <span>¡Premio Listo!</span>
+                          </>
+                        ) : (
+                          `${points} / ${target}`
+                        )}
                       </span>
                     </div>
                     <div className="w-full bg-neutral-900 rounded-full h-1.5 overflow-hidden border border-white/5">

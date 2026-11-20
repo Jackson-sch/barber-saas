@@ -39,19 +39,19 @@ export default function StepBarberSelect({
                   : 'bg-[#090A0E]/80 border-white/5 hover:border-white/15 text-neutral-300'
               }`}
             >
-              <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-neutral-800 border border-white/10 flex items-center justify-center text-amber-400 font-bold text-base shadow-sm">
+              <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                <div className="w-11 h-11 rounded-xl bg-neutral-800 border border-white/10 flex items-center justify-center text-amber-400 font-bold text-base shadow-sm shrink-0">
                   {barber.full_name.charAt(0)}
                 </div>
-                <div>
-                  <h3 className="font-semibold text-sm text-white">{barber.full_name}</h3>
-                  <div className="flex items-center gap-2 mt-0.5">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-sm text-white leading-snug">{barber.full_name}</h3>
+                  <div className="flex items-center flex-wrap gap-2 mt-0.5">
                     {barber.nickname && (
                       <span className="text-xs text-amber-400/90 font-mono">
                         &quot;{barber.nickname}&quot;
                       </span>
                     )}
-                    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded whitespace-nowrap">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                       Disponible
                     </span>

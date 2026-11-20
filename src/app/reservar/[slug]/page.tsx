@@ -271,16 +271,16 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
           </div>
 
           {/* Bento Cell 2: Quick Trust & Metrics Card */}
-          <div className="lg:col-span-4 grid grid-cols-2 lg:grid-cols-1 gap-4">
+          <div className="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
             {/* Metric A: Calificación & Reseñas */}
             <div className="bg-[#0E0F16]/90 border border-white/10 hover:border-amber-500/30 rounded-3xl p-5 backdrop-blur-xl transition duration-300 flex flex-col justify-between relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400">
                   Satisfacción
                 </span>
-                <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full text-amber-400 text-xs font-bold">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-full text-amber-400 text-xs font-bold whitespace-nowrap shrink-0">
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
                   <span>4.9 / 5.0</span>
                 </div>
               </div>
@@ -296,13 +296,13 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
 
             {/* Metric B: Garantía de Puntualidad */}
             <div className="bg-[#0E0F16]/90 border border-white/10 hover:border-emerald-500/30 rounded-3xl p-5 backdrop-blur-xl transition duration-300 flex flex-col justify-between relative overflow-hidden group">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-400">
                   Compromiso
                 </span>
-                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full font-medium">
-                  <Clock className="w-3 h-3" />
-                  0 Minutos Espera
+                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full font-medium whitespace-nowrap shrink-0">
+                  <Clock className="w-3 h-3 shrink-0" />
+                  <span>0 Minutos Espera</span>
                 </span>
               </div>
               <div className="mt-3">

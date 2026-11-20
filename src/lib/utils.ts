@@ -70,3 +70,30 @@ export function getDayUtcRange(dateStr: string, timezoneOffset: string = '-05:00
   return { startOfDay, endOfDay }
 }
 
+/**
+ * Formatea una hora de forma 100% determinista entre SSR (Node.js) y el navegador,
+ * evitando diferencias de espacios NBSP/ICU en `toLocaleTimeString('es-PE')`.
+ */
+export function formatTimeOnly(
+  dateInput: string | Date | null | undefined,
+  timeZone: string = 'America/Lima'
+): string {
+  if (!dateInput) return ''
+  const d = new Date(dateInput)
+  if (isNaN(d.getTime())) return ''
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).formatToParts(d)
+
+  const hour = parts.find((p) => p.type === 'hour')?.value ?? '00'
+  const minute = parts.find((p) => p.type === 'minute')?.value ?? '00'
+  const dayPeriod = (parts.find((p) => p.type === 'dayPeriod')?.value ?? '').toUpperCase()
+  const periodLabel = dayPeriod === 'AM' ? 'a. m.' : dayPeriod === 'PM' ? 'p. m.' : dayPeriod
+
+  return `${hour}:${minute} ${periodLabel}`.trim()
+}
+

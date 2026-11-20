@@ -12,16 +12,25 @@ import {
   Upload,
   Trash2,
   Smartphone,
+  KeyRound,
+  Wallet,
 } from 'lucide-react'
 import { updatePlatformSettingsAction } from '@/actions/platform'
 import { compressImageToDataUrl } from '@/lib/cloudinary'
+import AdminIntegrationsTab from './AdminIntegrationsTab'
 import type { PlatformSettings } from '@/types/database.types'
+import type { PlatformSecretsSafeView } from '@/lib/platform-secrets'
 
 interface AdminSettingsClientProps {
   initialSettings: PlatformSettings
+  initialSecrets: PlatformSecretsSafeView
 }
 
-export default function AdminSettingsClient({ initialSettings }: AdminSettingsClientProps) {
+export default function AdminSettingsClient({
+  initialSettings,
+  initialSecrets,
+}: AdminSettingsClientProps) {
+  const [activeTab, setActiveTab] = useState<'billing' | 'integrations'>('billing')
   const [platformName, setPlatformName] = useState(initialSettings.platform_name || 'BarberOS')
   const [yapePhone, setYapePhone] = useState(initialSettings.yape_phone || '')
   const [yapeHolder, setYapeHolder] = useState(initialSettings.yape_holder || '')
@@ -100,9 +109,42 @@ export default function AdminSettingsClient({ initialSettings }: AdminSettingsCl
           Configuración Global de la Plataforma
         </h1>
         <p className="text-sm text-neutral-400 mt-1">
-          Define tus cuentas oficiales de cobro (Yape, Plin, Banco), tarifas de planes y datos de soporte visibles para todas las barberías.
+          Define cuentas de cobro, tarifas de planes, soporte y llaves privadas de servicios (Cloudinary, Correo, WhatsApp, Pasarelas).
         </p>
       </div>
+
+      {/* Selector de pestañas */}
+      <div className="inline-flex p-1 rounded-2xl bg-neutral-900/80 border border-neutral-800 gap-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('billing')}
+          className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition cursor-pointer ${
+            activeTab === 'billing'
+              ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
+              : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
+          }`}
+        >
+          <Wallet className="w-3.5 h-3.5" />
+          <span>Cobros, Planes & Soporte</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('integrations')}
+          className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition cursor-pointer ${
+            activeTab === 'integrations'
+              ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
+              : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
+          }`}
+        >
+          <KeyRound className="w-3.5 h-3.5" />
+          <span>APIs, Keys & Integraciones</span>
+        </button>
+      </div>
+
+      {activeTab === 'integrations' ? (
+        <AdminIntegrationsTab initialSecrets={initialSecrets} />
+      ) : (
+        <>
 
       {error && (
         <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium">
@@ -417,6 +459,8 @@ export default function AdminSettingsClient({ initialSettings }: AdminSettingsCl
           </button>
         </div>
       </form>
+        </>
+      )}
     </div>
   )
 }

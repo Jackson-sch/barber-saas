@@ -7,9 +7,6 @@ import {
   TrendingUp,
   Loader2,
   DollarSign,
-  User,
-  FileText,
-  Tag,
 } from 'lucide-react'
 import { recordCashMovementAction } from '@/actions/cash-movements'
 import type { OrganizationMember } from '@/types/database.types'
@@ -37,6 +34,8 @@ const incomeCategories = [
   { id: 'INYECCION_FONDO', label: 'Inyección de Cambio / Fondo Extra' },
   { id: 'OTROS', label: 'Otro Ingreso Manual' },
 ]
+
+const AMOUNT_PRESETS = ['10', '20', '50', '100']
 
 export default function CashMovementModal({
   isOpen,
@@ -110,26 +109,32 @@ export default function CashMovementModal({
   const currentCategories = type === 'EXPENSE' ? expenseCategories : incomeCategories
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-[#0D0E15] border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xl bg-[#0D0E15] border border-white/[0.1] rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+          <div className="flex items-center gap-3">
             <div
-              className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
+              className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${
                 type === 'EXPENSE'
-                  ? 'bg-red-500/10 border-red-500/20 text-red-400'
-                  : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                  ? 'bg-red-500/10 border-red-500/25 text-red-400'
+                  : 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400'
               }`}
             >
               {type === 'EXPENSE' ? (
-                <TrendingDown className="w-4 h-4" />
+                <TrendingDown className="w-5 h-5" />
               ) : (
-                <TrendingUp className="w-4 h-4" />
+                <TrendingUp className="w-5 h-5" />
               )}
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight">
+              <h3 className="text-lg font-bold text-white tracking-tight">
                 {type === 'EXPENSE' ? 'Registrar Salida de Efectivo' : 'Ingreso Extraordinario'}
               </h3>
               <p className="text-xs text-neutral-400">
@@ -141,9 +146,10 @@ export default function CashMovementModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition"
+            aria-label="Cerrar modal"
+            className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -152,7 +158,7 @@ export default function CashMovementModal({
           <button
             type="button"
             onClick={() => handleTypeChange('EXPENSE')}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
               type === 'EXPENSE'
                 ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                 : 'text-neutral-400 hover:text-white'
@@ -165,7 +171,7 @@ export default function CashMovementModal({
           <button
             type="button"
             onClick={() => handleTypeChange('INCOME')}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
               type === 'INCOME'
                 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                 : 'text-neutral-400 hover:text-white'
@@ -177,23 +183,45 @@ export default function CashMovementModal({
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs">
+          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs font-medium">
             {error}
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-3.5">
-          {/* Amount */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Amount con presets rápidos */}
           <div>
-            <label htmlFor="field" className="block text-[11px] font-mono text-neutral-300 uppercase tracking-wider mb-1">
-              Monto en Efectivo (S/)
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label
+                htmlFor="cash_movement_amount"
+                className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider"
+              >
+                Monto en Efectivo (S/) *
+              </label>
+              <div className="flex items-center gap-1">
+                {AMOUNT_PRESETS.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setAmount(preset)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono border transition cursor-pointer ${
+                      amount === preset
+                        ? 'bg-amber-500 text-black border-amber-400 font-bold'
+                        : 'bg-[#090A0E] text-neutral-400 border-white/[0.08] hover:text-white'
+                    }`}
+                  >
+                    S/ {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 font-mono text-sm">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 font-mono text-sm pointer-events-none">
                 S/
               </span>
-              <input aria-label="0.00"
+              <input
+                id="cash_movement_amount"
                 type="number"
                 step="0.10"
                 min="0.10"
@@ -201,20 +229,24 @@ export default function CashMovementModal({
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-[#090A0E] border border-white/10 text-white font-mono text-lg font-bold focus:outline-none focus:border-amber-400 transition"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#090A0E] border border-white/[0.08] text-white font-mono text-lg font-bold tabular-nums focus:outline-none focus:border-amber-400 transition"
               />
             </div>
           </div>
 
           {/* Category */}
           <div>
-            <label htmlFor="field" className="block text-[11px] font-mono text-neutral-300 uppercase tracking-wider mb-1">
-              Categoría
+            <label
+              htmlFor="cash_movement_category"
+              className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5"
+            >
+              Categoría *
             </label>
-            <select aria-label="select"
+            <select
+              id="cash_movement_category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-[#090A0E] border border-white/10 text-white text-xs focus:outline-none focus:border-amber-400 transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#090A0E] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-amber-400 transition"
             >
               {currentCategories.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -227,14 +259,18 @@ export default function CashMovementModal({
           {/* Barber Selection if ADELANTO_BARBERO */}
           {type === 'EXPENSE' && category === 'ADELANTO_BARBERO' && (
             <div>
-              <label htmlFor="field" className="block text-[11px] font-mono text-neutral-300 uppercase tracking-wider mb-1">
-                Especialista que recibe el adelanto
+              <label
+                htmlFor="cash_movement_barber"
+                className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5"
+              >
+                Especialista que recibe el adelanto *
               </label>
-              <select aria-label="select"
+              <select
+                id="cash_movement_barber"
                 required
                 value={selectedBarberId}
                 onChange={(e) => setSelectedBarberId(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-[#090A0E] border border-white/10 text-white text-xs focus:outline-none focus:border-amber-400 transition"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#090A0E] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-amber-400 transition"
               >
                 <option value="">Selecciona al barbero...</option>
                 {barbers.map((b) => (
@@ -248,25 +284,29 @@ export default function CashMovementModal({
 
           {/* Description / Motivo */}
           <div>
-            <label htmlFor="field" className="block text-[11px] font-mono text-neutral-300 uppercase tracking-wider mb-1">
-              Motivo / Detalle del Comprobante
+            <label
+              htmlFor="cash_movement_description"
+              className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5"
+            >
+              Motivo / Detalle del Comprobante *
             </label>
-            <textarea aria-label="Ej: Compra de 2 bidones de agua y café para el salón..."
+            <textarea
+              id="cash_movement_description"
               rows={2}
               required
               placeholder="Ej: Compra de 2 bidones de agua y café para el salón..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full p-2.5 rounded-xl bg-[#090A0E] border border-white/10 text-white text-xs focus:outline-none focus:border-amber-400 transition resize-none placeholder-neutral-500"
+              className="w-full p-3 rounded-xl bg-[#090A0E] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-amber-400 transition resize-none placeholder-neutral-500"
             />
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-2.5 pt-2">
+          <div className="flex gap-2.5 pt-3 border-t border-white/[0.08]">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 px-3 rounded-xl bg-white/[0.05] hover:bg-white/10 text-neutral-300 text-xs font-semibold transition cursor-pointer border border-white/10"
+              className="flex-1 py-2.5 px-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-neutral-300 text-xs font-semibold transition cursor-pointer border border-white/[0.08]"
             >
               Cancelar
             </button>

@@ -8,7 +8,7 @@ import {
   TrendingDown,
   Receipt,
 } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, formatTimeOnly } from '@/lib/utils'
 import OpenShiftModal from './OpenShiftModal'
 import CloseShiftModal from './CloseShiftModal'
 import CashMovementModal from './CashMovementModal'
@@ -152,11 +152,7 @@ export default function CajaClient({
                   Turno Activo en Curso
                 </span>
                 <p className="text-xs text-neutral-400">
-                  Abierto hoy a las{' '}
-                  {new Date(currentShift.opened_at).toLocaleTimeString('es-PE', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  Abierto hoy a las {formatTimeOnly(currentShift.opened_at)}
                 </p>
               </div>
             </div>

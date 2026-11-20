@@ -126,17 +126,51 @@ export async function updateBarberAction(input: BarberInput) {
   if (!access.authorized) return { error: access.error || 'No autorizado' }
   const { supabase } = access
 
+  // Consultar el miembro objetivo y cuántos miembros activos hay en la barbería
+  const [{ data: targetMember }, { count: activeCount }] = await Promise.all([
+    supabase
+      .from('organization_members')
+      .select('id, role, is_active, user_id')
+      .eq('id', input.id)
+      .eq('organization_id', input.organization_id)
+      .maybeSingle(),
+    supabase
+      .from('organization_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', input.organization_id)
+      .eq('is_active', true),
+  ])
+
+  if (!targetMember) {
+    return { error: 'Miembro del equipo no encontrado.' }
+  }
+
+  const isTargetOwner = targetMember.role === 'OWNER'
+  const isSoleActiveMember = (activeCount ?? 0) <= 1 && targetMember.is_active
+
+  // Impedir que el dueño o el único barbero activo se desactive
+  if (input.is_active === false && (isTargetOwner || isSoleActiveMember)) {
+    return {
+      error: isTargetOwner
+        ? 'El dueño de la barbería no puede desactivarse.'
+        : 'No puedes desactivar al único barbero activo de la barbería.',
+    }
+  }
+
+  const finalRole = isTargetOwner ? 'OWNER' : input.role || 'BARBER'
+  const finalIsActive = isTargetOwner ? true : (input.is_active ?? true)
+
   const { error } = await supabase
     .from('organization_members')
     .update({
-      role: input.role || 'BARBER',
+      role: finalRole,
       full_name: input.full_name.trim(),
       nickname: input.nickname?.trim() || null,
       phone: input.phone?.trim() || null,
       avatar_url: input.avatar_url || null,
       specialties: input.specialties || [],
       commission_rate: Number(input.commission_rate ?? 40),
-      is_active: input.is_active ?? true,
+      is_active: finalIsActive,
       updated_at: new Date().toISOString(),
     })
     .eq('id', input.id)
@@ -156,6 +190,30 @@ export async function toggleBarberStatusAction(id: string, organization_id: stri
   const access = await verifyOrgAccess(organization_id, ['OWNER', 'ADMIN'])
   if (!access.authorized) return { error: access.error || 'No autorizado' }
   const { supabase } = access
+
+  if (!is_active) {
+    const [{ data: targetMember }, { count: activeCount }] = await Promise.all([
+      supabase
+        .from('organization_members')
+        .select('id, role, is_active')
+        .eq('id', id)
+        .eq('organization_id', organization_id)
+        .maybeSingle(),
+      supabase
+        .from('organization_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('organization_id', organization_id)
+        .eq('is_active', true),
+    ])
+
+    if (targetMember?.role === 'OWNER') {
+      return { error: 'El dueño de la barbería debe permanecer siempre activo.' }
+    }
+
+    if ((activeCount ?? 0) <= 1 && targetMember?.is_active) {
+      return { error: 'No puedes desactivar al único barbero activo del salón.' }
+    }
+  }
 
 
   const { error } = await supabase

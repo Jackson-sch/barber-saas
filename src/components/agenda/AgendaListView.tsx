@@ -1,5 +1,5 @@
 import { Calendar as CalendarIcon, MessageCircle } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, formatTimeOnly } from '@/lib/utils'
 import type { AppointmentWithDetails } from './AppointmentDetailModal'
 
 interface AgendaListViewProps {
@@ -27,14 +27,8 @@ export default function AgendaListView({
           {[...filteredAppointments]
             .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
             .map((app) => {
-              const startTime = new Date(app.start_time).toLocaleTimeString('es-PE', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })
-              const endTime = new Date(app.end_time).toLocaleTimeString('es-PE', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })
+              const startTime = formatTimeOnly(app.start_time)
+              const endTime = formatTimeOnly(app.end_time)
               const statusStyle = statusColors[app.status] || statusColors.CONFIRMED
 
               return (

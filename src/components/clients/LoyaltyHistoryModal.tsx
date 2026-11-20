@@ -14,6 +14,7 @@ import {
   Calendar,
   AlertCircle,
   CheckCircle2,
+  Trophy,
 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import {
@@ -117,21 +118,28 @@ export default function LoyaltyHistoryModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-              <Award className="w-4 h-4" />
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+    >
+      <div className="w-full max-w-xl bg-[#0D0E15] border border-white/[0.1] rounded-3xl p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+              <Award className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="font-bold text-white text-base">Fidelización de Cliente</h3>
-              <p className="text-xs text-neutral-400">{client.full_name} • {client.phone}</p>
+            <div className="min-w-0">
+              <h3 className="font-bold text-white text-base sm:text-lg truncate">Fidelización de Cliente</h3>
+              <p className="text-xs text-neutral-400 truncate">{client.full_name} • {client.phone}</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-neutral-800 text-neutral-400 hover:text-white transition cursor-pointer"
+            aria-label="Cerrar modal"
+            className="p-1.5 rounded-xl hover:bg-white/[0.06] text-neutral-400 hover:text-white transition cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -158,13 +166,20 @@ export default function LoyaltyHistoryModal({
               Tarjeta Digital de Fidelidad
             </span>
             <span
-              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 ${
                 isRewardReady
                   ? 'bg-amber-400 text-black shadow-md shadow-amber-400/20 animate-pulse'
                   : 'bg-neutral-800 text-neutral-300'
               }`}
             >
-              {isRewardReady ? '🏆 ¡Premio Disponible!' : 'En Progreso'}
+              {isRewardReady ? (
+                <>
+                  <Trophy className="w-3 h-3" />
+                  <span>¡Premio Disponible!</span>
+                </>
+              ) : (
+                'En Progreso'
+              )}
             </span>
           </div>
 
@@ -215,52 +230,60 @@ export default function LoyaltyHistoryModal({
         </div>
 
         {/* Ajuste manual administrativo */}
-        <div className="mt-5 p-4 rounded-xl bg-neutral-950 border border-neutral-800 space-y-3">
+        <div className="mt-5 p-4 rounded-2xl bg-neutral-950/90 border border-white/[0.08] space-y-3">
           <span className="text-xs font-semibold text-neutral-300 uppercase tracking-wider block">
             Ajuste Manual de {isPoints ? 'Puntos' : 'Sellos'}
           </span>
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
             <div className="sm:col-span-3">
-              <input aria-label="input"
+              <label htmlFor="loyalty_adjust_amount" className="sr-only">
+                Cantidad
+              </label>
+              <input
+                id="loyalty_adjust_amount"
                 type="number"
                 min="1"
                 value={adjustAmount}
                 onChange={(e) => setAdjustAmount(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-white font-bold text-xs focus:outline-none focus:border-amber-500"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#0D0E15] border border-white/[0.1] text-white font-bold text-xs tabular-nums focus:outline-none focus:border-amber-500 transition"
                 placeholder="Cantidad"
               />
             </div>
-            <div className="sm:col-span-5">
-              <input aria-label="input"
+            <div className="sm:col-span-9">
+              <label htmlFor="loyalty_adjust_reason" className="sr-only">
+                Motivo del ajuste
+              </label>
+              <input
+                id="loyalty_adjust_reason"
                 type="text"
                 value={adjustReason}
                 onChange={(e) => setAdjustReason(e.target.value)}
-                placeholder="Motivo (ej. Cortesía)..."
-                className="w-full px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-amber-500"
+                placeholder="Motivo (ej. Cortesía, ajuste manual)..."
+                className="w-full px-3 py-2.5 rounded-xl bg-[#0D0E15] border border-white/[0.1] text-white text-xs placeholder-neutral-500 focus:outline-none focus:border-amber-500 transition"
               />
             </div>
-            <div className="sm:col-span-4 flex items-center gap-1.5">
-              <button
-                type="button"
-                disabled={isAdjusting}
-                onClick={() => handleAdjust(1)}
-                className="flex-1 py-2 px-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-1 transition cursor-pointer"
-                title="Añadir sellos/puntos"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Sumar</span>
-              </button>
-              <button
-                type="button"
-                disabled={isAdjusting}
-                onClick={() => handleAdjust(-1)}
-                className="flex-1 py-2 px-2.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 text-xs font-semibold flex items-center justify-center gap-1 transition cursor-pointer"
-                title="Restar sellos/puntos"
-              >
-                <Minus className="w-3.5 h-3.5" />
-                <span>Restar</span>
-              </button>
-            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              disabled={isAdjusting}
+              onClick={() => handleAdjust(1)}
+              className="w-full py-2.5 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 disabled:opacity-50 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
+              title="Añadir sellos/puntos"
+            >
+              <Plus className="w-3.5 h-3.5 shrink-0" />
+              <span>Sumar</span>
+            </button>
+            <button
+              type="button"
+              disabled={isAdjusting}
+              onClick={() => handleAdjust(-1)}
+              className="w-full py-2.5 px-3 rounded-xl bg-red-500/15 hover:bg-red-500/25 disabled:opacity-50 text-red-300 border border-red-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
+              title="Restar sellos/puntos"
+            >
+              <Minus className="w-3.5 h-3.5 shrink-0" />
+              <span>Restar</span>
+            </button>
           </div>
         </div>
 

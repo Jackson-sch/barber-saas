@@ -12,6 +12,11 @@ import {
   CheckCircle2,
   AlertTriangle,
   Info,
+  Smartphone,
+  Zap,
+  Globe,
+  Clock,
+  Scissors,
 } from 'lucide-react'
 import { AVAILABLE_WHATSAPP_VARIABLES } from '@/lib/whatsapp'
 import { testWhatsAppCredentialsAction } from '@/actions/whatsapp'
@@ -154,12 +159,23 @@ export default function WhatsAppSettingsTab({
               Envía recordatorios y confirmaciones automáticas por API oficial o mediante enlace directo manual 1-clic con fallback automático.
             </p>
           </div>
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 self-start sm:self-auto">
-            {waProvider === 'MANUAL'
-              ? '📱 Modo Manual (wa.me)'
-              : waProvider === 'META_CLOUD_API'
-                ? '⚡ Meta Cloud API'
-                : '🌐 Custom Gateway'}
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 self-start sm:self-auto inline-flex items-center gap-1.5">
+            {waProvider === 'MANUAL' ? (
+              <>
+                <Smartphone className="w-3 h-3" />
+                <span>Modo Manual (wa.me)</span>
+              </>
+            ) : waProvider === 'META_CLOUD_API' ? (
+              <>
+                <Zap className="w-3 h-3" />
+                <span>Meta Cloud API</span>
+              </>
+            ) : (
+              <>
+                <Globe className="w-3 h-3" />
+                <span>Custom Gateway</span>
+              </>
+            )}
           </span>
         </div>
 
@@ -407,24 +423,28 @@ export default function WhatsAppSettingsTab({
           {/* Selector de Plantilla a Editar */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             {[
-              { id: 'reminder', label: '⏰ Recordatorio Previo' },
-              { id: 'confirmation', label: '✅ Confirmación de Cita' },
-              { id: 'reschedule', label: '🔄 Reprogramación' },
-              { id: 'followup', label: '✂️ Agradecimiento' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveWaTab(tab.id as any)}
-                className={`py-1.5 px-3 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
-                  activeWaTab === tab.id
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                    : 'bg-[#090A0E] text-neutral-400 hover:text-white border border-white/10'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+              { id: 'reminder', label: 'Recordatorio Previo', icon: Clock },
+              { id: 'confirmation', label: 'Confirmación de Cita', icon: CheckCircle2 },
+              { id: 'reschedule', label: 'Reprogramación', icon: RefreshCw },
+              { id: 'followup', label: 'Agradecimiento', icon: Scissors },
+            ].map((tab) => {
+              const TabIcon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveWaTab(tab.id as any)}
+                  className={`py-1.5 px-3 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap inline-flex items-center gap-1.5 ${
+                    activeWaTab === tab.id
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-[#090A0E] text-neutral-400 hover:text-white border border-white/10'
+                  }`}
+                >
+                  <TabIcon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              )
+            })}
           </div>
 
           {/* Textarea de la plantilla activa */}

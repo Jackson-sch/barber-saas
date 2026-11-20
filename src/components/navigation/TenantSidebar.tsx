@@ -22,6 +22,7 @@ import {
   Settings,
   BarChart3,
   User,
+  Crown,
 } from 'lucide-react'
 import { logoutAction } from '@/actions/auth'
 
@@ -71,35 +72,43 @@ export function TenantSidebar({ slug, org, member, userEmail, isSuperAdmin = fal
   }
   const planLabel = planDisplayLabels[planTier] || `Plan ${planTier}`
 
+  const currentRole = isSuperAdmin ? 'OWNER' : member?.role || 'BARBER'
+  const canManageAdminModules = currentRole === 'OWNER' || currentRole === 'ADMIN'
+
   const navGroups = [
     {
       title: 'OPERACIONES',
       items: [
-        { href: `/app/${slug}/dashboard`, label: 'Dashboard', icon: LayoutDashboard },
-        { href: `/app/${slug}/agenda`, label: 'Agenda & Citas', icon: Calendar },
-        { href: `/app/${slug}/pos`, label: 'Punto de Venta POS', icon: CreditCard },
-        { href: `/app/${slug}/caja`, label: 'Caja & Turnos', icon: Wallet },
+        { href: `/app/${slug}/dashboard`, label: 'Dashboard', icon: LayoutDashboard, roles: ['OWNER', 'ADMIN', 'RECEPTIONIST', 'BARBER'] },
+        { href: `/app/${slug}/agenda`, label: 'Agenda & Citas', icon: Calendar, roles: ['OWNER', 'ADMIN', 'RECEPTIONIST', 'BARBER'] },
+        { href: `/app/${slug}/pos`, label: 'Punto de Venta POS', icon: CreditCard, roles: ['OWNER', 'ADMIN', 'RECEPTIONIST'] },
+        { href: `/app/${slug}/caja`, label: 'Caja & Turnos', icon: Wallet, roles: ['OWNER', 'ADMIN', 'RECEPTIONIST'] },
       ],
     },
     {
       title: 'GESTIÓN & FINANZAS',
       items: [
-        { href: `/app/${slug}/reportes`, label: 'Reportes & Finanzas', icon: BarChart3 },
-        { href: `/app/${slug}/clientes`, label: 'Clientes & Fichas', icon: Users },
-        { href: `/app/${slug}/barberos`, label: 'Barberos & Comisiones', icon: UserCheck },
-        { href: `/app/${slug}/servicios`, label: 'Servicios & Precios', icon: Scissors },
-        { href: `/app/${slug}/inventario`, label: 'Inventario & Stock', icon: Package },
+        { href: `/app/${slug}/reportes`, label: 'Reportes & Finanzas', icon: BarChart3, roles: ['OWNER', 'ADMIN'] },
+        { href: `/app/${slug}/clientes`, label: 'Clientes & Fichas', icon: Users, roles: ['OWNER', 'ADMIN', 'RECEPTIONIST', 'BARBER'] },
+        { href: `/app/${slug}/barberos`, label: 'Barberos & Comisiones', icon: UserCheck, roles: ['OWNER', 'ADMIN', 'RECEPTIONIST', 'BARBER'] },
+        { href: `/app/${slug}/servicios`, label: 'Servicios & Precios', icon: Scissors, roles: ['OWNER', 'ADMIN', 'RECEPTIONIST'] },
+        { href: `/app/${slug}/inventario`, label: 'Inventario & Stock', icon: Package, roles: ['OWNER', 'ADMIN', 'RECEPTIONIST'] },
       ],
     },
     {
       title: 'SISTEMA',
       items: [
-        { href: `/app/${slug}/perfil`, label: 'Mi Perfil & Seguridad', icon: User },
-        { href: `/app/${slug}/suscripcion`, label: 'Mi Suscripción', icon: Sparkles },
-        { href: `/app/${slug}/configuracion`, label: 'Configuración', icon: Settings },
+        { href: `/app/${slug}/perfil`, label: 'Mi Perfil & Seguridad', icon: User, roles: ['OWNER', 'ADMIN', 'RECEPTIONIST', 'BARBER'] },
+        { href: `/app/${slug}/suscripcion`, label: 'Mi Suscripción', icon: Sparkles, roles: ['OWNER', 'ADMIN'] },
+        { href: `/app/${slug}/configuracion`, label: 'Configuración', icon: Settings, roles: ['OWNER', 'ADMIN'] },
       ],
     },
   ]
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => item.roles.includes(currentRole)),
+    }))
+    .filter((group) => group.items.length > 0)
 
   const SidebarContent = (
     <div className="flex flex-col h-full bg-[#0D0E15] text-neutral-200 border-r border-white/[0.08]">
@@ -108,7 +117,7 @@ export function TenantSidebar({ slug, org, member, userEmail, isSuperAdmin = fal
         <div className="p-3 bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border-b border-amber-500/20">
           <div className="flex items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider">
-              <span>👑</span>
+              <Crown className="w-3.5 h-3.5" />
               <span>Modo SúperAdmin</span>
             </span>
             <Link
@@ -192,55 +201,57 @@ export function TenantSidebar({ slug, org, member, userEmail, isSuperAdmin = fal
         ))}
       </nav>
 
-      {/* Subscription Status Widget */}
+      {/* Subscription Status Widget (solo visible para Dueño / Admin) */}
       <div className="p-3 border-t border-white/[0.08] bg-[#0A0B10]">
-        <div
-          className={`p-3 rounded-xl border text-xs ${
-            isPaidPlanActive
-              ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/25'
-              : 'bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20'
-          }`}
-        >
+        {canManageAdminModules && (
           <div
-            className={`flex items-center justify-between font-semibold mb-1 ${
-              isPaidPlanActive ? 'text-emerald-400' : 'text-amber-400'
+            className={`p-3 rounded-xl border text-xs ${
+              isPaidPlanActive
+                ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/25'
+                : 'bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20'
             }`}
           >
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{planLabel}</span>
-            </div>
-            <span
-              className={`font-mono text-[11px] px-1.5 py-0.5 rounded ${
-                daysLeft > 0
-                  ? isPaidPlanActive
-                    ? 'bg-emerald-500/20 text-emerald-300'
-                    : 'bg-amber-500/20 text-amber-300'
-                  : 'bg-red-500/20 text-red-300'
+            <div
+              className={`flex items-center justify-between font-semibold mb-1 ${
+                isPaidPlanActive ? 'text-emerald-400' : 'text-amber-400'
               }`}
             >
-              {daysLeft > 0 ? `${daysLeft}d restantes` : 'Vencido'}
-            </span>
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{planLabel}</span>
+              </div>
+              <span
+                className={`font-mono text-[11px] px-1.5 py-0.5 rounded ${
+                  daysLeft > 0
+                    ? isPaidPlanActive
+                      ? 'bg-emerald-500/20 text-emerald-300'
+                      : 'bg-amber-500/20 text-amber-300'
+                    : 'bg-red-500/20 text-red-300'
+                }`}
+              >
+                {daysLeft > 0 ? `${daysLeft}d restantes` : 'Vencido'}
+              </span>
+            </div>
+            <p className="text-neutral-400 text-[11px] leading-relaxed mt-1">
+              {isPaidPlanActive
+                ? 'Suscripción activa y verificada.'
+                : daysLeft > 0
+                  ? 'Acceso completo a todos los módulos y funciones.'
+                  : 'Renueva tu suscripción para mantener tu cuenta activa.'}
+            </p>
+            <Link
+              href={`/app/${slug}/suscripcion`}
+              onClick={() => setMobileOpen(false)}
+              className={`mt-2.5 block text-center py-1.5 rounded-lg font-semibold transition text-[11px] border ${
+                isPaidPlanActive
+                  ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/30'
+                  : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/30'
+              }`}
+            >
+              {isPaidPlanActive ? 'Gestionar Suscripción' : 'Activar Plan Anual / Mensual'}
+            </Link>
           </div>
-          <p className="text-neutral-400 text-[11px] leading-relaxed mt-1">
-            {isPaidPlanActive
-              ? 'Suscripción activa y verificada.'
-              : daysLeft > 0
-                ? 'Acceso completo a todos los módulos y funciones.'
-                : 'Renueva tu suscripción para mantener tu cuenta activa.'}
-          </p>
-          <Link
-            href={`/app/${slug}/suscripcion`}
-            onClick={() => setMobileOpen(false)}
-            className={`mt-2.5 block text-center py-1.5 rounded-lg font-semibold transition text-[11px] border ${
-              isPaidPlanActive
-                ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/30'
-                : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/30'
-            }`}
-          >
-            {isPaidPlanActive ? 'Gestionar Suscripción' : 'Activar Plan Anual / Mensual'}
-          </Link>
-        </div>
+        )}
 
         {/* User profile & Logout */}
         <div className="mt-3 flex items-center justify-between pt-2 border-t border-white/[0.06]">

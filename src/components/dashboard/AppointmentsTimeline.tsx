@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Clock, Calendar, Plus, MessageCircle, ArrowUpRight } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, formatTimeOnly } from '@/lib/utils'
 import { formatWhatsAppUrl } from '@/lib/whatsapp'
 import type { DashboardAppointment } from './DashboardClient'
 
@@ -93,10 +93,7 @@ export default function AppointmentsTimeline({
       ) : (
         <div className="space-y-3">
           {filteredAppointments.map((app) => {
-            const startTime = new Date(app.start_time).toLocaleTimeString('es-PE', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })
+            const startTime = formatTimeOnly(app.start_time)
             const isCompleted =
               (app.status || '').toUpperCase() === 'COMPLETED' ||
               (app.status || '').toUpperCase() === 'COMPLETADA'

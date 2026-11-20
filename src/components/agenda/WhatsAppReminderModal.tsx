@@ -15,6 +15,7 @@ import {
   Phone,
   RotateCcw,
   Loader2,
+  Zap,
 } from 'lucide-react'
 
 import type { AppointmentWithDetails } from './AppointmentDetailModal'
@@ -166,8 +167,9 @@ export default function WhatsAppReminderModal({
                   Notificación vía WhatsApp
                 </h3>
                 {isApiConfigured && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
-                    ⚡ Automático ({customTemplates?.provider === 'META_CLOUD_API' ? 'Meta API' : 'Gateway'})
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30 inline-flex items-center gap-1">
+                    <Zap className="w-3 h-3" />
+                    <span>Automático ({customTemplates?.provider === 'META_CLOUD_API' ? 'Meta API' : 'Gateway'})</span>
                   </span>
                 )}
               </div>

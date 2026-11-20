@@ -1,3 +1,5 @@
+import { Scissors } from 'lucide-react'
+
 export default function DemoTabPos() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 animate-in fade-in duration-200">
@@ -66,7 +68,7 @@ export default function DemoTabPos() {
         <div className="w-full max-w-[280px] bg-white text-black p-4 rounded-xl shadow-2xl font-mono text-[10px] leading-tight space-y-2 border border-neutral-300">
           <div className="text-center pb-2 border-b border-dashed border-neutral-400 space-y-0.5">
             <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center mx-auto text-xs font-bold mb-1">
-              ✂️
+              <Scissors className="w-4 h-4" />
             </div>
             <h4 className="font-bold text-xs uppercase tracking-tight">THE ROYAL BARBER CLUB</h4>
             <p className="text-[9px] text-neutral-600">Av. Benavides 1240, Miraflores</p>

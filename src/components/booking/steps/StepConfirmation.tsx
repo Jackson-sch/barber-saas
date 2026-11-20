@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { CheckCircle2, Ticket, ArrowRight } from 'lucide-react'
+import { CheckCircle2, Ticket, ArrowRight, MessageCircle } from 'lucide-react'
 import { formatWhatsAppUrl } from '@/lib/whatsapp'
 import type { BookingOrganization, ConfirmedBookingInfo } from '../types'
 
@@ -138,8 +138,9 @@ export default function StepConfirmation({
               : 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/20'
           }`}
         >
+          <MessageCircle className="w-4 h-4" />
           <span>
-            {isQrPayment ? '📲 Enviar Constancia por WhatsApp' : 'Notificar por WhatsApp'}
+            {isQrPayment ? 'Enviar Constancia por WhatsApp' : 'Notificar por WhatsApp'}
           </span>
           <ArrowRight className="w-4 h-4" />
         </a>

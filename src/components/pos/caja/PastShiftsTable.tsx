@@ -1,5 +1,5 @@
 import { History } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, formatDateTime, formatTimeOnly } from '@/lib/utils'
 import type { CashShift } from '@/types/database.types'
 
 interface PastShiftsTableProps {
@@ -32,18 +32,8 @@ export default function PastShiftsTable({ shifts }: PastShiftsTableProps) {
             </thead>
             <tbody className="divide-y divide-neutral-800/60">
               {shifts.map((sh) => {
-                const openedDate = new Date(sh.opened_at).toLocaleDateString('es-PE', {
-                  day: '2-digit',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-                const closedDate = sh.closed_at
-                  ? new Date(sh.closed_at).toLocaleTimeString('es-PE', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : '-'
+                const openedDate = formatDateTime(sh.opened_at)
+                const closedDate = sh.closed_at ? formatTimeOnly(sh.closed_at) : '-'
                 const diff = Number(sh.difference || 0)
 
                 return (

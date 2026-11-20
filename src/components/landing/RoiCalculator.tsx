@@ -140,8 +140,9 @@ export default function RoiCalculator() {
               </span>
               <span className="text-xs text-neutral-400 font-mono">/ mes</span>
             </div>
-            <p className="text-xs text-emerald-400 font-medium pt-1">
-              📈 Retorno de inversión estimado: <strong className="font-mono">{roiMultiple}x veces</strong> el costo del Plan Pro.
+            <p className="text-xs text-emerald-400 font-medium pt-1 inline-flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 shrink-0" />
+              <span>Retorno de inversión estimado: <strong className="font-mono">{roiMultiple}x veces</strong> el costo del Plan Pro.</span>
             </p>
           </div>
 

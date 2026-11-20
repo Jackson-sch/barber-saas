@@ -13,7 +13,9 @@ import {
   Shield,
   Scissors,
   Search,
+  Lock,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import BarberFormModal from './BarberFormModal'
 import BarberScheduleModal from './BarberScheduleModal'
 import { toggleBarberStatusAction } from '@/actions/barbers'
@@ -51,8 +53,21 @@ export default function BarbersClient({
     )
   })
 
+  const activeMembersCount = members.filter((m) => m.is_active).length
+
   async function handleToggleStatus(m: OrganizationMember) {
-    await toggleBarberStatusAction(m.id, organizationId, !m.is_active, slug)
+    if (m.is_active && (m.role === 'OWNER' || activeMembersCount <= 1)) {
+      toast.error(
+        m.role === 'OWNER'
+          ? 'El dueño de la barbería debe permanecer siempre activo.'
+          : 'No puedes desactivar al único barbero activo del salón.'
+      )
+      return
+    }
+    const res = await toggleBarberStatusAction(m.id, organizationId, !m.is_active, slug)
+    if (res?.error) {
+      toast.error(res.error)
+    }
   }
 
   function handleOpenCreate() {
@@ -203,27 +218,37 @@ export default function BarbersClient({
 
                 {/* Acciones del Barbero */}
                 <div className="mt-5 pt-3 border-t border-neutral-800/60 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => handleToggleStatus(member)}
-                    className={`text-xs font-medium flex items-center gap-1.5 transition cursor-pointer ${
-                      member.is_active
-                        ? 'text-emerald-400 hover:text-emerald-300'
-                        : 'text-neutral-500 hover:text-neutral-400'
-                    }`}
-                  >
-                    {member.is_active ? (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Activo</span>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="w-3.5 h-3.5" />
-                        <span>Inactivo</span>
-                      </>
-                    )}
-                  </button>
+                  {member.is_active && (member.role === 'OWNER' || activeMembersCount <= 1) ? (
+                    <span
+                      className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5"
+                      title="El dueño o único barbero activo no puede desactivarse"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{member.role === 'OWNER' ? 'Dueño Activo' : 'Barbero Principal'}</span>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(member)}
+                      className={`text-xs font-medium flex items-center gap-1.5 transition cursor-pointer ${
+                        member.is_active
+                          ? 'text-emerald-400 hover:text-emerald-300'
+                          : 'text-neutral-500 hover:text-neutral-400'
+                      }`}
+                    >
+                      {member.is_active ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>Inactivo</span>
+                        </>
+                      )}
+                    </button>
+                  )}
 
                   <div className="flex items-center gap-2">
                     <button
@@ -257,6 +282,7 @@ export default function BarbersClient({
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
         member={selectedMember}
+        activeMembersCount={activeMembersCount}
         organizationId={organizationId}
         slug={slug}
       />

@@ -174,19 +174,94 @@ export async function updateTenantSettingsAction(input: UpdateTenantSettingsInpu
     .single()
 
   const currentSettings = (currentOrg?.settings as Record<string, any>) || {}
-  const updatedSettings = {
+
+  // Sanitizar llaves secretas para no persistirlas nunca dentro del JSONB público `organizations.settings`
+  const sanitizedExistingWhatsapp = currentSettings.whatsapp_notifications
+    ? (() => {
+        const { accessToken: _a, webhookBearerToken: _w, ...rest } = currentSettings.whatsapp_notifications
+        return rest
+      })()
+    : undefined
+
+  const sanitizedExistingCulqi = currentSettings.culqi_settings
+    ? (() => {
+        const { secret_key: _s, ...rest } = currentSettings.culqi_settings
+        return rest
+      })()
+    : undefined
+
+  const sanitizedInputWhatsapp = input.whatsappSettings
+    ? (() => {
+        const { accessToken: _a, webhookBearerToken: _w, ...rest } = input.whatsappSettings
+        return rest
+      })()
+    : undefined
+
+  const sanitizedInputCulqi = input.culqiSettings
+    ? (() => {
+        const { secret_key: _s, ...rest } = input.culqiSettings
+        return rest
+      })()
+    : undefined
+
+  const updatedSettings: Record<string, any> = {
     ...currentSettings,
     opening_time: input.openingTime || currentSettings.opening_time || '09:00',
     closing_time: input.closingTime || currentSettings.closing_time || '21:00',
+    ...(sanitizedExistingWhatsapp !== undefined
+      ? { whatsapp_notifications: sanitizedExistingWhatsapp }
+      : {}),
+    ...(sanitizedExistingCulqi !== undefined ? { culqi_settings: sanitizedExistingCulqi } : {}),
     ...(input.loyaltyProgram !== undefined ? { loyalty_program: input.loyaltyProgram } : {}),
-    ...(input.whatsappSettings !== undefined ? { whatsapp_notifications: input.whatsappSettings } : {}),
-    ...(input.culqiSettings !== undefined ? { culqi_settings: input.culqiSettings } : {}),
+    ...(sanitizedInputWhatsapp !== undefined ? { whatsapp_notifications: sanitizedInputWhatsapp } : {}),
+    ...(sanitizedInputCulqi !== undefined ? { culqi_settings: sanitizedInputCulqi } : {}),
     ...(input.manualPaymentSettings !== undefined
       ? { manual_payment_settings: input.manualPaymentSettings }
       : {}),
     ...(input.cloudinarySettings !== undefined ? { cloudinary_settings: input.cloudinarySettings } : {}),
     ...(input.bannerUrl !== undefined ? { banner_url: input.bannerUrl } : {}),
     ...(input.tagline !== undefined ? { tagline: input.tagline } : {}),
+  }
+
+  if (input.culqiSettings !== undefined || input.whatsappSettings !== undefined) {
+    const { data: existingSecrets } = await supabase
+      .from('organization_secrets')
+      .select('culqi_secret_key, whatsapp_access_token, whatsapp_webhook_token')
+      .eq('organization_id', input.organizationId)
+      .maybeSingle()
+
+    const nextCulqiSecret =
+      input.culqiSettings !== undefined
+        ? input.culqiSettings.secret_key?.trim() || null
+        : existingSecrets?.culqi_secret_key ?? null
+
+    const nextWaAccessToken =
+      input.whatsappSettings !== undefined
+        ? input.whatsappSettings.accessToken?.trim() || null
+        : existingSecrets?.whatsapp_access_token ?? null
+
+    const nextWaWebhookToken =
+      input.whatsappSettings !== undefined
+        ? input.whatsappSettings.webhookBearerToken?.trim() || null
+        : existingSecrets?.whatsapp_webhook_token ?? null
+
+    const { error: secretsErr } = await supabase
+      .from('organization_secrets')
+      .upsert(
+        {
+          organization_id: input.organizationId,
+          culqi_secret_key: nextCulqiSecret,
+          whatsapp_access_token: nextWaAccessToken,
+          whatsapp_webhook_token: nextWaWebhookToken,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'organization_id' }
+      )
+
+    if (secretsErr) {
+      console.error('Error updating organization secrets:', secretsErr)
+      return { error: 'No se pudieron guardar las credenciales privadas.' }
+    }
   }
 
   const updatePayload: Database['public']['Tables']['organizations']['Update'] = {

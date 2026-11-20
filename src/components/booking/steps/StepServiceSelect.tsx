@@ -32,32 +32,31 @@ export default function StepServiceSelect({
             <div
               key={srv.id}
               onClick={() => onSelectService(srv.id)}
-              className={`p-4 rounded-xl border transition cursor-pointer flex items-center justify-between gap-4 ${
+              className={`p-3.5 sm:p-4 rounded-xl border transition cursor-pointer space-y-2 ${
                 isSelected
                   ? 'bg-amber-500/10 border-amber-400/80 shadow-md shadow-amber-500/5'
                   : 'bg-[#090A0E]/80 border-white/5 hover:border-white/15 text-neutral-300'
               }`}
             >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-sm text-white truncate">{srv.name}</h3>
-                  {isSelected && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <h3 className="font-semibold text-sm text-white leading-snug">{srv.name}</h3>
+                  {isSelected && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />}
                 </div>
-                {srv.description && (
-                  <p className="text-xs text-neutral-400 mt-0.5 line-clamp-1 leading-relaxed">
-                    {srv.description}
-                  </p>
-                )}
-                <div className="flex items-center gap-1.5 text-[11px] font-mono text-neutral-400 mt-2">
-                  <Clock className="w-3.5 h-3.5 text-neutral-500" />
-                  <span>{formatMinutes(srv.duration_minutes)}</span>
-                </div>
-              </div>
-
-              <div className="text-right shrink-0">
-                <span className="text-base font-mono font-bold text-amber-400">
+                <span className="text-base font-mono font-bold text-amber-400 shrink-0 whitespace-nowrap tabular-nums">
                   {formatPrice(Number(srv.price))}
                 </span>
+              </div>
+
+              {srv.description && (
+                <p className="text-xs text-neutral-400 line-clamp-2 leading-relaxed">
+                  {srv.description}
+                </p>
+              )}
+
+              <div className="flex items-center gap-1.5 text-[11px] font-mono text-neutral-400 pt-0.5">
+                <Clock className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                <span>{formatMinutes(srv.duration_minutes)}</span>
               </div>
             </div>
           )

@@ -286,7 +286,7 @@ export default function CloudinarySettingsTab({
                   Copia tu <strong>Cloud Name</strong> desde la pantalla de inicio (Product Environment).
                 </li>
                 <li>
-                  Ve a <strong>Settings (⚙️) &gt; Upload &gt; Upload presets &gt; Add upload preset</strong>.
+                  Ve a <strong>Settings &gt; Upload &gt; Upload presets &gt; Add upload preset</strong>.
                 </li>
                 <li>
                   Cambia el campo <strong>Signing Mode</strong> a <strong>Unsigned</strong>, guarda el preset y copia su nombre aquí.

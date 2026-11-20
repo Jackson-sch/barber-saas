@@ -1,5 +1,5 @@
 import { Clock, Plus, MessageCircle } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, formatTimeOnly } from '@/lib/utils'
 import type { OrganizationMember } from '@/types/database.types'
 import type { AppointmentWithDetails } from './AppointmentDetailModal'
 
@@ -74,14 +74,8 @@ export default function AgendaChairsView({
                 </div>
               ) : (
                 barberAppointments.map((app) => {
-                  const startTime = new Date(app.start_time).toLocaleTimeString('es-PE', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                  const endTime = new Date(app.end_time).toLocaleTimeString('es-PE', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
+                  const startTime = formatTimeOnly(app.start_time)
+                  const endTime = formatTimeOnly(app.end_time)
                   const statusStyle = statusColors[app.status] || statusColors.CONFIRMED
 
                   return (

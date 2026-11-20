@@ -10,6 +10,7 @@ import {
   ExternalLink,
   DollarSign,
   ArrowRight,
+  Zap,
 } from 'lucide-react'
 import PrintableTicket, { type TicketItem } from './PrintableTicket'
 import { formatPrice } from '@/lib/utils'
@@ -282,9 +283,10 @@ export default function TicketReceiptModal({
                 <button
                   type="button"
                   onClick={onNewSale}
-                  className="flex-1 py-2.5 px-3 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-xs transition cursor-pointer border border-white/10 text-center"
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-xs transition cursor-pointer border border-white/10 inline-flex items-center justify-center gap-1.5"
                 >
-                  ⚡ Nueva Venta
+                  <Zap className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Nueva Venta</span>
                 </button>
               )}
 

@@ -158,7 +158,7 @@ export async function verifyOrgAccess(
     }
   }
 
-  if (member && !member.is_active && !isSuperAdmin) {
+  if (member && !member.is_active && member.role !== 'OWNER' && !isSuperAdmin) {
     return {
       authorized: false,
       error: 'Tu cuenta de miembro está desactivada en esta barbería.',

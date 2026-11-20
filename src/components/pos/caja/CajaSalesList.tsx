@@ -1,5 +1,5 @@
 import { Printer } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, formatTimeOnly } from '@/lib/utils'
 import type { SaleWithDetails } from './types'
 import type { SaleReceiptData } from '../TicketReceiptModal'
 
@@ -21,10 +21,7 @@ export default function CajaSalesList({ sales, paymentLabels, onSelectReceipt }:
   return (
     <div className="divide-y divide-neutral-800 max-h-80 overflow-y-auto">
       {sales.map((s) => {
-        const timeStr = new Date(s.created_at).toLocaleTimeString('es-PE', {
-          hour: '2-digit',
-          minute: '2-digit',
-        })
+        const timeStr = formatTimeOnly(s.created_at)
         const badge = paymentLabels[s.payment_method] || paymentLabels.CASH
 
         return (

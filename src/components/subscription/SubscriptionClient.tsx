@@ -467,8 +467,9 @@ export default function SubscriptionClient({
                         alt="Vista previa voucher"
                         className="w-10 h-10 rounded object-cover border border-neutral-800"
                       />
-                      <span className="text-[11px] text-emerald-400 truncate flex-1">
-                        ✓ {voucherFileName || 'Comprobante cargado'}
+                      <span className="text-[11px] text-emerald-400 truncate flex-1 inline-flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{voucherFileName || 'Comprobante cargado'}</span>
                       </span>
                       <button
                         type="button"

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { Scissors, ChevronRight, CreditCard, MessageCircle } from 'lucide-react'
+import { formatTimeOnly } from '@/lib/utils'
 import { formatWhatsAppUrl } from '@/lib/whatsapp'
 import type { OrganizationMember } from '@/types/database.types'
 
@@ -134,10 +135,7 @@ export default function FloorRadar({ barbers, appointments, slug }: FloorRadarPr
                         <div className="flex items-center justify-between text-neutral-400 text-[11px]">
                           <span>Próxima cita:</span>
                           <span className="font-mono font-semibold text-neutral-200">
-                            {new Date(nextApp.start_time).toLocaleTimeString('es-PE', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
+                            {formatTimeOnly(nextApp.start_time)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
@@ -152,7 +150,7 @@ export default function FloorRadar({ barbers, appointments, slug }: FloorRadarPr
                             <a
                               href={formatWhatsAppUrl(
                                 nextApp.client.phone,
-                                `¡Hola ${nextApp.client.full_name || ''}! Tu turno está programado para hoy a las ${new Date(nextApp.start_time).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })} con ${barber.nickname || barber.full_name}. ¿Confirmas tu asistencia?`
+                                `¡Hola ${nextApp.client.full_name || ''}! Tu turno está programado para hoy a las ${formatTimeOnly(nextApp.start_time)} con ${barber.nickname || barber.full_name}. ¿Confirmas tu asistencia?`
                               )}
                               target="_blank"
                               rel="noopener noreferrer"

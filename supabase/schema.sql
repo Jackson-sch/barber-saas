@@ -324,6 +324,109 @@ CREATE TABLE IF NOT EXISTS public.platform_settings (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 22. SECRETOS GLOBALES E INTEGRACIONES DE LA PLATAFORMA (EXCLUSIVO SUPERADMIN)
+CREATE TABLE IF NOT EXISTS public.platform_secrets (
+    id TEXT PRIMARY KEY DEFAULT 'default',
+    -- Cloudinary de la Plataforma (comprobantes de pago SaaS, QR y assets globales)
+    cloudinary_enabled BOOLEAN NOT NULL DEFAULT false,
+    cloudinary_cloud_name TEXT,
+    cloudinary_api_key TEXT,
+    cloudinary_api_secret TEXT,
+    cloudinary_upload_preset TEXT,
+    cloudinary_folder TEXT DEFAULT 'barberos-saas',
+    -- Correo Transaccional (Resend / SMTP)
+    email_provider TEXT NOT NULL DEFAULT 'NONE',
+    email_from_name TEXT DEFAULT 'BarberOS',
+    email_from_address TEXT,
+    resend_api_key TEXT,
+    smtp_host TEXT,
+    smtp_port INT DEFAULT 587,
+    smtp_user TEXT,
+    smtp_password TEXT,
+    -- WhatsApp Oficial de la Plataforma (notificaciones SaaS y alertas)
+    whatsapp_provider TEXT NOT NULL DEFAULT 'NONE',
+    whatsapp_phone_number_id TEXT,
+    whatsapp_access_token TEXT,
+    whatsapp_gateway_url TEXT,
+    whatsapp_admin_notify_phone TEXT,
+    -- Pasarela de Pagos SaaS (cobro automático de suscripciones)
+    culqi_public_key TEXT,
+    culqi_secret_key TEXT,
+    mercadopago_public_key TEXT,
+    mercadopago_access_token TEXT,
+    -- Automatización & Alertas
+    cron_secret TEXT,
+    webhook_notify_url TEXT,
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 21. SECRETOS PRIVADOS POR ORGANIZACIÓN (CULQI SECRET KEY, TOKENS WHATSAPP)
+CREATE TABLE IF NOT EXISTS public.organization_secrets (
+    organization_id UUID PRIMARY KEY REFERENCES public.organizations(id) ON DELETE CASCADE,
+    culqi_secret_key TEXT,
+    whatsapp_access_token TEXT,
+    whatsapp_webhook_token TEXT,
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Migración idempotente: mover llaves privadas desde organizations.settings a organization_secrets y sanear JSON público
+INSERT INTO public.organization_secrets (
+    organization_id,
+    culqi_secret_key,
+    whatsapp_access_token,
+    whatsapp_webhook_token,
+    updated_at
+)
+SELECT
+    id,
+    NULLIF(TRIM(settings->'culqi_settings'->>'secret_key'), ''),
+    NULLIF(TRIM(COALESCE(
+        settings->'whatsapp_notifications'->>'accessToken',
+        settings->'whatsapp_settings'->>'accessToken',
+        settings->'whatsappSettings'->>'accessToken'
+    )), ''),
+    NULLIF(TRIM(COALESCE(
+        settings->'whatsapp_notifications'->>'webhookBearerToken',
+        settings->'whatsapp_settings'->>'webhookBearerToken',
+        settings->'whatsappSettings'->>'webhookBearerToken'
+    )), ''),
+    now()
+FROM public.organizations
+WHERE
+    NULLIF(TRIM(settings->'culqi_settings'->>'secret_key'), '') IS NOT NULL
+    OR NULLIF(TRIM(COALESCE(
+        settings->'whatsapp_notifications'->>'accessToken',
+        settings->'whatsapp_settings'->>'accessToken',
+        settings->'whatsappSettings'->>'accessToken'
+    )), '') IS NOT NULL
+    OR NULLIF(TRIM(COALESCE(
+        settings->'whatsapp_notifications'->>'webhookBearerToken',
+        settings->'whatsapp_settings'->>'webhookBearerToken',
+        settings->'whatsappSettings'->>'webhookBearerToken'
+    )), '') IS NOT NULL
+ON CONFLICT (organization_id) DO UPDATE SET
+    culqi_secret_key = COALESCE(NULLIF(EXCLUDED.culqi_secret_key, ''), public.organization_secrets.culqi_secret_key),
+    whatsapp_access_token = COALESCE(NULLIF(EXCLUDED.whatsapp_access_token, ''), public.organization_secrets.whatsapp_access_token),
+    whatsapp_webhook_token = COALESCE(NULLIF(EXCLUDED.whatsapp_webhook_token, ''), public.organization_secrets.whatsapp_webhook_token),
+    updated_at = now();
+
+UPDATE public.organizations
+SET settings = (
+    settings
+    #- '{culqi_settings,secret_key}'
+    #- '{whatsapp_notifications,accessToken}'
+    #- '{whatsapp_notifications,webhookBearerToken}'
+    #- '{whatsapp_settings,accessToken}'
+    #- '{whatsapp_settings,webhookBearerToken}'
+    #- '{whatsappSettings,accessToken}'
+    #- '{whatsappSettings,webhookBearerToken}'
+)
+WHERE
+    (settings->'culqi_settings' ? 'secret_key')
+    OR (settings->'whatsapp_notifications' ?| ARRAY['accessToken', 'webhookBearerToken'])
+    OR (settings->'whatsapp_settings' ?| ARRAY['accessToken', 'webhookBearerToken'])
+    OR (settings->'whatsappSettings' ?| ARRAY['accessToken', 'webhookBearerToken']);
+
 -- TRIGGER AUTOMÁTICO PARA CREAR PROFILE CUANDO UN USUARIO SE REGISTRA EN AUTH
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -371,6 +474,9 @@ RETURNS BOOLEAN AS $$
   );
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
+-- Garantizar que ningún OWNER quede desactivado por accidente
+UPDATE public.organization_members SET is_active = true WHERE role = 'OWNER' AND is_active = false;
+
 -- Verifica si el usuario actual pertenece a la organización indicada
 CREATE OR REPLACE FUNCTION public.is_org_member(org_id UUID)
 RETURNS BOOLEAN AS $$
@@ -378,7 +484,7 @@ RETURNS BOOLEAN AS $$
     SELECT 1 FROM public.organization_members
     WHERE organization_id = org_id
       AND user_id = auth.uid()
-      AND is_active = true
+      AND (is_active = true OR role = 'OWNER')
   ) OR public.is_super_admin();
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
@@ -390,7 +496,7 @@ RETURNS BOOLEAN AS $$
     WHERE organization_id = org_id
       AND user_id = auth.uid()
       AND role IN ('OWNER', 'ADMIN')
-      AND is_active = true
+      AND (is_active = true OR role = 'OWNER')
   ) OR public.is_super_admin();
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
@@ -415,6 +521,8 @@ ALTER TABLE public.commissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cash_movements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.loyalty_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.organization_secrets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.platform_secrets ENABLE ROW LEVEL SECURITY;
 
 -- 1. PROFILES
 DROP POLICY IF EXISTS "profiles_select_own_or_admin" ON public.profiles;
@@ -664,5 +772,17 @@ CREATE POLICY "platform_settings_select_all" ON public.platform_settings
 
 DROP POLICY IF EXISTS "platform_settings_write_superadmin" ON public.platform_settings;
 CREATE POLICY "platform_settings_write_superadmin" ON public.platform_settings
+  FOR ALL USING (public.is_super_admin())
+  WITH CHECK (public.is_super_admin());
+
+-- 21. ORGANIZATION_SECRETS (Acceso exclusivo para OWNER/ADMIN de la barbería o SuperAdmin)
+DROP POLICY IF EXISTS "organization_secrets_admin_all" ON public.organization_secrets;
+CREATE POLICY "organization_secrets_admin_all" ON public.organization_secrets
+  FOR ALL USING (public.is_org_admin(organization_id))
+  WITH CHECK (public.is_org_admin(organization_id));
+
+-- 22. PLATFORM_SECRETS (Acceso exclusivo SuperAdmin)
+DROP POLICY IF EXISTS "platform_secrets_superadmin_all" ON public.platform_secrets;
+CREATE POLICY "platform_secrets_superadmin_all" ON public.platform_secrets
   FOR ALL USING (public.is_super_admin())
   WITH CHECK (public.is_super_admin());

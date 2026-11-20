@@ -1,4 +1,4 @@
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle, Zap } from 'lucide-react'
 
 export default function DemoTabAgenda() {
   return (
@@ -140,8 +140,9 @@ export default function DemoTabAgenda() {
 
           <div className="pt-2">
             <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
-              <span className="text-[11px] text-emerald-400 font-semibold font-mono">
-                ⚡ 99.4% Tasa de Asistencia Registrada
+              <span className="text-[11px] text-emerald-400 font-semibold font-mono inline-flex items-center gap-1">
+                <Zap className="w-3.5 h-3.5" />
+                <span>99.4% Tasa de Asistencia Registrada</span>
               </span>
             </div>
           </div>

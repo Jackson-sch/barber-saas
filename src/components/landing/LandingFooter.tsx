@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Scissors, ArrowRight, ShieldCheck, Heart } from 'lucide-react'
+import { Scissors, ArrowRight, ShieldCheck, Heart, Check } from 'lucide-react'
 
 export default function LandingFooter() {
   return (
@@ -43,9 +43,9 @@ export default function LandingFooter() {
           </div>
 
           <div className="pt-4 flex items-center justify-center gap-6 text-xs text-neutral-500 flex-wrap">
-            <span>✓ 14 días de prueba completa</span>
-            <span>✓ Sin tarjeta de crédito</span>
-            <span>✓ Soporte en español por WhatsApp</span>
+            <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-400" />14 días de prueba completa</span>
+            <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-400" />Sin tarjeta de crédito</span>
+            <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-400" />Soporte en español por WhatsApp</span>
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { getDayUtcRange, getLocalDateString } from '@/lib/utils'
+import { getOrganizationSecretsServer } from '@/lib/organization-secrets'
 
 interface CreateBookingParams {
   organizationId: string
@@ -344,8 +345,10 @@ export async function createCulqiBookingChargeAction(params: CulqiBookingChargeP
 
   const orgSettings = (org.settings as Record<string, any>) || {}
   const culqi = orgSettings.culqi_settings
+  const secrets = await getOrganizationSecretsServer(params.organizationId)
+  const culqiSecretKey = (secrets.culqi_secret_key || culqi?.secret_key || '').trim()
 
-  if (!culqi?.enabled || !culqi?.secret_key) {
+  if (!culqi?.enabled || !culqiSecretKey) {
     return { error: 'Esta barbería no tiene habilitada la pasarela Culqi.' }
   }
 
@@ -392,7 +395,7 @@ export async function createCulqiBookingChargeAction(params: CulqiBookingChargeP
     const culqiRes = await fetch('https://api.culqi.com/v2/charges', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${culqi.secret_key.trim()}`,
+        Authorization: `Bearer ${culqiSecretKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
