@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { getDayUtcRange, getLocalDateString, formatPersonName } from '@/lib/utils'
 import { getOrganizationSecretsServer } from '@/lib/organization-secrets'
+import { sendBookingPushNotification } from '@/lib/push-notifications'
 
 interface CreateBookingParams {
   organizationId: string
@@ -305,6 +306,20 @@ export async function createPublicBookingAction(params: CreateBookingParams) {
     revalidatePath(`/app/${targetSlug}/agenda`)
     revalidatePath(`/app/${targetSlug}/dashboard`)
     revalidatePath(`/app/${targetSlug}/pos`)
+
+    // Enviar notificación Push nativa al barbero asignado y administradores (no bloqueante)
+    try {
+      await sendBookingPushNotification({
+        organizationId,
+        slug: targetSlug,
+        barberId,
+        clientName: normalizedClientName,
+        serviceName: service.name,
+        startTime: start.toISOString(),
+      })
+    } catch {
+      // Silencioso para no afectar la reserva del cliente
+    }
   }
 
   return {

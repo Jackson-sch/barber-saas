@@ -25,6 +25,7 @@ import {
   Crown,
 } from 'lucide-react'
 import { logoutAction } from '@/actions/auth'
+import PushNotificationToggle from '@/components/navigation/PushNotificationToggle'
 
 interface TenantSidebarProps {
   slug: string
@@ -252,6 +253,11 @@ export function TenantSidebar({ slug, org, member, userEmail, isSuperAdmin = fal
             </Link>
           </div>
         )}
+
+        {/* Push Notifications Toggle */}
+        <div className="mb-2.5">
+          <PushNotificationToggle organizationId={org.id} />
+        </div>
 
         {/* User profile & Logout */}
         <div className="mt-3 flex items-center justify-between pt-2 border-t border-white/[0.06]">

@@ -786,3 +786,24 @@ DROP POLICY IF EXISTS "platform_secrets_superadmin_all" ON public.platform_secre
 CREATE POLICY "platform_secrets_superadmin_all" ON public.platform_secrets
   FOR ALL USING (public.is_super_admin())
   WITH CHECK (public.is_super_admin());
+
+-- 23. SUSCRIPCIONES WEB PUSH NATIVAS (BARBEROS Y ADMINS)
+CREATE TABLE IF NOT EXISTS public.push_subscriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    endpoint TEXT NOT NULL,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    user_agent TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE (user_id, endpoint)
+);
+
+ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "push_subscriptions_own_all" ON public.push_subscriptions;
+CREATE POLICY "push_subscriptions_own_all" ON public.push_subscriptions
+  FOR ALL USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
