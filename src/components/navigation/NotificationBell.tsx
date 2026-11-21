@@ -161,6 +161,7 @@ export default function NotificationBell({ organizationId, slug }: NotificationB
     setPushLoading(true)
     try {
       const reg = await navigator.serviceWorker.register('/sw.js')
+      await reg.update().catch(() => {})
       await navigator.serviceWorker.ready
 
       if (pushSubscribed) {
@@ -182,9 +183,16 @@ export default function NotificationBell({ organizationId, slug }: NotificationB
         return
       }
 
+      // Si había una suscripción previa atascada o con otra llave, limpiarla antes de re-suscribir
+      const staleSub = await reg.pushManager.getSubscription()
+      if (staleSub) {
+        await staleSub.unsubscribe().catch(() => {})
+      }
+
+      const cleanVapid = vapidPublicKey.trim()
       const subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        applicationServerKey: urlBase64ToUint8Array(cleanVapid),
       })
 
       const json = subscription.toJSON()
@@ -212,7 +220,14 @@ export default function NotificationBell({ organizationId, slug }: NotificationB
         toast.success('¡Notificaciones push nativas activadas!')
       }
     } catch (err: any) {
-      toast.error(err?.message || 'Error al configurar notificaciones push.')
+      const msg = String(err?.message || '')
+      if (msg.toLowerCase().includes('push service error') || err?.name === 'AbortError') {
+        toast.error(
+          'El servicio Push fue bloqueado o no responde. Verifica que no estés en modo Incógnito, ni usando Brave, VPN o DNS privado con bloqueo (ej. AdGuard).'
+        )
+      } else {
+        toast.error(msg || 'Error al configurar notificaciones push.')
+      }
     }
     setPushLoading(false)
   }
