@@ -1,4 +1,4 @@
-import webpush from 'web-push'
+import * as webpush from 'web-push'
 import { Pool } from 'pg'
 import { createClient as createSupabaseAdminClient } from '@supabase/supabase-js'
 import { formatPersonName, formatTimeOnly } from '@/lib/utils'
