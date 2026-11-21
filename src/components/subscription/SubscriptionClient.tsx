@@ -741,62 +741,128 @@ export default function SubscriptionClient({
             Aún no has enviado ningún comprobante de pago.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="text-[11px] text-neutral-400 uppercase tracking-wider border-b border-white/[0.06]">
-                <tr>
-                  <th className="pb-2.5">Fecha</th>
-                  <th className="pb-2.5">Plan</th>
-                  <th className="pb-2.5">Meses</th>
-                  <th className="pb-2.5">Monto</th>
-                  <th className="pb-2.5">Método</th>
-                  <th className="pb-2.5">Comprobante</th>
-                  <th className="pb-2.5">Estado</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.05]">
-                {payments.map((p) => {
-                  const dateStr = formatDateOnly(p.submitted_at)
-                  const badge = paymentBadges[p.status] || paymentBadges.PENDING
+          <>
+            {/* Vista móvil en tarjetas */}
+            <div className="space-y-3 md:hidden">
+              {payments.map((p) => {
+                const dateStr = formatDateOnly(p.submitted_at)
+                const badge = paymentBadges[p.status] || paymentBadges.PENDING
 
-                  return (
-                    <tr key={p.id} className="text-neutral-300 hover:bg-white/[0.02] transition">
-                      <td className="py-2.5 font-medium text-white font-mono text-xs" suppressHydrationWarning>
-                        {dateStr}
-                      </td>
-                      <td className="py-2.5 font-semibold text-amber-400">{p.plan_tier}</td>
-                      <td className="py-2.5 tabular-nums">{p.months_paid}</td>
-                      <td className="py-2.5 font-bold text-white tabular-nums">
+                return (
+                  <div
+                    key={p.id}
+                    className="p-3.5 rounded-xl bg-neutral-950/90 border border-white/[0.06] space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-bold text-amber-400 text-xs">{p.plan_tier}</span>
+                        <span className="text-[11px] text-neutral-400 tabular-nums">
+                          • {p.months_paid} {p.months_paid === 1 ? 'mes' : 'meses'}
+                        </span>
+                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold border shrink-0 ${badge.color}`}
+                      >
+                        {badge.label}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <span className="font-black text-white text-sm tabular-nums">
                         {formatPrice(Number(p.amount))}
-                      </td>
-                      <td className="py-2.5">{p.payment_method}</td>
-                      <td className="py-2.5">
-                        <a
-                          href={p.voucher_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-amber-400 hover:underline inline-flex items-center gap-1"
+                      </span>
+                      <span className="text-neutral-400 font-mono text-[11px]" suppressHydrationWarning>
+                        {p.payment_method} • {dateStr}
+                      </span>
+                    </div>
+
+                    {p.status === 'REJECTED' && p.rejection_reason && (
+                      <p className="text-[11px] text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-2.5 py-1.5">
+                        {p.rejection_reason}
+                      </p>
+                    )}
+
+                    <div className="pt-2 border-t border-white/[0.05] flex justify-end">
+                      <a
+                        href={p.voucher_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold text-amber-400 hover:underline inline-flex items-center gap-1"
+                      >
+                        <span>Ver Voucher</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Vista escritorio en tabla */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full min-w-[680px] text-left text-xs">
+                <thead className="text-[11px] text-neutral-400 uppercase tracking-wider border-b border-white/[0.06]">
+                  <tr>
+                    <th className="pb-2.5 pr-4 whitespace-nowrap">Fecha</th>
+                    <th className="pb-2.5 px-3 whitespace-nowrap">Plan</th>
+                    <th className="pb-2.5 px-3 whitespace-nowrap">Meses</th>
+                    <th className="pb-2.5 px-3 whitespace-nowrap">Monto</th>
+                    <th className="pb-2.5 px-3 whitespace-nowrap">Método</th>
+                    <th className="pb-2.5 px-3 whitespace-nowrap">Comprobante</th>
+                    <th className="pb-2.5 pl-3 whitespace-nowrap">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.05]">
+                  {payments.map((p) => {
+                    const dateStr = formatDateOnly(p.submitted_at)
+                    const badge = paymentBadges[p.status] || paymentBadges.PENDING
+
+                    return (
+                      <tr key={p.id} className="text-neutral-300 hover:bg-white/[0.02] transition">
+                        <td
+                          className="py-2.5 pr-4 font-medium text-white font-mono text-xs whitespace-nowrap"
+                          suppressHydrationWarning
                         >
-                          <span>Ver Voucher</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </td>
-                      <td className="py-2.5">
-                        <div className="flex flex-col items-start gap-0.5">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${badge.color}`}>
-                            {badge.label}
-                          </span>
-                          {p.status === 'REJECTED' && p.rejection_reason && (
-                            <span className="text-[10px] text-red-400">{p.rejection_reason}</span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                          {dateStr}
+                        </td>
+                        <td className="py-2.5 px-3 font-semibold text-amber-400 whitespace-nowrap">
+                          {p.plan_tier}
+                        </td>
+                        <td className="py-2.5 px-3 tabular-nums whitespace-nowrap">{p.months_paid}</td>
+                        <td className="py-2.5 px-3 font-bold text-white tabular-nums whitespace-nowrap">
+                          {formatPrice(Number(p.amount))}
+                        </td>
+                        <td className="py-2.5 px-3 whitespace-nowrap">{p.payment_method}</td>
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <a
+                            href={p.voucher_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-amber-400 hover:underline inline-flex items-center gap-1"
+                          >
+                            <span>Ver Voucher</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </td>
+                        <td className="py-2.5 pl-3">
+                          <div className="flex flex-col items-start gap-0.5">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap ${badge.color}`}
+                            >
+                              {badge.label}
+                            </span>
+                            {p.status === 'REJECTED' && p.rejection_reason && (
+                              <span className="text-[10px] text-red-400">{p.rejection_reason}</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
