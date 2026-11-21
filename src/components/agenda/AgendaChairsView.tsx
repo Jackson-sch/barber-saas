@@ -1,5 +1,5 @@
 import { Clock, Plus, MessageCircle } from 'lucide-react'
-import { formatPrice, formatTimeOnly } from '@/lib/utils'
+import { formatPrice, formatTimeOnly, formatPersonName } from '@/lib/utils'
 import type { OrganizationMember } from '@/types/database.types'
 import type { AppointmentWithDetails } from './AppointmentDetailModal'
 
@@ -96,7 +96,7 @@ export default function AgendaChairsView({
                       </div>
 
                       <h4 className="text-xs font-bold text-white group-hover:text-amber-300 transition truncate">
-                        {app.client?.full_name || 'Cliente'}
+                        {formatPersonName(app.client?.full_name) || 'Cliente'}
                       </h4>
 
                       <p className="text-[11px] text-neutral-400 truncate mt-0.5">

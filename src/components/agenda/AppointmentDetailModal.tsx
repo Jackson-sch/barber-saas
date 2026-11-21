@@ -18,7 +18,7 @@ import {
   Loader2,
   Eye,
 } from 'lucide-react'
-import { formatPrice, formatMinutes } from '@/lib/utils'
+import { formatPrice, formatMinutes, getAppointmentPaymentState } from '@/lib/utils'
 import { updateAppointmentStatusAction } from '@/actions/agenda'
 import Link from 'next/link'
 
@@ -344,13 +344,20 @@ export default function AppointmentDetailModal({
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Marcar Completada</span>
                   </button>
-                  <Link
-                    href={`/app/${slug}/pos?appointmentId=${appointment.id}`}
-                    className="py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-semibold flex items-center justify-center gap-1.5 transition"
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    <span>Cobrar en POS</span>
-                  </Link>
+                  {!getAppointmentPaymentState(appointment).isPrepaid ? (
+                    <Link
+                      href={`/app/${slug}/pos?appointmentId=${appointment.id}`}
+                      className="py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span>Cobrar en POS</span>
+                    </Link>
+                  ) : (
+                    <span className="py-2 px-3 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{getAppointmentPaymentState(appointment).label}</span>
+                    </span>
+                  )}
                 </>
               )}
 

@@ -1,4 +1,5 @@
 // src/lib/whatsapp.ts
+import { formatPersonName } from '@/lib/utils'
 
 export const DEFAULT_WHATSAPP_TEMPLATES = {
   reminder:
@@ -58,12 +59,14 @@ export function replaceAppointmentVariables(
 
   const priceStr = `S/ ${Number(data.servicePrice || 0).toFixed(2)}`
   const direccionStr = data.barberiaAddress || 'Nuestro local principal'
+  const clientNameStr = formatPersonName(data.clientName) || 'Cliente'
+  const barberNameStr = formatPersonName(data.barberName) || 'Especialista'
 
   return template
-    .replace(/{cliente}/gi, data.clientName)
+    .replace(/{cliente}/gi, clientNameStr)
     .replace(/{barberia}/gi, data.barberiaName)
     .replace(/{servicio}/gi, data.serviceName)
-    .replace(/{barbero}/gi, data.barberName)
+    .replace(/{barbero}/gi, barberNameStr)
     .replace(/{fecha}/gi, fechaStr)
     .replace(/{hora}/gi, horaStr)
     .replace(/{precio}/gi, priceStr)

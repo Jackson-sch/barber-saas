@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { getDayUtcRange, getLocalDateString } from '@/lib/utils'
+import { getDayUtcRange, getLocalDateString, formatPersonName } from '@/lib/utils'
 import { getOrganizationSecretsServer } from '@/lib/organization-secrets'
 
 interface CreateBookingParams {
@@ -225,13 +225,15 @@ export async function createPublicBookingAction(params: CreateBookingParams) {
     .eq('phone', phoneClean)
     .maybeSingle()
 
+  const normalizedClientName = formatPersonName(clientName)
+
   if (existingClient) {
     clientId = existingClient.id
     // Actualizar nombre/email si han cambiado
     await supabase
       .from('clients')
       .update({
-        full_name: clientName.trim(),
+        full_name: normalizedClientName,
         email: clientEmail?.trim() || null,
         updated_at: new Date().toISOString(),
       })
@@ -242,7 +244,7 @@ export async function createPublicBookingAction(params: CreateBookingParams) {
       .from('clients')
       .insert({
         organization_id: organizationId,
-        full_name: clientName.trim(),
+        full_name: normalizedClientName,
         phone: phoneClean,
         email: clientEmail?.trim() || null,
         total_visits: 0,

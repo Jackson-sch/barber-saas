@@ -150,6 +150,7 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
     if (!file) return
     if (file.size > 4 * 1024 * 1024) {
       setError('El archivo de imagen no debe superar los 4MB.')
+      e.target.value = ''
       return
     }
     setError(null)
@@ -160,6 +161,7 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
       maxDim: 800,
     })
     setLogoUrl(result.url)
+    e.target.value = ''
   }
 
   async function handleBannerUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -167,6 +169,7 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
     if (!file) return
     if (file.size > 5 * 1024 * 1024) {
       setError('La imagen de portada no debe superar los 5MB.')
+      e.target.value = ''
       return
     }
     setError(null)
@@ -177,6 +180,7 @@ export default function SalonSettingsClient({ organization, isOwner, slug }: Sal
       maxDim: 1600,
     })
     setBannerUrl(result.url)
+    e.target.value = ''
   }
 
   async function handleSave(e: React.FormEvent) {

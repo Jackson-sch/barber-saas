@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { verifyOrgAccess } from '@/lib/tenant'
+import { formatPersonName } from '@/lib/utils'
 import { revalidatePath } from 'next/cache'
 
 export interface CreateAppointmentInput {
@@ -49,13 +50,15 @@ export async function createAppointmentAction(input: CreateAppointmentInput) {
     .eq('phone', phoneClean)
     .single()
 
+  const normalizedClientName = formatPersonName(input.client_name)
+
   if (existingClient) {
     clientId = existingClient.id
     // Actualizar nombre y email si se provee
     await supabase
       .from('clients')
       .update({
-        full_name: input.client_name.trim(),
+        full_name: normalizedClientName,
         email: input.client_email?.trim() || null,
         updated_at: new Date().toISOString(),
       })
@@ -65,7 +68,7 @@ export async function createAppointmentAction(input: CreateAppointmentInput) {
       .from('clients')
       .insert({
         organization_id: input.organization_id,
-        full_name: input.client_name.trim(),
+        full_name: normalizedClientName,
         phone: phoneClean,
         email: input.client_email?.trim() || null,
         total_visits: 0,

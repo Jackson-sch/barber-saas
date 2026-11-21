@@ -1,6 +1,7 @@
 'use server'
 
 import { verifyOrgAccess } from '@/lib/tenant'
+import { formatPersonName } from '@/lib/utils'
 import { revalidatePath } from 'next/cache'
 
 export interface ClientInput {
@@ -52,7 +53,7 @@ export async function createClientAction(input: ClientInput) {
     .from('clients')
     .insert({
       organization_id: input.organization_id,
-      full_name: input.full_name.trim(),
+      full_name: formatPersonName(input.full_name),
       phone: phoneClean,
       email: input.email?.trim() || null,
       notes: input.notes?.trim() || null,
@@ -91,7 +92,7 @@ export async function updateClientAction(input: ClientInput) {
   const { error } = await supabase
     .from('clients')
     .update({
-      full_name: input.full_name.trim(),
+      full_name: formatPersonName(input.full_name),
       phone: phoneClean,
       email: input.email?.trim() || null,
       notes: input.notes?.trim() || null,

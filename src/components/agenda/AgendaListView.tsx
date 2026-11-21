@@ -1,5 +1,5 @@
 import { Calendar as CalendarIcon, MessageCircle } from 'lucide-react'
-import { formatPrice, formatTimeOnly } from '@/lib/utils'
+import { formatPrice, formatTimeOnly, formatPersonName } from '@/lib/utils'
 import type { AppointmentWithDetails } from './AppointmentDetailModal'
 
 interface AgendaListViewProps {
@@ -45,7 +45,7 @@ export default function AgendaListView({
 
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-white">{app.client?.full_name}</span>
+                        <span className="text-sm font-bold text-white">{formatPersonName(app.client?.full_name) || 'Cliente'}</span>
                         <span
                           className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}
                         >

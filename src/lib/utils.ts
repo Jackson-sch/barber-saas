@@ -97,3 +97,60 @@ export function formatTimeOnly(
   return `${hour}:${minute} ${periodLabel}`.trim()
 }
 
+export type AppointmentPaymentStatus = 'PAID_ONLINE' | 'VOUCHER_ATTACHED' | 'UNPAID'
+
+export interface AppointmentPaymentState {
+  status: AppointmentPaymentStatus
+  label: string
+  isPrepaid: boolean
+}
+
+/**
+ * Determina si una cita ya fue pagada por adelantado (Culqi online o voucher Yape/Plin adjunto).
+ */
+export function getAppointmentPaymentState(app: {
+  notes?: string | null
+  voucher_url?: string | null
+}): AppointmentPaymentState {
+  if (app.notes && app.notes.includes('[PAGADO ONLINE CULQI')) {
+    return {
+      status: 'PAID_ONLINE',
+      label: 'Pagado Online',
+      isPrepaid: true,
+    }
+  }
+  if (app.voucher_url && app.voucher_url.trim().length > 0) {
+    return {
+      status: 'VOUCHER_ATTACHED',
+      label: 'Voucher Adjunto',
+      isPrepaid: true,
+    }
+  }
+  return {
+    status: 'UNPAID',
+    label: 'Pendiente de cobro',
+    isPrepaid: false,
+  }
+}
+
+/**
+ * Normaliza nombres y apellidos en formato Capitalizado (Title Case),
+ * evitando que se muestren todo en minúsculas o todo en mayúsculas.
+ */
+export function formatPersonName(name: string | null | undefined): string {
+  if (!name) return ''
+  return name
+    .trim()
+    .replace(/\s+/g, ' ')
+    .split(' ')
+    .map((word) => {
+      if (!word) return ''
+      return (
+        word.charAt(0).toLocaleUpperCase('es-PE') +
+        word.slice(1).toLocaleLowerCase('es-PE')
+      )
+    })
+    .join(' ')
+}
+
+

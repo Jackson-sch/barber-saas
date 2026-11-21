@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Clock, Calendar, Plus, MessageCircle, ArrowUpRight } from 'lucide-react'
-import { formatPrice, formatTimeOnly } from '@/lib/utils'
+import { Clock, Calendar, Plus, MessageCircle, ArrowUpRight, CheckCircle2, FileCheck } from 'lucide-react'
+import { formatPrice, formatTimeOnly, getAppointmentPaymentState, formatPersonName } from '@/lib/utils'
 import { formatWhatsAppUrl } from '@/lib/whatsapp'
 import type { DashboardAppointment } from './DashboardClient'
 
@@ -102,8 +102,11 @@ export default function AppointmentsTimeline({
               (app.status || '').toUpperCase() === 'EN_PROGRESO'
 
             const clientPhone = app.client?.phone || ''
-            const waMessage = `¡Hola ${app.client?.full_name || ''}! Te saludamos de ${orgName}. Te recordamos tu cita de ${app.service?.name || 'Corte'} hoy a las ${startTime}. ¿Confirmas tu asistencia?`
+            const clientDisplayName = formatPersonName(app.client?.full_name) || 'Cliente sin nombre'
+            const barberDisplayName = formatPersonName(app.barber?.full_name) || ''
+            const waMessage = `¡Hola ${formatPersonName(app.client?.full_name) || 'Cliente'}! Te saludamos de ${orgName}. Te recordamos tu cita de ${app.service?.name || 'Corte'} hoy a las ${startTime}. ¿Confirmas tu asistencia?`
             const waUrl = clientPhone ? formatWhatsAppUrl(clientPhone, waMessage) : ''
+            const paymentState = getAppointmentPaymentState(app)
 
             return (
               <div
@@ -123,7 +126,7 @@ export default function AppointmentsTimeline({
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="text-sm font-bold text-white truncate">
-                        {app.client?.full_name || 'Cliente sin nombre'}
+                        {clientDisplayName}
                       </h4>
 
                       {isCompleted ? (
@@ -147,7 +150,7 @@ export default function AppointmentsTimeline({
                       <span>
                         Especialista:{' '}
                         <strong className="text-neutral-300 font-normal">
-                          {app.barber?.full_name}
+                          {barberDisplayName}
                         </strong>
                       </span>
                     </p>
@@ -175,7 +178,7 @@ export default function AppointmentsTimeline({
                       </a>
                     )}
 
-                    {!isCompleted && (
+                    {!isCompleted && !paymentState.isPrepaid && (
                       <Link
                         href={`/app/${slug}/pos?appointmentId=${app.id}`}
                         className="py-1.5 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition flex items-center gap-1 shadow-md shadow-amber-500/20"
@@ -183,6 +186,28 @@ export default function AppointmentsTimeline({
                       >
                         <span>Cobrar</span>
                         <ArrowUpRight className="w-3 h-3" />
+                      </Link>
+                    )}
+
+                    {!isCompleted && paymentState.status === 'PAID_ONLINE' && (
+                      <Link
+                        href={`/app/${slug}/agenda`}
+                        className="py-1.5 px-2.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold text-[11px] flex items-center gap-1 transition hover:bg-emerald-500/25"
+                        title="Servicio pagado online con tarjeta"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Pagado Online</span>
+                      </Link>
+                    )}
+
+                    {!isCompleted && paymentState.status === 'VOUCHER_ATTACHED' && (
+                      <Link
+                        href={`/app/${slug}/agenda`}
+                        className="py-1.5 px-2.5 rounded-lg bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold text-[11px] flex items-center gap-1 transition hover:bg-cyan-500/25"
+                        title="El cliente adjuntó un comprobante al reservar"
+                      >
+                        <FileCheck className="w-3.5 h-3.5" />
+                        <span>Voucher Adjunto</span>
                       </Link>
                     )}
                   </div>

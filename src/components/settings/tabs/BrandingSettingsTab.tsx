@@ -57,7 +57,7 @@ export default function BrandingSettingsTab({
 
         {/* 1. Logotipo del Salón */}
         <div className="p-4 rounded-xl bg-[#090A0E] border border-white/[0.06] space-y-3">
-          <label htmlFor="field" className="block text-xs font-semibold text-neutral-200">
+          <label htmlFor="branding_logo_url" className="block text-xs font-semibold text-neutral-200">
             Logotipo Oficial del Salón
           </label>
           <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -79,10 +79,17 @@ export default function BrandingSettingsTab({
             {/* Upload & URL Controls */}
             <div className="flex-1 space-y-2 w-full">
               <div className="flex items-center gap-2 flex-wrap">
-                <label htmlFor="field" className="py-2 px-3 rounded-xl bg-white/[0.07] hover:bg-white/15 text-white text-xs font-semibold transition flex items-center gap-2 cursor-pointer border border-white/10">
+                <label
+                  htmlFor="branding_logo_file"
+                  className={`py-2 px-3 rounded-xl bg-white/[0.07] hover:bg-white/15 text-white text-xs font-semibold transition flex items-center gap-2 border border-white/10 ${
+                    isOwner ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                  }`}
+                >
                   <Upload className="w-3.5 h-3.5 text-amber-400" />
                   <span>Subir Imagen</span>
-                  <input aria-label="input"
+                  <input
+                    id="branding_logo_file"
+                    aria-label="Subir imagen de logotipo"
                     type="file"
                     accept="image/*"
                     disabled={!isOwner}
@@ -105,7 +112,9 @@ export default function BrandingSettingsTab({
               </div>
 
               <div className="flex items-center gap-2">
-                <input aria-label="input"
+                <input
+                  id="branding_logo_url"
+                  aria-label="URL directa del logo"
                   type="url"
                   disabled={!isOwner}
                   value={logoUrl}
@@ -124,7 +133,7 @@ export default function BrandingSettingsTab({
         {/* 2. Portada / Banner de Fondo */}
         <div className="p-4 rounded-xl bg-[#090A0E] border border-white/[0.06] space-y-3">
           <div className="flex items-center justify-between">
-            <label htmlFor="field" className="block text-xs font-semibold text-neutral-200">
+            <label htmlFor="branding_banner_url" className="block text-xs font-semibold text-neutral-200">
               Portada de Fondo para Portal de Reservas
             </label>
             {bannerUrl && (
@@ -192,10 +201,17 @@ export default function BrandingSettingsTab({
 
           {/* Upload or Custom URL */}
           <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
-            <label htmlFor="field" className="py-2 px-3 rounded-xl bg-white/[0.07] hover:bg-white/15 text-white text-xs font-semibold transition flex items-center gap-2 cursor-pointer border border-white/10 shrink-0 w-full sm:w-auto justify-center">
+            <label
+              htmlFor="branding_banner_file"
+              className={`py-2 px-3 rounded-xl bg-white/[0.07] hover:bg-white/15 text-white text-xs font-semibold transition flex items-center gap-2 border border-white/10 shrink-0 w-full sm:w-auto justify-center ${
+                isOwner ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'
+              }`}
+            >
               <Upload className="w-3.5 h-3.5 text-amber-400" />
               <span>Subir Portada</span>
-              <input aria-label="input"
+              <input
+                id="branding_banner_file"
+                aria-label="Subir imagen de portada"
                 type="file"
                 accept="image/*"
                 disabled={!isOwner}
@@ -203,7 +219,9 @@ export default function BrandingSettingsTab({
                 className="hidden"
               />
             </label>
-            <input aria-label="input"
+            <input
+              id="branding_banner_url"
+              aria-label="URL de imagen de portada"
               type="url"
               disabled={!isOwner}
               value={bannerUrl}

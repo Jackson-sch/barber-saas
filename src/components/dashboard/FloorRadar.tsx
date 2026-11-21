@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Scissors, ChevronRight, CreditCard, MessageCircle } from 'lucide-react'
-import { formatTimeOnly } from '@/lib/utils'
+import { Scissors, ChevronRight, CreditCard, MessageCircle, CheckCircle2, FileCheck } from 'lucide-react'
+import { formatTimeOnly, getAppointmentPaymentState, formatPersonName } from '@/lib/utils'
 import { formatWhatsAppUrl } from '@/lib/whatsapp'
 import type { OrganizationMember } from '@/types/database.types'
 
@@ -11,6 +11,8 @@ export interface FloorRadarAppointment {
   barber_id: string
   status: string
   start_time: string
+  notes?: string | null
+  voucher_url?: string | null
   client?: { full_name: string; phone?: string } | null
   service?: { name: string; price: number; duration_minutes: number } | null
 }
@@ -107,7 +109,7 @@ export default function FloorRadar({ barbers, appointments, slug }: FloorRadarPr
                         <div className="flex items-center justify-between text-neutral-400 text-[11px]">
                           <span>Atendiendo a:</span>
                           <span className="font-semibold text-white truncate max-w-[140px]">
-                            {currentApp.client?.full_name || 'Cliente'}
+                            {formatPersonName(currentApp.client?.full_name) || 'Cliente'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
@@ -120,14 +122,35 @@ export default function FloorRadar({ barbers, appointments, slug }: FloorRadarPr
                           <span className="text-[10px] text-amber-400/90 font-mono font-medium animate-pulse">
                             ● En atención
                           </span>
-                          <Link
-                            href={`/app/${slug}/pos?appointmentId=${currentApp.id}`}
-                            className="py-1 px-2 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-[10px] font-semibold flex items-center gap-1 transition shadow-sm"
-                            title="Cobrar servicio en el POS"
-                          >
-                            <CreditCard className="w-3 h-3" />
-                            <span>Cobrar POS</span>
-                          </Link>
+                          {(() => {
+                            const ps = getAppointmentPaymentState(currentApp)
+                            if (ps.status === 'PAID_ONLINE') {
+                              return (
+                                <span className="py-1 px-2 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-semibold flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>Pagado Online</span>
+                                </span>
+                              )
+                            }
+                            if (ps.status === 'VOUCHER_ATTACHED') {
+                              return (
+                                <span className="py-1 px-2 rounded-md bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-[10px] font-semibold flex items-center gap-1">
+                                  <FileCheck className="w-3 h-3" />
+                                  <span>Voucher Adjunto</span>
+                                </span>
+                              )
+                            }
+                            return (
+                              <Link
+                                href={`/app/${slug}/pos?appointmentId=${currentApp.id}`}
+                                className="py-1 px-2 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-[10px] font-semibold flex items-center gap-1 transition shadow-sm"
+                                title="Cobrar servicio en el POS"
+                              >
+                                <CreditCard className="w-3 h-3" />
+                                <span>Cobrar POS</span>
+                              </Link>
+                            )
+                          })()}
                         </div>
                       </>
                     ) : nextApp ? (
@@ -141,7 +164,7 @@ export default function FloorRadar({ barbers, appointments, slug }: FloorRadarPr
                         <div className="flex items-center justify-between text-[11px]">
                           <span className="text-neutral-500">Cliente:</span>
                           <span className="text-white truncate max-w-[140px]">
-                            {nextApp.client?.full_name || 'Cliente'}
+                            {formatPersonName(nextApp.client?.full_name) || 'Cliente'}
                           </span>
                         </div>
                         {nextApp.client?.phone ? (
@@ -150,7 +173,7 @@ export default function FloorRadar({ barbers, appointments, slug }: FloorRadarPr
                             <a
                               href={formatWhatsAppUrl(
                                 nextApp.client.phone,
-                                `¡Hola ${nextApp.client.full_name || ''}! Tu turno está programado para hoy a las ${formatTimeOnly(nextApp.start_time)} con ${barber.nickname || barber.full_name}. ¿Confirmas tu asistencia?`
+                                `¡Hola ${formatPersonName(nextApp.client.full_name) || 'Cliente'}! Tu turno está programado para hoy a las ${formatTimeOnly(nextApp.start_time)} con ${formatPersonName(barber.nickname || barber.full_name)}. ¿Confirmas tu asistencia?`
                               )}
                               target="_blank"
                               rel="noopener noreferrer"
