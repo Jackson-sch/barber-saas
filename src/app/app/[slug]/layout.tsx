@@ -1,6 +1,7 @@
 import { getTenantAuthContext } from '@/lib/tenant'
 import { TenantSidebar } from '@/components/navigation/TenantSidebar'
 import CommandPalette from '@/components/navigation/CommandPalette'
+import NotificationBell from '@/components/navigation/NotificationBell'
 import { ExternalLink } from 'lucide-react'
 
 interface TenantLayoutProps {
@@ -58,7 +59,9 @@ export default async function TenantLayout({ children, params }: TenantLayoutPro
             organizationName={org.name}
           />
 
-          <div className="flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-2.5 sm:gap-3 text-xs">
+            <NotificationBell organizationId={org.id} slug={slug} />
+
             <a
               href={`/reservar/${slug}`}
               target="_blank"
