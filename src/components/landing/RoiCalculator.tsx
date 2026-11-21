@@ -38,7 +38,7 @@ export default function RoiCalculator() {
           ¿Cuánto dinero gana de más tu barbería con BarberOS?
         </h2>
         <p className="text-sm text-neutral-400 leading-relaxed">
-          Descubre el retorno de inversión real al eliminar citas canceladas sin aviso y duplicar la fidelidad de tus clientes habituales.
+          Simula el impacto financiero estimado en tu barbería al reducir citas olvidadas e impulsar la recurrencia de clientes.
         </p>
       </div>
 
@@ -172,6 +172,10 @@ export default function RoiCalculator() {
             <span>Empezar con 14 Días Gratis</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
+
+          <p className="text-[10px] text-neutral-500 leading-relaxed text-center">
+            * Simulación ilustrativa basada en 26 días laborales/mes, ~8 citas recuperadas por barbero y un 8% adicional de recurrencia sobre los parámetros seleccionados.
+          </p>
         </div>
       </div>
     </section>

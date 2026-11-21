@@ -62,10 +62,6 @@ export default function LandingFooter() {
           <p className="text-neutral-400 leading-relaxed text-[11px]">
             El sistema operativo integral para la gestión de salones y barberías de alta gama en Latinoamérica. Diseñado para ofrecer precisión, control y máxima rentabilidad.
           </p>
-          <div className="flex items-center gap-2 text-[11px] text-emerald-400 font-mono">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Sistemas Cloud 100% Operativos</span>
-          </div>
         </div>
 
         {/* Col 2: Ecosistema */}

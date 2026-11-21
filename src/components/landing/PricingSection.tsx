@@ -60,7 +60,7 @@ export default function PricingSection() {
         'Capacitación y onboarding dedicado para tu equipo',
         'Soporte técnico VIP prioritario 24/7 por WhatsApp',
       ],
-      ctaText: 'Contactar para Enterprise',
+      ctaText: 'Probar Enterprise Gratis',
       href: '/registro-barberia',
     },
   ]

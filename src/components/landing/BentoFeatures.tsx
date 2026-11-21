@@ -45,7 +45,7 @@ export default function BentoFeatures() {
           </div>
           <div className="pt-2">
             <span className="text-[11px] font-mono font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20 inline-block">
-              Reduce inasistencias a &lt; 1%
+              Confirmación directa por WhatsApp
             </span>
           </div>
         </div>
@@ -99,7 +99,7 @@ export default function BentoFeatures() {
           </div>
           <div className="pt-2">
             <span className="text-[11px] font-mono font-semibold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20 inline-block">
-              +35% de recurrencia en clientes regulares
+              Premios automáticos sin cupones de papel
             </span>
           </div>
         </div>

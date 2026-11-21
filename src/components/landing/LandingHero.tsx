@@ -74,31 +74,31 @@ export default function LandingHero() {
         </span>
       </div>
 
-      {/* Real-time KPI Stats Ticker */}
+      {/* Platform Highlights */}
       <div className="mt-14 grid grid-cols-2 lg:grid-cols-4 gap-3 max-w-4xl mx-auto">
         <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] text-center">
           <span className="text-2xl sm:text-3xl font-black text-white font-mono block">
-            +450
+            14 días
           </span>
-          <span className="text-[11px] text-neutral-400 font-medium">Barberías Activas</span>
+          <span className="text-[11px] text-neutral-400 font-medium">Prueba Pro Gratuita</span>
         </div>
         <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] text-center">
           <span className="text-2xl sm:text-3xl font-black text-amber-400 font-mono block">
-            +180K
+            24/7
           </span>
-          <span className="text-[11px] text-neutral-400 font-medium">Cortes Gestionados</span>
+          <span className="text-[11px] text-neutral-400 font-medium">Portal de Reservas Web</span>
         </div>
         <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] text-center">
           <span className="text-2xl sm:text-3xl font-black text-emerald-400 font-mono block">
-            99.4%
+            0%
           </span>
-          <span className="text-[11px] text-neutral-400 font-medium">Asistencia con WhatsApp</span>
+          <span className="text-[11px] text-neutral-400 font-medium">Comisión SaaS por Venta</span>
         </div>
         <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] text-center">
           <span className="text-2xl sm:text-3xl font-black text-white font-mono block">
-            S/ 3.2M+
+            80mm
           </span>
-          <span className="text-[11px] text-neutral-400 font-medium">Facturados en POS</span>
+          <span className="text-[11px] text-neutral-400 font-medium">Tickets Térmicos & POS</span>
         </div>
       </div>
     </div>

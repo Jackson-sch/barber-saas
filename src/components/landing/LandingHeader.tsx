@@ -13,7 +13,7 @@ export default function LandingHeader() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
         {/* Brand Logo */}
         <Link href="/">
-          <BrandLogo size={40} badge="v2.4" subtitle="Salon & Barbershop OS" />
+          <BrandLogo size={40} subtitle="Salon & Barbershop OS" />
         </Link>
 
         {/* Desktop Navigation Links */}
