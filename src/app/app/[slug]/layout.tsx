@@ -1,8 +1,11 @@
 import { getTenantAuthContext } from '@/lib/tenant'
+import { getSubscriptionStatusInfo } from '@/lib/subscription-guard'
 import { TenantSidebar } from '@/components/navigation/TenantSidebar'
 import CommandPalette from '@/components/navigation/CommandPalette'
 import NotificationBell from '@/components/navigation/NotificationBell'
-import { ExternalLink } from 'lucide-react'
+import Link from 'next/link'
+import { ExternalLink, AlertTriangle } from 'lucide-react'
+import { SystemFooter } from '@/components/ui/SystemFooter'
 
 interface TenantLayoutProps {
   children: React.ReactNode
@@ -11,7 +14,11 @@ interface TenantLayoutProps {
 
 export default async function TenantLayout({ children, params }: TenantLayoutProps) {
   const { slug } = await params
-  const { org, member, user, isSuperAdmin } = await getTenantAuthContext(slug)
+  const { org, member, user, isSuperAdmin } = await getTenantAuthContext(slug, {
+    allowWhenExpired: true,
+  })
+  const subInfo = getSubscriptionStatusInfo(org, org.subscription)
+  const isBillingAdmin = member.role === 'OWNER' || member.role === 'ADMIN'
 
   return (
     <div className="min-h-screen bg-[#090A0E] text-white flex flex-col md:flex-row">
@@ -89,7 +96,55 @@ export default async function TenantLayout({ children, params }: TenantLayoutPro
           </div>
         </header>
 
-        <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto relative z-10 flex-1 w-full">{children}</div>
+        <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto relative z-10 flex-1 w-full">
+          {isBillingAdmin && (subInfo.isExpired || !org.is_active) && (
+            <div className="mb-5 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start sm:items-center gap-3">
+                <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5 sm:mt-0" />
+                <div className="text-xs">
+                  <p className="font-bold text-red-300">
+                    Cuenta desactivada automáticamente por vencimiento de prueba o suscripción
+                  </p>
+                  <p className="text-neutral-300 mt-0.5">
+                    Tu portal de reservas está en pausa. Sube tu comprobante de pago abajo para reactivar tu barbería de inmediato.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href={`/app/${slug}/suscripcion`}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition shrink-0 text-center"
+              >
+                Renovar Ahora
+              </Link>
+            </div>
+          )}
+
+          {isBillingAdmin && org.is_active && !subInfo.isExpired && subInfo.daysLeft <= 3 && (
+            <div className="mb-5 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start sm:items-center gap-2.5 text-xs">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
+                <p className="text-neutral-200">
+                  <strong className="text-amber-300">Recordatorio:</strong> tu{' '}
+                  {org.subscription?.status === 'ACTIVE' ? 'suscripción' : 'prueba gratuita'} vence en{' '}
+                  <strong className="text-white tabular-nums">
+                    {subInfo.daysLeft} {subInfo.daysLeft === 1 ? 'día' : 'días'}
+                  </strong>
+                  . Renueva antes del vencimiento para evitar la desactivación automática.
+                </p>
+              </div>
+              <Link
+                href={`/app/${slug}/suscripcion`}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition shrink-0 text-center"
+              >
+                Gestionar Plan
+              </Link>
+            </div>
+          )}
+
+          {children}
+        </div>
+
+        <SystemFooter />
       </main>
     </div>
   )

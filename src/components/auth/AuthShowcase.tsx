@@ -1,7 +1,8 @@
 'use client'
 
-import { Scissors, ShieldCheck, Sparkles, MessageCircle, Printer, Trophy } from 'lucide-react'
+import { ShieldCheck, Sparkles, MessageCircle, Printer, Trophy } from 'lucide-react'
 import Link from 'next/link'
+import { BrandLogo } from '@/components/ui/BrandLogo'
 
 export default function AuthShowcase() {
   return (
@@ -13,23 +14,12 @@ export default function AuthShowcase() {
 
       {/* Top Brand Bar */}
       <div className="relative z-10 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition shadow-lg shadow-amber-500/10">
-            <Scissors className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-black text-white tracking-tight font-mono">
-                Barber<span className="text-amber-500">OS</span>
-              </span>
-              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-bold text-amber-400 font-mono uppercase tracking-wider">
-                Enterprise
-              </span>
-            </div>
-            <p className="text-[11px] text-neutral-400 font-medium">
-              El Sistema Operativo para Salones de Alta Gama
-            </p>
-          </div>
+        <Link href="/">
+          <BrandLogo
+            size={44}
+            badge="Enterprise"
+            subtitle="El Sistema Operativo para Salones de Alta Gama"
+          />
         </Link>
 
         {/* Live status badge */}

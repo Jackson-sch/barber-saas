@@ -10,7 +10,7 @@ interface SuscripcionPageProps {
 
 export default async function SuscripcionPage({ params }: SuscripcionPageProps) {
   const { slug } = await params
-  const { org } = await getTenantAuthContext(slug)
+  const { org } = await getTenantAuthContext(slug, { allowWhenExpired: true })
   const supabase = await createClient()
 
   // 1. Obtener Suscripción actual, historial de pagos y configuración global de cobros

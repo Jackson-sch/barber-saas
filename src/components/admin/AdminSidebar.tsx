@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { logoutAction } from '@/actions/auth'
+import { BrandMark } from '@/components/ui/BrandLogo'
 
 interface AdminSidebarProps {
   userEmail: string
@@ -79,9 +80,7 @@ export default function AdminSidebar({
       {/* Top Bar Móvil */}
       <header className="md:hidden sticky top-0 z-40 h-15 px-4 bg-[#0B0C11]/95 backdrop-blur-md border-b border-white/[0.08] flex items-center justify-between">
         <Link href="/admin" className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
-            <ShieldCheck className="w-4 h-4" />
-          </div>
+          <BrandMark size={36} />
           <div>
             <span className="font-extrabold text-white text-sm tracking-tight block leading-none">
               Barber<span className="text-amber-500">OS</span>
@@ -125,9 +124,7 @@ export default function AdminSidebar({
             <div className="space-y-5">
               <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                    <ShieldCheck className="w-4 h-4" />
-                  </div>
+                  <BrandMark size={36} />
                   <div>
                     <span className="font-extrabold text-white text-sm tracking-tight block">
                       Barber<span className="text-amber-500">OS</span>
@@ -202,9 +199,7 @@ export default function AdminSidebar({
       <aside className="hidden md:flex md:w-64 bg-[#0B0C11] border-r border-white/[0.08] flex-col shrink-0 sticky top-0 h-screen">
         <div className="p-5 border-b border-white/[0.08]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-500/5 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-inner">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
+            <BrandMark size={40} />
             <div>
               <span className="font-extrabold text-white text-base tracking-tight block leading-tight">
                 Barber<span className="text-amber-500">OS</span>

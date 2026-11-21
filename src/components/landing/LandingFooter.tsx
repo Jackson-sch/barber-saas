@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { Scissors, ArrowRight, ShieldCheck, Heart, Check } from 'lucide-react'
+import { ArrowRight, ShieldCheck, Heart, Check, Coffee } from 'lucide-react'
+import { BrandLogo } from '@/components/ui/BrandLogo'
+import pkg from '../../../package.json'
 
 export default function LandingFooter() {
   return (
@@ -54,13 +56,8 @@ export default function LandingFooter() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 border-t border-white/[0.06] grid grid-cols-1 md:grid-cols-4 gap-8 text-xs relative z-10">
         {/* Col 1: Brand */}
         <div className="space-y-3 md:col-span-2 max-w-sm">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-              <Scissors className="w-4 h-4" />
-            </div>
-            <span className="text-lg font-black text-white font-mono">
-              Barber<span className="text-amber-500">OS</span>
-            </span>
+          <Link href="/">
+            <BrandLogo size={36} compact />
           </Link>
           <p className="text-neutral-400 leading-relaxed text-[11px]">
             El sistema operativo integral para la gestión de salones y barberías de alta gama en Latinoamérica. Diseñado para ofrecer precisión, control y máxima rentabilidad.
@@ -121,11 +118,29 @@ export default function LandingFooter() {
       </div>
 
       {/* Copyright Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-neutral-500 relative z-10">
-        <p>© {new Date().getFullYear()} BarberOS Cloud Platform. Todos los derechos reservados.</p>
-        <p className="flex items-center gap-1">
-          <span>Diseñado con pasión para barberos y estilistas</span>
-        </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 border-t border-white/[0.06] flex flex-col md:flex-row items-center justify-between gap-3 text-[11px] text-neutral-500 relative z-10">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <p>© {new Date().getFullYear()} BarberOS Cloud Platform. Todos los derechos reservados.</p>
+          <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] font-mono text-[10px] text-neutral-400 tabular-nums">
+            v{pkg.version || '0.1.0'}
+          </span>
+        </div>
+
+        <div className="inline-flex items-center gap-1.5 text-neutral-400">
+          <Coffee className="w-3.5 h-3.5 text-amber-400/90 shrink-0" />
+          <span>Forjado con código, precisión y buen café por</span>
+          <span className="font-semibold text-neutral-200">Jackson Sebastian</span>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <Link href="/terminos" className="hover:text-amber-400 transition">
+            Términos y Condiciones
+          </Link>
+          <span>•</span>
+          <Link href="/privacidad" className="hover:text-amber-400 transition">
+            Privacidad y Seguridad
+          </Link>
+        </div>
       </div>
     </footer>
   )

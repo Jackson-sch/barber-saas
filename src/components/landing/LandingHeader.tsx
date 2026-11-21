@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Scissors, Menu, X, ArrowRight, Sparkles } from 'lucide-react'
+import { Menu, X, ArrowRight, Sparkles } from 'lucide-react'
+import { BrandLogo } from '@/components/ui/BrandLogo'
 
 export default function LandingHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -11,23 +12,8 @@ export default function LandingHeader() {
     <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#090A0E]/80 backdrop-blur-xl transition">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-3 group select-none">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform duration-200 shadow-lg shadow-amber-500/10">
-            <Scissors className="w-5 h-5" />
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-black text-white tracking-tight leading-none font-mono">
-                Barber<span className="text-amber-500">OS</span>
-              </span>
-              <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[9px] font-bold text-amber-400 font-mono">
-                v2.4
-              </span>
-            </div>
-            <span className="text-[9px] uppercase tracking-[0.2em] text-neutral-400 font-semibold mt-0.5">
-              Salon & Barbershop OS
-            </span>
-          </div>
+        <Link href="/">
+          <BrandLogo size={40} badge="v2.4" subtitle="Salon & Barbershop OS" />
         </Link>
 
         {/* Desktop Navigation Links */}

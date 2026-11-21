@@ -1,5 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
+import {
+  getSubscriptionStatusInfo,
+  deactivateExpiredOrganizationServer,
+} from '@/lib/subscription-guard'
 import type { Organization, OrganizationSubscription, OrganizationMember, Profile } from '@/types/database.types'
 
 export type MemberRole = 'OWNER' | 'ADMIN' | 'RECEPTIONIST' | 'BARBER'
@@ -42,10 +46,30 @@ export async function requireTenant(slug: string): Promise<TenantWithSubscriptio
     notFound()
   }
 
+  // Si la suscripción/trial venció y la barbería seguía activa, desactivarla automáticamente
+  if (org.is_active) {
+    const subInfo = getSubscriptionStatusInfo(org, org.subscription)
+    if (subInfo.isExpired) {
+      await deactivateExpiredOrganizationServer(
+        org.id,
+        typeof org.settings === 'object' && org.settings !== null
+          ? (org.settings as Record<string, any>)
+          : null
+      )
+      return {
+        ...org,
+        is_active: false,
+      }
+    }
+  }
+
   return org
 }
 
-export async function getTenantAuthContext(slug: string) {
+export async function getTenantAuthContext(
+  slug: string,
+  options?: { allowWhenExpired?: boolean }
+) {
   const supabase = await createClient()
 
   const {
@@ -86,19 +110,47 @@ export async function getTenantAuthContext(slug: string) {
     redirect(`/login?error=unauthorized`)
   }
 
-  // Si la organización no está activa, denegar acceso al equipo de la barbería
-  if (!org.is_active) {
-    const orgSettings = (typeof org.settings === 'object' && org.settings !== null ? org.settings : {}) as Record<string, any>
-    if (orgSettings.approval_status === 'PENDING') {
+  const typedMember = member as unknown as OrganizationMember
+  const subInfo = getSubscriptionStatusInfo(org, org.subscription)
+
+  // Si la organización no está activa o su trial/suscripción expiró
+  if (!org.is_active || subInfo.isExpired) {
+    if (subInfo.isPendingApproval) {
       redirect(`/login?error=pending_approval`)
     }
+
+    if (subInfo.isExpired && org.is_active) {
+      await deactivateExpiredOrganizationServer(
+        org.id,
+        typeof org.settings === 'object' && org.settings !== null
+          ? (org.settings as Record<string, any>)
+          : null
+      )
+    }
+
+    const isBillingAdmin = typedMember.role === 'OWNER' || typedMember.role === 'ADMIN'
+    const isExpiredSuspension =
+      subInfo.isExpired || subInfo.suspendedReason === 'SUBSCRIPTION_EXPIRED'
+
+    if (isBillingAdmin && isExpiredSuspension) {
+      if (options?.allowWhenExpired) {
+        return {
+          user,
+          org: { ...org, is_active: false },
+          member: typedMember,
+          isSuperAdmin,
+        }
+      }
+      redirect(`/app/${slug}/suscripcion?expired=1`)
+    }
+
     redirect(`/login?error=suspended`)
   }
 
   return {
     user,
     org,
-    member: member as unknown as OrganizationMember,
+    member: typedMember,
     isSuperAdmin,
   }
 }

@@ -4,8 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { loginAction } from '@/actions/auth'
+import { BrandLogo } from '@/components/ui/BrandLogo'
 import {
-  Scissors,
   Lock,
   Mail,
   ArrowRight,
@@ -96,13 +96,8 @@ export default function LoginForm() {
         </Link>
 
         {/* Mobile Brand (visible when showcase is hidden) */}
-        <div className="lg:hidden flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-            <Scissors className="w-3.5 h-3.5" />
-          </div>
-          <span className="text-sm font-bold text-white font-mono">
-            Barber<span className="text-amber-500">OS</span>
-          </span>
+        <div className="lg:hidden">
+          <BrandLogo size={30} compact />
         </div>
       </div>
 
@@ -264,11 +259,11 @@ export default function LoginForm() {
       <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-white/[0.06] text-[11px] text-neutral-500">
         <span>BarberOS Cloud Platform</span>
         <div className="flex items-center gap-4">
-          <Link href="/" className="hover:text-neutral-300 transition">
+          <Link href="/terminos" className="hover:text-neutral-300 transition">
             Términos
           </Link>
           <span>•</span>
-          <Link href="/" className="hover:text-neutral-300 transition">
+          <Link href="/privacidad" className="hover:text-neutral-300 transition">
             Privacidad
           </Link>
           <span>•</span>

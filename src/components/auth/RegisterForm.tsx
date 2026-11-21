@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { registerBarbershopAction } from '@/actions/onboarding'
 import { slugify } from '@/lib/utils'
+import { BrandLogo } from '@/components/ui/BrandLogo'
 import {
-  Scissors,
   User,
   Building2,
   Mail,
@@ -109,13 +109,8 @@ export default function RegisterForm() {
         </Link>
 
         {/* Mobile Brand */}
-        <div className="lg:hidden flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-            <Scissors className="w-3.5 h-3.5" />
-          </div>
-          <span className="text-sm font-bold text-white font-mono">
-            Barber<span className="text-amber-500">OS</span>
-          </span>
+        <div className="lg:hidden">
+          <BrandLogo size={30} compact />
         </div>
       </div>
 
@@ -307,7 +302,15 @@ export default function RegisterForm() {
                   className="mt-0.5 w-4 h-4 rounded bg-[#0D0E15] border-white/[0.15] text-amber-500 focus:ring-amber-500 focus:ring-offset-0 transition cursor-pointer accent-amber-500"
                 />
                 <span className="leading-relaxed">
-                  Acepto los Términos de Servicio y la Política de Privacidad de BarberOS.
+                  Acepto los{' '}
+                  <Link href="/terminos" target="_blank" className="text-amber-400 hover:underline font-semibold">
+                    Términos de Servicio
+                  </Link>{' '}
+                  y la{' '}
+                  <Link href="/privacidad" target="_blank" className="text-amber-400 hover:underline font-semibold">
+                    Política de Privacidad
+                  </Link>{' '}
+                  de BarberOS.
                 </span>
               </label>
             </div>
@@ -351,11 +354,11 @@ export default function RegisterForm() {
       <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/[0.06] text-[11px] text-neutral-500">
         <span>BarberOS Onboarding</span>
         <div className="flex items-center gap-4">
-          <Link href="/" className="hover:text-neutral-300 transition">
+          <Link href="/terminos" className="hover:text-neutral-300 transition">
             Términos
           </Link>
           <span>•</span>
-          <Link href="/" className="hover:text-neutral-300 transition">
+          <Link href="/privacidad" className="hover:text-neutral-300 transition">
             Privacidad
           </Link>
           <span>•</span>

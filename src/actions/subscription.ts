@@ -139,11 +139,27 @@ export async function approvePaymentAction(paymentId: string, rejectionReason?: 
     })
   }
 
-  // Activar la organización en caso estuviese suspendida
+  // Activar la organización en caso estuviese suspendida y limpiar marca de vencimiento
+  const { data: orgRow } = await supabase
+    .from('organizations')
+    .select('settings')
+    .eq('id', payment.organization_id)
+    .maybeSingle()
+
+  const prevSettings = (
+    typeof orgRow?.settings === 'object' && orgRow?.settings !== null ? orgRow.settings : {}
+  ) as Record<string, any>
+  const cleanedSettings = {
+    ...prevSettings,
+    suspended_reason: null,
+    expired_at: null,
+  }
+
   await supabase
     .from('organizations')
     .update({
       is_active: true,
+      settings: cleanedSettings,
       updated_at: new Date().toISOString(),
     })
     .eq('id', payment.organization_id)

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AdminSidebar from '@/components/admin/AdminSidebar'
+import { SystemFooter } from '@/components/ui/SystemFooter'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -50,8 +51,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         pendingOrgsCount={pendingOrgsCount}
       />
 
-      <main className="flex-1 overflow-y-auto min-w-0">
-        <div className="p-4 sm:p-6 md:p-8 pb-24 md:pb-10 max-w-7xl mx-auto">{children}</div>
+      <main className="flex-1 overflow-y-auto min-w-0 flex flex-col">
+        <div className="p-4 sm:p-6 md:p-8 pb-8 md:pb-10 max-w-7xl mx-auto flex-1 w-full">{children}</div>
+
+        <SystemFooter className="pb-20 md:pb-4" />
       </main>
     </div>
   )
