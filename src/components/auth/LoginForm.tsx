@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { loginAction } from '@/actions/auth'
@@ -31,6 +31,18 @@ export default function LoginForm() {
   const [rememberMe, setRememberMe] = useState(true)
   const [forgotModalOpen, setForgotModalOpen] = useState(false)
 
+  useEffect(() => {
+    try {
+      const savedEmail = localStorage.getItem('barberos_remember_email')
+      if (savedEmail) {
+        setEmail(savedEmail)
+        setRememberMe(true)
+      }
+    } catch {
+      // Ignorar si localStorage no está disponible
+    }
+  }, [])
+
   const [error, setError] = useState<string | null>(
     errorParam === 'unauthorized'
       ? 'No tienes permisos para acceder a esta barbería.'
@@ -46,6 +58,16 @@ export default function LoginForm() {
     e.preventDefault()
     setError(null)
     setLoading(true)
+
+    try {
+      if (rememberMe && email.trim()) {
+        localStorage.setItem('barberos_remember_email', email.trim())
+      } else {
+        localStorage.removeItem('barberos_remember_email')
+      }
+    } catch {
+      // Ignorar errores de almacenamiento
+    }
 
     const formData = new FormData()
     formData.append('email', email)
@@ -138,13 +160,16 @@ export default function LoginForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Campo Email */}
             <div className="space-y-1.5">
-              <label htmlFor="field" className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
+              <label htmlFor="login_email" className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
                 Correo Electrónico
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input aria-label="input"
+                <input
+                  id="login_email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -157,7 +182,7 @@ export default function LoginForm() {
             {/* Campo Contraseña */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label htmlFor="field" className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
+                <label htmlFor="login_password" className="block text-[11px] font-bold text-neutral-300 uppercase tracking-wider font-mono">
                   Contraseña
                 </label>
                 <button
@@ -170,8 +195,11 @@ export default function LoginForm() {
               </div>
               <div className="relative">
                 <Lock className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input aria-label="input"
+                <input
+                  id="login_password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -196,8 +224,9 @@ export default function LoginForm() {
 
             {/* Recordarme Checkbox */}
             <div className="flex items-center justify-between pt-1">
-              <label htmlFor="field" className="flex items-center gap-2 cursor-pointer select-none">
-                <input aria-label="input"
+              <label htmlFor="login_remember_me" className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  id="login_remember_me"
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
