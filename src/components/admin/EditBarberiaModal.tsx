@@ -79,8 +79,13 @@ export default function EditBarberiaModal({ isOpen, onClose, org }: EditBarberia
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-[#0D0E15] border border-white/10 rounded-2xl p-6 shadow-2xl relative text-white">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !loading) onClose()
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+    >
+      <div className="w-full max-w-xl bg-[#0D0E15] border border-white/[0.1] rounded-3xl p-6 sm:p-7 shadow-2xl relative text-white max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
           <div className="flex items-center gap-3">
@@ -93,8 +98,10 @@ export default function EditBarberiaModal({ isOpen, onClose, org }: EditBarberia
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-white/[0.06] text-neutral-400 hover:text-white transition cursor-pointer"
+            aria-label="Cerrar modal"
+            className="p-1.5 rounded-xl hover:bg-white/[0.06] text-neutral-400 hover:text-white transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -116,10 +123,11 @@ export default function EditBarberiaModal({ isOpen, onClose, org }: EditBarberia
         <form onSubmit={handleSubmit} className="mt-5 space-y-4 text-xs">
           {/* Nombre Comercial */}
           <div>
-            <label htmlFor="field" className="block text-neutral-300 font-medium mb-1.5">
+            <label htmlFor="edit_org_name" className="block text-neutral-300 font-medium mb-1.5">
               Nombre Comercial de la Barbería *
             </label>
-            <input aria-label="input"
+            <input
+              id="edit_org_name"
               type="text"
               required
               value={name}
@@ -131,9 +139,9 @@ export default function EditBarberiaModal({ isOpen, onClose, org }: EditBarberia
 
           {/* Slug URL */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
               <div className="flex items-center gap-2">
-                <label htmlFor="field" className="text-neutral-300 font-medium">
+                <label htmlFor="edit_org_slug" className="text-neutral-300 font-medium">
                   Slug Identificador (URL) *
                 </label>
                 <button
@@ -151,7 +159,8 @@ export default function EditBarberiaModal({ isOpen, onClose, org }: EditBarberia
                 /reservar/{slug.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-')}
               </span>
             </div>
-            <input aria-label="input"
+            <input
+              id="edit_org_slug"
               type="text"
               required
               value={slug}
@@ -172,8 +181,11 @@ export default function EditBarberiaModal({ isOpen, onClose, org }: EditBarberia
           {/* Teléfono y Ciudad */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="field" className="block text-neutral-300 font-medium mb-1.5">Teléfono / WhatsApp</label>
-              <input aria-label="input"
+              <label htmlFor="edit_org_phone" className="block text-neutral-300 font-medium mb-1.5">
+                Teléfono / WhatsApp
+              </label>
+              <input
+                id="edit_org_phone"
                 type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -182,8 +194,11 @@ export default function EditBarberiaModal({ isOpen, onClose, org }: EditBarberia
               />
             </div>
             <div>
-              <label htmlFor="field" className="block text-neutral-300 font-medium mb-1.5">Ciudad</label>
-              <input aria-label="input"
+              <label htmlFor="edit_org_city" className="block text-neutral-300 font-medium mb-1.5">
+                Ciudad
+              </label>
+              <input
+                id="edit_org_city"
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
@@ -196,8 +211,11 @@ export default function EditBarberiaModal({ isOpen, onClose, org }: EditBarberia
           {/* Email y Dirección */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="field" className="block text-neutral-300 font-medium mb-1.5">Email de Contacto</label>
-              <input aria-label="input"
+              <label htmlFor="edit_org_email" className="block text-neutral-300 font-medium mb-1.5">
+                Email de Contacto
+              </label>
+              <input
+                id="edit_org_email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -206,8 +224,11 @@ export default function EditBarberiaModal({ isOpen, onClose, org }: EditBarberia
               />
             </div>
             <div>
-              <label htmlFor="field" className="block text-neutral-300 font-medium mb-1.5">Dirección del Local</label>
-              <input aria-label="input"
+              <label htmlFor="edit_org_address" className="block text-neutral-300 font-medium mb-1.5">
+                Dirección del Local
+              </label>
+              <input
+                id="edit_org_address"
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
