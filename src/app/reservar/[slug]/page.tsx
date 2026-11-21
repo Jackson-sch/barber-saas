@@ -1,6 +1,8 @@
+import type { Metadata } from 'next'
 import { requireTenant } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import { BookingWizard } from '@/components/booking/BookingWizard'
+import InstallPwaBanner from '@/components/booking/InstallPwaBanner'
 import {
   Scissors,
   MapPin,
@@ -26,6 +28,44 @@ import Link from 'next/link'
 
 interface BookingPageProps {
   params: Promise<{ slug: string }>
+}
+
+export async function generateMetadata({ params }: BookingPageProps): Promise<Metadata> {
+  const { slug } = await params
+  const supabase = await createClient()
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('name, logo_url, settings')
+    .eq('slug', slug)
+    .maybeSingle()
+
+  const orgName = org?.name?.trim() || 'Barbería'
+  const settings = (
+    typeof org?.settings === 'object' && org?.settings !== null ? org.settings : {}
+  ) as Record<string, any>
+  const description =
+    settings.tagline || `Reserva tu cita online en ${orgName} al instante.`
+  const iconUrl =
+    org?.logo_url &&
+    org.logo_url.startsWith('https://res.cloudinary.com/') &&
+    org.logo_url.includes('/image/upload/')
+      ? org.logo_url.replace('/image/upload/', '/image/upload/w_192,h_192,c_fill,f_png/')
+      : '/icons/icon-192.png'
+
+  return {
+    title: `${orgName} — Reservar Cita Online`,
+    description,
+    manifest: `/reservar/${slug}/manifest.webmanifest`,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'black-translucent',
+      title: orgName,
+    },
+    icons: {
+      icon: iconUrl,
+      apple: iconUrl,
+    },
+  }
 }
 
 export default async function PublicBookingPage({ params }: BookingPageProps) {
@@ -168,6 +208,8 @@ export default async function PublicBookingPage({ params }: BookingPageProps) {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <InstallPwaBanner orgName={org.name} primaryColor={primaryColor} logoUrl={logoUrl} />
+
             <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               Abierto Hoy • {openingTime} - {closingTime}
