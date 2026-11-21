@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'BarberOS — Gestión Inteligente de Barberías',
     short_name: 'BarberOS',
     description: 'Sistema Operativo Profesional para Barberías y Salones de Alta Gama. Agenda, POS y Caja.',
-    start_url: '/',
+    start_url: '/login',
     display: 'standalone',
     background_color: '#07080B',
     theme_color: '#07080B',

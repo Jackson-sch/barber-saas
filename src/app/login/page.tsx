@@ -1,5 +1,7 @@
 import { Suspense } from 'react'
+import { redirect } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
 import AuthShowcase from '@/components/auth/AuthShowcase'
 import LoginForm from '@/components/auth/LoginForm'
 import type { Metadata } from 'next'
@@ -9,7 +11,54 @@ export const metadata: Metadata = {
   description: 'Ingresa a la consola de gestión de tu barbería o salón en BarberOS.',
 }
 
-export default function LoginPage() {
+interface LoginPageProps {
+  searchParams: Promise<{ error?: string; redirect?: string }>
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const resolvedParams = await searchParams
+
+  if (!resolvedParams?.error) {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_super_admin')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (profile?.is_super_admin) {
+        redirect('/admin')
+      }
+
+      const { data: membership } = await supabase
+        .from('organization_members')
+        .select('role, organization:organizations(slug, is_active)')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle()
+
+      const orgData = Array.isArray(membership?.organization)
+        ? membership?.organization[0]
+        : membership?.organization
+
+      if (orgData?.slug && orgData.is_active) {
+        const target =
+          resolvedParams?.redirect && resolvedParams.redirect.startsWith(`/app/${orgData.slug}`)
+            ? resolvedParams.redirect
+            : membership?.role === 'BARBER'
+            ? `/app/${orgData.slug}/agenda`
+            : `/app/${orgData.slug}/dashboard`
+        redirect(target)
+      }
+    }
+  }
+
   return (
     <main
       suppressHydrationWarning
